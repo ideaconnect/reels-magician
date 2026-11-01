@@ -1,0 +1,40 @@
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+publish/
+*.user
+*.suo
+
+# IDE
+.vs/
+.idea/
+.vscode/
+*.DotSettings.user
+
+# Test artefacts
+TestResults/
+
+# Downloaded at run time, never redistributed from here
+*.gguf
+ggml-*.bin
+*.caffemodel
+*.onnx
+*.safetensors
+cudart-*.zip
+
+# Media: test inputs and rendered reels
+*.mp4
+*.mkv
+*.webm
+*.mov
+*.wav
+*.m4a
+
+# Local secrets and signing material
+.env
+.env.*
+*.pfx
+*.p12
+*.snk

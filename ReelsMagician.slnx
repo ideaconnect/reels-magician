@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ReelsMagician.App/ReelsMagician.App.csproj" />
+    <Project Path="src/ReelsMagician.Core/ReelsMagician.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ReelsMagician.SmokeTests/ReelsMagician.SmokeTests.csproj" />
+  </Folder>
+</Solution>

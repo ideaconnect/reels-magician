@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <Version>0.1.0</Version>
+    <Authors>IDCT Bartosz Pachołek</Authors>
+    <Copyright>Copyright (c) 2026, IDCT Bartosz Pachołek</Copyright>
+  </PropertyGroup>
+</Project>
