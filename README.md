@@ -1,6 +1,6 @@
 # ReelsMagician
 
-A Windows desktop app that turns a long video into a vertical **1080×1920** reel.
+A desktop app for Windows and Linux that turns a long video into a vertical **1080×1920** reel.
 
 Point it at an MP4 or a compatible video link. It transcribes the speech, lets you correct the subtitles,
 asks a local Qwen model to pick the most compelling stretch, keeps the subject centred in the
@@ -9,9 +9,9 @@ captions — plain, or with each word highlighted as it is spoken, the way CapCu
 
 Everything runs locally. Nothing is uploaded.
 
-> **Status: 0.1, an early and unstable release.** It works end to end on the machines it has been
-> tested on, but expect rough edges, and expect settings and on-disk formats to change between
-> versions.
+> **Status: an early and unstable preview.** It works end to end on the machines it has been
+> tested on, Windows 11 and Ubuntu 26.10, but expect rough edges, and expect settings and on-disk
+> formats to change between versions.
 
 ---
 
@@ -115,15 +115,22 @@ it is invisible in the ASS text — the tags look perfectly reasonable either wa
 
 ## Requirements
 
-- Windows 10 or 11, x64
-- [.NET 10 SDK](https://dotnet.microsoft.com/download) to build (the built app needs only the runtime)
-- ~7 GB of disk for the tools and models (about 0.5 GB more on an NVIDIA card, for the CUDA runtime)
-- A GPU is strongly recommended for the analysis step: NVIDIA with a current driver, or any GPU
-  with a Vulkan driver
+[docs/system-requirements.md](docs/system-requirements.md) has the details for each system. In short:
 
-Everything else the app installs itself, into `%LOCALAPPDATA%\ReelsMagician`. No admin rights, no
-system changes, nothing added to your PATH. Tools already on your PATH — ffmpeg, most likely — are
-reused rather than downloaded again.
+- **Windows 11, x64.** Windows 10 22H2 should work, but Microsoft and .NET no longer support it.
+- **Linux, x64, in a Wayland session:** Ubuntu 24.04 or newer, with GNOME, KDE Plasma, sway or
+  another Wayland desktop. The app does not run under X11.
+- **Disk:** about 6 GB for the tools and default models, plus about 0.5 GB more on Windows with an
+  NVIDIA card, for the CUDA runtime.
+- **GPU:** strongly recommended for the analysis step. NVIDIA with a current driver, or any GPU with
+  a Vulkan driver.
+- **[.NET 10 SDK](https://dotnet.microsoft.com/download)** only to build it yourself. The releases
+  include everything they need.
+
+Everything else the app installs itself, into its own data folder: `%LOCALAPPDATA%\ReelsMagician`
+on Windows, `~/.local/share/ReelsMagician` on Linux. No admin rights, no system changes, nothing
+added to your PATH. Tools already on your PATH, most likely ffmpeg, are reused rather than
+downloaded again.
 
 | Component | Source | Size |
 |---|---|---|
@@ -165,8 +172,14 @@ Two things are easy to get wrong here, and ReelsMagician handles both:
 
 ### About CUDA and Vulkan
 
-**Qwen runs on CUDA on an NVIDIA card, and on Vulkan everywhere else.** llama.cpp publishes
-official Windows builds for both. Vulkan runs on AMD, Intel and NVIDIA alike, but on an NVIDIA
+**On Linux, Qwen runs on Vulkan and Whisper on the CPU.** llama.cpp publishes no CUDA build that
+ReelsMagician uses on Linux, and its Vulkan build runs on AMD, Intel and NVIDIA alike. whisper.cpp
+publishes only a CPU build for Linux. The app finds the GPU in sysfs and counts a Vulkan driver
+only when the card's kernel driver can run it: Mesa installs its manifests for every vendor
+whatever the hardware.
+
+**On Windows, Qwen runs on CUDA on an NVIDIA card, and on Vulkan everywhere else.** llama.cpp
+publishes official Windows builds for both. Vulkan runs on AMD, Intel and NVIDIA alike, but on an NVIDIA
 card CUDA is faster, most of all when reading the long transcript the analysis starts from.
 
 On an NVIDIA card the app asks the driver which CUDA version it supports and which generation the
@@ -180,9 +193,13 @@ put it — the older `HKLM\SOFTWARE\Khronos\Vulkan\Drivers` hive is checked too,
 systems no longer populate it.
 
 **Whisper does not, yet.** whisper.cpp publishes no Vulkan build for Windows — only CPU, OpenBLAS
-and cuBLAS. ReelsMagician therefore picks cuBLAS on an NVIDIA card and OpenBLAS otherwise. This is
+and CUDA. ReelsMagician therefore picks CUDA on an NVIDIA card and OpenBLAS otherwise. This is
 not much of a bottleneck in practice: large-v3-turbo transcribes roughly 6× faster than real time
 on a modern CPU.
+
+**A lesser build is never installed silently.** If the best build this machine supports cannot
+be found (say, an NVIDIA card would get CPU whisper.cpp because the CUDA build was renamed), the
+install log says so, and so does the Setup tab, for as long as that build stays installed.
 
 The preference list is matched by pattern with Vulkan first, so if that project ever ships a
 Vulkan asset it will be adopted with no code change. To use your own build today, point
@@ -190,14 +207,26 @@ Vulkan asset it will be adopted with no code change. To use your own build today
 
 ---
 
+## Getting it
+
+Releases come as a zip for Windows and an AppImage for Linux.
+
+- **Windows:** unzip `ReelsMagician-win-x64.zip` and run `ReelsMagician.exe`. It isn't signed yet,
+  so SmartScreen asks once: choose **More info**, then **Run anyway**.
+- **Linux:** `chmod +x ReelsMagician-x86_64.AppImage`, then run it from a Wayland session.
+
 ## Build and run
 
-```powershell
+```sh
 git clone https://github.com/ideaconnect/reels-magician.git
 cd reels-magician
 dotnet build -c Release
 dotnet run --project src/ReelsMagician.App -c Release
 ```
+
+The same commands work on Windows and Linux. On Linux, run it from a Wayland session. The
+release packages are built by `.github/workflows/release.yml`, and the AppImage by
+`packaging/linux/build-appimage.sh`.
 
 On first launch, open **1 · Setup** and press **Install everything missing**. It resumes if
 interrupted, so a dropped connection is not a restart.
@@ -232,7 +261,12 @@ the spoken word is emphasised — **Colour** recolours it and nothing moves at a
 enlarges it vertically, which still leaves the line's width, and so its position, untouched. **Refresh preview** renders a real frame of your reel with the captions
 burned in. Transition length lives here too.
 
-**6 · Render** — choose an output folder and go. The activity log shows every step.
+**6 · Render** — choose an output folder and go. **Copy path** copies where the reel went, and
+**Open folder** shows it wherever the system has a file manager to open. The activity log shows
+every step.
+
+File pickers and confirmations are drawn by the app itself, the same on both systems. A question
+always defaults to the answer that changes nothing.
 
 ### Caption presets
 
@@ -249,7 +283,8 @@ burned in. Transition length lives here too.
 ## Where things live
 
 ```
-%LOCALAPPDATA%\ReelsMagician\
+%LOCALAPPDATA%\ReelsMagician\        on Windows
+~/.local/share/ReelsMagician/        on Linux
   tools\      ffmpeg, whisper.cpp, llama.cpp; yt-dlp and the JS runtime if you downloaded them
   models\     Whisper, Qwen and face detector weights
   cache\      per-project working files (audio, clips, subtitles)
@@ -258,7 +293,7 @@ burned in. Transition length lives here too.
   settings.json
 ```
 
-Reels are written to `%USERPROFILE%\Videos\ReelsMagician` unless you choose otherwise.
+Reels are written to `Videos/ReelsMagician` in your home folder unless you choose otherwise.
 
 The app used to be called Selfroller. On first run it moves an existing `%LOCALAPPDATA%\Selfroller`
 folder to the new name, so nothing has to be downloaded again. An output folder you already chose
@@ -294,9 +329,11 @@ src/ReelsMagician.Core/        no UI, fully testable
   Framing/      subject detection, crop path planning
   Rendering/    caption styles, ASS generation, renderer, preview
   Projects/     settings, project state, pipeline orchestration
-src/ReelsMagician.App/         WPF front end
+src/ReelsMagician.App/         Avalonia front end, Windows and Wayland
 tests/ReelsMagician.SmokeTests/
-tools/make-speech-video.ps1 generates a narrated 4K test video
+packaging/linux/               the AppImage: desktop entry, icons, build script
+docs/                          system requirements and architecture decisions
+tools/make-speech-video.ps1 generates a narrated 4K test video (Windows: it uses the Windows speech engine)
 ```
 
 ## Tests
@@ -305,8 +342,14 @@ tools/make-speech-video.ps1 generates a narrated 4K test video
 # Logic checks, plus a real ffmpeg render of a synthetic 4K source
 dotnet run --project tests/ReelsMagician.SmokeTests -c Release
 
-# Install the whole toolchain and assert the right backends were chosen
+# Logic checks only, needing no tools; this is what CI runs on Windows and Ubuntu
+dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- logic
+
+# Install the whole toolchain, the optional link tools included, and assert the right backends were chosen
 dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- install
+
+# The same, but only the required tools: never yt-dlp or Deno
+dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- tools
 
 # Full pipeline: Whisper, Qwen, framing and render over a narrated test video
 pwsh tools/make-speech-video.ps1
@@ -323,6 +366,17 @@ crossfade offsets, the audio/video alignment across a cut, and the ASS output.
 ---
 
 ## Troubleshooting
+
+**Linux: "ReelsMagician needs a Wayland session"** — log in to a Wayland desktop. On Ubuntu 24.04,
+choose **Ubuntu** rather than **Ubuntu on Xorg** on the login screen. The app has no X11 mode.
+
+**Linux: the AppImage does not start** — it needs FUSE 3 (`fusermount3`, in the `fuse3` package),
+which Ubuntu installs by default. Without it, run it as
+`./ReelsMagician-x86_64.AppImage --appimage-extract-and-run`.
+
+**Linux: "no driver for this GPU"** — install Mesa's Vulkan drivers (`mesa-vulkan-drivers`), or
+the NVIDIA driver on an NVIDIA card. Without one, Qwen runs on the CPU, which works but is much
+slower.
 
 **"Vulkan loader present but no driver found"** — update your graphics driver. Without Vulkan (or,
 on an NVIDIA card, CUDA) the app falls back to the CPU llama.cpp build, which works but is much

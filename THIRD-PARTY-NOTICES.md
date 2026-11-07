@@ -13,11 +13,14 @@ from its publisher when it is downloaded.
 | Package | Licence | Source |
 |---|---|---|
 | OpenCvSharp4 | Apache-2.0 | https://github.com/shimat/opencvsharp |
-| OpenCvSharp4.runtime.win (native OpenCV build) | Apache-2.0; its `opencv_videoio_ffmpeg` DLL is OpenCV's LGPL-2.1 build of FFmpeg | https://github.com/shimat/opencvsharp |
+| OpenCvSharp4.runtime.win (native OpenCV build for Windows) | Apache-2.0; its `opencv_videoio_ffmpeg` DLL is OpenCV's LGPL-2.1 build of FFmpeg | https://github.com/shimat/opencvsharp |
+| OpenCvSharp4.official.runtime.linux-x64 (native OpenCV build for Linux) | Apache-2.0; the native library statically links FFmpeg and Tesseract, each under its own licence | https://github.com/shimat/opencvsharp |
+| SharpCompress (unpacks the `.tar.xz` archives Linux tools come in) | MIT | https://github.com/adamhathcock/sharpcompress |
 
 ## Downloaded by the app at run time
 
-Installed into `%LOCALAPPDATA%\ReelsMagician`, never into this repository. A tool already on the
+Installed into `%LOCALAPPDATA%\ReelsMagician` on Windows and `~/.local/share/ReelsMagician` on
+Linux, never into this repository. A tool already on the
 user's PATH (ffmpeg, most likely) is reused instead of downloaded.
 
 | Component | Licence | Source |
@@ -46,8 +49,9 @@ link against them.
 
 ## If you redistribute a build
 
-A build of the app ships the OpenCvSharp native runtime, so include its Apache-2.0 notice and the
-LGPL-2.1 notice for `opencv_videoio_ffmpeg`. If you
+A build of the app ships the OpenCvSharp native runtime and SharpCompress. Include their Apache-2.0
+and MIT notices, and the notices for what the native runtime carries: on Windows, the LGPL-2.1
+notice for `opencv_videoio_ffmpeg`; on Linux, those of FFmpeg and Tesseract. If you
 bundle any of the run-time components above instead of letting the app download them, you take on
 their licence terms yourself: for the GPL ffmpeg build, that includes the obligation to provide
 its corresponding source.

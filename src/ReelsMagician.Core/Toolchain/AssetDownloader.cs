@@ -1,7 +1,9 @@
+using System.Formats.Tar;
 using System.IO.Compression;
 using System.Net;
 using System.Net.Http.Headers;
 using ReelsMagician.Core.Diagnostics;
+using SharpCompress.Compressors.Xz;
 
 namespace ReelsMagician.Core.Toolchain;
 
@@ -122,20 +124,28 @@ public sealed class AssetDownloader(HttpClient http, IProgressSink sink)
 public static class ArchiveExtractor
 {
     /// <summary>
-    /// Extracts a zip into <paramref name="targetDir"/>, replacing what was there. When the
-    /// archive has a single top-level folder (as ffmpeg and llama.cpp builds do) its contents are
-    /// lifted up one level so tool paths stay stable across releases. With
+    /// Extracts a .zip, .tar.gz or .tar.xz into <paramref name="targetDir"/>, replacing what was
+    /// there. When the archive has a single top-level folder (as ffmpeg and llama.cpp builds do)
+    /// its contents are lifted up one level so tool paths stay stable across releases. With
     /// <paramref name="merge"/>, the archive is laid over the existing folder instead, for a
     /// runtime that has to sit next to the binaries that load it.
     /// </summary>
-    public static void ExtractZip(string zipPath, string targetDir, IProgressSink sink, string label, bool merge = false)
+    public static void Extract(string archivePath, string targetDir, IProgressSink sink, string label, bool merge = false)
     {
         var staging = targetDir + ".staging";
         if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
         Directory.CreateDirectory(staging);
 
         sink.Report("install", $"Extracting {label}…", null);
-        ZipFile.ExtractToDirectory(zipPath, staging, overwriteFiles: true);
+        try
+        {
+            Unpack(archivePath, staging);
+        }
+        catch
+        {
+            Directory.Delete(staging, recursive: true);
+            throw;
+        }
 
         var roots = Directory.GetFileSystemEntries(staging);
         var source = roots.Length == 1 && Directory.Exists(roots[0]) ? roots[0] : staging;
@@ -158,5 +168,27 @@ public static class ArchiveExtractor
 
         if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
         sink.Info("install", $"{label}: installed to {targetDir}");
+    }
+
+    /// <summary>
+    /// Unpacks by file type. Tar archives keep each entry's execute bits and symbolic links,
+    /// which the Linux builds depend on: llama.cpp ships its libraries as versioned links.
+    /// </summary>
+    private static void Unpack(string archivePath, string destination)
+    {
+        var name = Path.GetFileName(archivePath).ToLowerInvariant();
+        if (name.EndsWith(".zip"))
+        {
+            ZipFile.ExtractToDirectory(archivePath, destination, overwriteFiles: true);
+            return;
+        }
+
+        using var file = File.OpenRead(archivePath);
+        using Stream tar =
+            name.EndsWith(".tar.gz") || name.EndsWith(".tgz") ? new GZipStream(file, CompressionMode.Decompress) :
+            name.EndsWith(".tar.xz") ? new XZStream(file) :
+            name.EndsWith(".tar") ? file :
+            throw new NotSupportedException($"Unsupported archive type: {Path.GetFileName(archivePath)}");
+        TarFile.ExtractToDirectory(tar, destination, overwriteFiles: true);
     }
 }

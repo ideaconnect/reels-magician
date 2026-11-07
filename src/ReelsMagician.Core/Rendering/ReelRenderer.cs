@@ -258,7 +258,7 @@ public sealed class ReelRenderer(FFmpegTool ffmpeg, IProgressSink sink)
     /// <summary>Reads a rendered intermediate's real duration, which drives the xfade offsets.</summary>
     private async Task<double> ProbeDurationAsync(string path, CancellationToken ct)
     {
-        var probe = Path.Combine(Path.GetDirectoryName(ffmpeg.Path)!, "ffprobe.exe");
+        var probe = Path.Combine(Path.GetDirectoryName(ffmpeg.Path)!, Toolchain.ToolPaths.ExeName("ffprobe"));
         if (File.Exists(probe))
         {
             try

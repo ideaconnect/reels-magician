@@ -1,0 +1,43 @@
+name: CI
+
+# Builds the app and runs the logic checks on Windows and Ubuntu, so a change made on one
+# system cannot quietly break the other. The checks need no tools, GPU or network.
+
+on:
+  push:
+    branches: [main, "port/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Build the app and the checks
+        run: dotnet build ReelsMagician.slnx -c Release
+      - name: Logic checks
+        run: dotnet run --project tests/ReelsMagician.SmokeTests -c Release --no-build -- logic
+
+  ubuntu:
+    name: Ubuntu
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Build the app and the checks
+        run: dotnet build ReelsMagician.slnx -c Release
+      - name: Logic checks
+        run: dotnet run --project tests/ReelsMagician.SmokeTests -c Release --no-build -- logic

@@ -1,13 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
-    <UseWPF>true</UseWPF>
+    <TargetFramework>net10.0</TargetFramework>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\reelsmagician.ico</ApplicationIcon>
     <AssemblyName>ReelsMagician</AssemblyName>
     <RootNamespace>ReelsMagician.App</RootNamespace>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- Only the Windows and Wayland backends: the Linux build has no X11 path at all (docs/adr/0001). -->
+    <PackageReference Include="Avalonia" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Skia" Version="12.1.5" />
+    <PackageReference Include="Avalonia.HarfBuzz" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Win32" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Wayland" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.5" />
+  </ItemGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\reelsmagician-256.png" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ReelsMagician.Core\ReelsMagician.Core.csproj" />
   </ItemGroup>

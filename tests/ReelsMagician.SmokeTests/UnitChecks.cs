@@ -906,7 +906,7 @@ public static class UnitChecks
             "the data folder root itself is refused — this clears parts, never the whole tree");
         Check.True(!cleaner.IsInsideDataFolder(Path.Combine(root, "..", "somewhere-else")),
             "a traversal out of the folder is refused");
-        Check.True(!cleaner.IsInsideDataFolder(@"C:\Windows\System32"),
+        Check.True(!cleaner.IsInsideDataFolder(OperatingSystem.IsWindows() ? @"C:\Windows\System32" : "/usr/bin"),
             "an unrelated system path is refused");
         Check.True(cleaner.IsInsideDataFolder(paths.Models), "a real category inside the folder is allowed");
         Check.True(cleaner.IsInsideDataFolder(Path.Combine(paths.Cache, "deep", "file.bin")),
@@ -942,14 +942,18 @@ public static class UnitChecks
         Directory.CreateDirectory(legacy.WhisperDir);
         File.WriteAllText(Path.Combine(legacy.WhisperDir, "selfroller-backend.txt"), "whisper-blas-bin-x64.zip");
 
-        // A file held open blocks the move; the old folder must then be used where it is.
-        using (File.Open(Path.Combine(legacy.Models, "big-model.bin"), FileMode.Open, FileAccess.Read, FileShare.Read))
+        // On Windows a file held open blocks the move, and the old folder must then be used where
+        // it is. Linux renames a folder whatever is open inside it, so there is nothing to block.
+        if (OperatingSystem.IsWindows())
         {
-            Check.Equal(legacy.Root, ToolPaths.ResolveRoot(parent), "a locked old folder is used in place");
+            using (File.Open(Path.Combine(legacy.Models, "big-model.bin"), FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                Check.Equal(legacy.Root, ToolPaths.ResolveRoot(parent), "a locked old folder is used in place");
+            }
+            Check.True(!Directory.Exists(Path.Combine(parent, ToolPaths.FolderName)), "and nothing is half-moved");
+            Check.True(File.Exists(Path.Combine(legacy.WhisperDir, ToolPaths.BackendMarkerName)),
+                "its backend marker still takes the new name");
         }
-        Check.True(!Directory.Exists(Path.Combine(parent, ToolPaths.FolderName)), "and nothing is half-moved");
-        Check.True(File.Exists(Path.Combine(legacy.WhisperDir, ToolPaths.BackendMarkerName)),
-            "its backend marker still takes the new name");
 
         var root = ToolPaths.ResolveRoot(parent);
         var paths = new ToolPaths(root);
@@ -994,7 +998,7 @@ public static class UnitChecks
 
         string? Pick(CudaSupport? cuda, bool vulkan = true) =>
             GitHubReleases.SelectAsset([release],
-                ToolchainManager.LlamaRules(new GpuCapabilities([], vulkan, vulkan ? 1 : 0, cuda)))?.Asset.Name;
+                ToolBuilds.LlamaRules(new GpuCapabilities([], vulkan, vulkan ? 1 : 0, cuda), TargetOs.Windows))?.Asset.Name;
 
         CudaSupport Nvidia(string driver, string compute) => new(Version.Parse(driver), Version.Parse(compute));
 
@@ -1014,18 +1018,18 @@ public static class UnitChecks
         Check.Equal("llama-b12032-bin-win-cpu-x64.zip", Pick(null, vulkan: false),
             "no GPU driver at all gets the CPU build");
 
-        Check.True(ToolchainManager.LlamaCudaVersion("cudart-llama-bin-win-cuda-13.4-x64.zip") is null,
+        Check.True(ToolBuilds.LlamaCudaVersion("cudart-llama-bin-win-cuda-13.4-x64.zip") is null,
             "a runtime archive is never taken for the build itself");
-        Check.True(ToolchainManager.LlamaCudaVersion("llama-b12032-bin-win-cuda-13.4-arm64.zip") is null,
+        Check.True(ToolBuilds.LlamaCudaVersion("llama-b12032-bin-win-cuda-13.4-arm64.zip") is null,
             "nor is an ARM build");
-        var build = ToolchainManager.LlamaCudaVersion("llama-b12032-bin-win-cuda-13.4-x64.zip");
+        var build = ToolBuilds.LlamaCudaVersion("llama-b12032-bin-win-cuda-13.4-x64.zip");
         Check.True(build is not null &&
-                   release.Assets.Any(a => a.Name == ToolchainManager.LlamaCudaRuntimeAsset(build)),
+                   release.Assets.Any(a => a.Name == ToolBuilds.LlamaCudaRuntimeAsset(build)),
             "the build's runtime archive is found in the same release");
 
-        Check.True(ToolchainManager.ExpectsLlamaCuda(new GpuCapabilities([], true, 1, Nvidia("13.0", "8.9"))),
+        Check.True(ToolBuilds.ExpectsLlamaCuda(new GpuCapabilities([], true, 1, Nvidia("13.0", "8.9")), TargetOs.Windows),
             "the setup screen expects the larger CUDA download on a CUDA-capable card");
-        Check.True(!ToolchainManager.ExpectsLlamaCuda(new GpuCapabilities([], true, 1, Nvidia("11.8", "8.9"))),
+        Check.True(!ToolBuilds.ExpectsLlamaCuda(new GpuCapabilities([], true, 1, Nvidia("11.8", "8.9")), TargetOs.Windows),
             "and not on a driver too old for it");
     }
 
@@ -1048,16 +1052,16 @@ public static class UnitChecks
         }
 
         var target = Path.Combine(root, "llama");
-        ArchiveExtractor.ExtractZip(Zip("build.zip", "llama-server.exe", "ggml-cuda.dll"),
+        ArchiveExtractor.Extract(Zip("build.zip", "llama-server.exe", "ggml-cuda.dll"),
             target, NullProgressSink.Instance, "build");
-        ArchiveExtractor.ExtractZip(Zip("runtime.zip", "cudart64_13.dll", "cublas64_13.dll"),
+        ArchiveExtractor.Extract(Zip("runtime.zip", "cudart64_13.dll", "cublas64_13.dll"),
             target, NullProgressSink.Instance, "runtime", merge: true);
 
         Check.True(File.Exists(Path.Combine(target, "llama-server.exe")), "merging keeps what was there");
         Check.True(File.Exists(Path.Combine(target, "cudart64_13.dll")), "and lays the runtime next to it");
         Check.True(!Directory.Exists(target + ".staging"), "no staging folder is left behind");
 
-        ArchiveExtractor.ExtractZip(Zip("next.zip", "llama-server.exe"), target, NullProgressSink.Instance, "build");
+        ArchiveExtractor.Extract(Zip("next.zip", "llama-server.exe"), target, NullProgressSink.Instance, "build");
         Check.True(!File.Exists(Path.Combine(target, "cudart64_13.dll")), "a plain extract still replaces the folder");
 
         Directory.Delete(root, recursive: true);

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=ReelsMagician
+GenericName=Reel maker
+Comment=Turn a long video into a short vertical reel
+Exec=ReelsMagician
+Icon=reelsmagician
+Terminal=false
+Categories=AudioVideo;Video;AudioVideoEditing;
+StartupWMClass=ReelsMagician

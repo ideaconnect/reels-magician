@@ -27,9 +27,13 @@ public static class EndToEnd
             if (fraction is >= 1) Console.WriteLine();
         });
 
-    public static async Task InstallAsync()
+    /// <param name="includeLinkTools">
+    /// Also fetch yt-dlp and Deno, which the app downloads only after the user agrees. The
+    /// 'link' mode needs them; the 'tools' mode leaves them out.
+    /// </param>
+    public static async Task InstallAsync(bool includeLinkTools = true)
     {
-        Check.Section("Toolchain install (real downloads)");
+        Check.Section(includeLinkTools ? "Toolchain install (real downloads)" : "Required toolchain install (real downloads)");
 
         var paths = new ToolPaths();
         var sink = CreateSink();
@@ -43,11 +47,11 @@ public static class EndToEnd
         var tools = await manager.EnsureAsync(settings, CancellationToken.None);
 
         // Opt-in in the app, where the user is asked first. The 'link' mode needs them here.
-        tools = await manager.InstallLinkToolsAsync(settings, CancellationToken.None);
+        if (includeLinkTools) tools = await manager.InstallLinkToolsAsync(settings, CancellationToken.None);
         Console.WriteLine();
 
         Check.True(tools.HasFfmpeg, $"ffmpeg resolved ({tools.FfmpegPath})");
-        Check.True(tools.HasYtDlp, $"yt-dlp installed ({tools.YtDlpPath})");
+        if (includeLinkTools) Check.True(tools.HasYtDlp, $"yt-dlp installed ({tools.YtDlpPath})");
         Check.True(tools.WhisperCliPath is not null, $"whisper.cpp installed ({tools.WhisperCliPath})");
         Check.True(tools.LlamaServerPath is not null, $"llama.cpp installed ({tools.LlamaServerPath})");
         Check.True(tools.WhisperModelPath is not null, "Whisper weights downloaded");
@@ -57,10 +61,12 @@ public static class EndToEnd
 
         Console.WriteLine($"    Whisper backend : {tools.WhisperBackend}");
         Console.WriteLine($"    llama.cpp backend: {tools.LlamaBackend}");
+        Check.True(tools.WhisperWarning is null, $"whisper.cpp is not a Fallback build ({tools.WhisperWarning ?? "ok"})");
+        Check.True(tools.LlamaWarning is null, $"llama.cpp is not a Fallback build ({tools.LlamaWarning ?? "ok"})");
 
         // The whole point of the GPU preference: an NVIDIA card CUDA can drive must get the CUDA
         // build, and any other Vulkan-capable machine the Vulkan one.
-        if (ToolchainManager.ExpectsLlamaCuda(gpu))
+        if (ToolBuilds.ExpectsLlamaCuda(gpu, ToolBuilds.Current))
             Check.True(tools.LlamaBackend.Contains("CUDA"),
                 $"llama.cpp picked the CUDA build on an NVIDIA card (got '{tools.LlamaBackend}')");
         else if (gpu.VulkanAvailable)
@@ -73,7 +79,7 @@ public static class EndToEnd
     /// catches a bad yt-dlp flag, a format selector that stops finding 4K, or a silent loss of
     /// progress reporting — none of which the offline tests can see.
     /// </summary>
-    public static async Task LinkAsync(string url)
+    public static async Task ResolveLinkAsync(string url)
     {
         Check.Section($"Compatible video link resolution — {url}");
 

@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using Microsoft.Win32;
 
 namespace ReelsMagician.Core.Toolchain;
@@ -35,10 +36,14 @@ public sealed record GpuCapabilities(
     public string Describe()
     {
         var gpus = Adapters.Count == 0 ? "no adapter detected" : string.Join(", ", Adapters.Select(a => a.Name));
+        var windows = OperatingSystem.IsWindows();
         var vulkan =
             VulkanAvailable ? $"Vulkan ready ({VulkanIcdCount} driver{(VulkanIcdCount == 1 ? "" : "s")})" :
-            HasVulkanLoader ? "Vulkan loader present but no driver found" :
-            "no Vulkan loader — update your graphics driver";
+            HasVulkanLoader
+                ? (windows ? "Vulkan loader present but no driver found"
+                           : "Vulkan loader present but no driver for this GPU — install mesa-vulkan-drivers, or the NVIDIA driver")
+                : (windows ? "no Vulkan loader — update your graphics driver"
+                           : "no Vulkan loader — install libvulkan1");
         var cuda = Cuda is null ? "" : $", CUDA {Cuda.DriverVersion} (compute {Cuda.LowestComputeCapability})";
         return $"{gpus} — {vulkan}{cuda}";
     }
@@ -46,10 +51,173 @@ public sealed record GpuCapabilities(
 
 public static class GpuProbe
 {
+    public static GpuCapabilities Detect()
+    {
+        if (OperatingSystem.IsWindows()) return DetectWindows();
+        if (OperatingSystem.IsLinux()) return DetectLinux("/sys/class/drm", LinuxIcdManifests(), HasLinuxVulkanLoader());
+        return new GpuCapabilities([], HasVulkanLoader: false, VulkanIcdCount: 0);
+    }
+
+    // ── Linux ────────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Reads the GPUs from sysfs and matches each one to an installed Vulkan driver manifest.
+    /// Mesa installs the manifests for every vendor at once, so a manifest on its own says
+    /// nothing about the hardware: only one matching an adapter's vendor counts as a driver.
+    /// Linux gets no CUDA builds, so CUDA is never probed here.
+    /// </summary>
+    /// <param name="drmClassDir">Normally <c>/sys/class/drm</c>.</param>
+    /// <param name="icdManifests">Paths or file names of the Vulkan driver manifests installed.</param>
+    /// <param name="hasLoader">Whether <c>libvulkan.so.1</c> can be loaded.</param>
+    public static GpuCapabilities DetectLinux(string drmClassDir, IEnumerable<string> icdManifests, bool hasLoader)
+    {
+        var manifests = icdManifests
+            .Select(m => Path.GetFileName(m).ToLowerInvariant())
+            .Where(m => !m.Contains("i686") && !m.Contains("icd32")) // 32-bit drivers serve 32-bit programs only
+            .ToList();
+
+        var adapters = new List<GpuInfo>();
+        foreach (var card in SafeDirectories(drmClassDir, "card*").Order(StringComparer.Ordinal))
+        {
+            // card0, card1 … are GPUs; card1-eDP-1 and the like are their connectors.
+            var name = Path.GetFileName(card);
+            if (name.Length <= 4 || !name[4..].All(char.IsAsciiDigit)) continue;
+
+            var device = Path.Combine(card, "device");
+            // Firmware framebuffers such as simpledrm have no PCI vendor and are not GPUs.
+            if (ReadTrimmed(Path.Combine(device, "vendor")) is not { Length: > 2 } vendorId) continue;
+
+            var vendor = VendorFromPciId(vendorId);
+            var deviceId = ReadTrimmed(Path.Combine(device, "device"));
+            var driver = ReadDriver(device);
+            var display = $"{VendorName(vendor)} GPU [{Hex(vendorId)}:{Hex(deviceId)}]" +
+                          (driver is null ? "" : $" ({driver})");
+            if (adapters.Any(a => a.Name == display)) continue;
+
+            adapters.Add(new GpuInfo(display, vendor, manifests.Any(m => DriverServes(m, vendor, driver))));
+        }
+
+        return new GpuCapabilities(adapters, hasLoader, adapters.Count(a => a.HasVulkanDriver));
+    }
+
+    /// <summary>
+    /// Whether a Vulkan driver manifest, by its file name, can drive this card. Each Vulkan driver
+    /// works only on top of one kernel driver: Mesa's Radeon driver needs amdgpu, its NVIDIA
+    /// driver needs nouveau, and NVIDIA's own needs nvidia. Mesa installs all of its manifests
+    /// everywhere, so the kernel driver is what tells a usable one apart. When the kernel driver
+    /// is unknown, the vendor alone decides.
+    /// </summary>
+    private static bool DriverServes(string manifest, GpuVendor vendor, string? kernelDriver)
+    {
+        bool On(params string[] drivers) => kernelDriver is null || drivers.Contains(kernelDriver);
+
+        return vendor switch
+        {
+            GpuVendor.Amd => (manifest.StartsWith("radeon_icd") || manifest.StartsWith("amd_icd")) && On("amdgpu"),
+            GpuVendor.Intel => (manifest.StartsWith("intel_icd") && On("i915", "xe")) ||
+                               (manifest.StartsWith("intel_hasvk_icd") && On("i915")),
+            GpuVendor.Nvidia => (manifest.StartsWith("nvidia_icd") && On("nvidia")) ||
+                                (manifest.StartsWith("nouveau_icd") && On("nouveau")),
+            GpuVendor.Qualcomm => manifest.StartsWith("freedreno_icd") && On("msm"),
+            _ => false,
+        };
+    }
+
+    /// <summary>
+    /// The driver manifests the Vulkan loader would find: the files named in VK_DRIVER_FILES
+    /// or VK_ICD_FILENAMES when set, otherwise the icd.d folders on its search path.
+    /// </summary>
+    private static List<string> LinuxIcdManifests()
+    {
+        var overrides = Environment.GetEnvironmentVariable("VK_DRIVER_FILES") ??
+                        Environment.GetEnvironmentVariable("VK_ICD_FILENAMES");
+        if (!string.IsNullOrWhiteSpace(overrides))
+            return overrides.Split(':', StringSplitOptions.RemoveEmptyEntries).Where(File.Exists).ToList();
+
+        var home = Environment.GetEnvironmentVariable("HOME") ?? "";
+        string Env(string name, string fallback) =>
+            Environment.GetEnvironmentVariable(name) is { Length: > 0 } v ? v : fallback;
+
+        var roots = new List<string> { Env("XDG_CONFIG_HOME", Path.Combine(home, ".config")) };
+        roots.AddRange(Env("XDG_CONFIG_DIRS", "/etc/xdg").Split(':', StringSplitOptions.RemoveEmptyEntries));
+        roots.Add("/etc");
+        roots.Add(Env("XDG_DATA_HOME", Path.Combine(home, ".local", "share")));
+        roots.AddRange(Env("XDG_DATA_DIRS", "/usr/local/share:/usr/share").Split(':', StringSplitOptions.RemoveEmptyEntries));
+
+        return roots
+            .Select(r => Path.Combine(r, "vulkan", "icd.d"))
+            .Distinct()
+            .SelectMany(d => SafeFiles(d, "*.json"))
+            .ToList();
+    }
+
+    private static bool HasLinuxVulkanLoader()
+    {
+        if (!NativeLibrary.TryLoad("libvulkan.so.1", out var handle)) return false;
+        NativeLibrary.Free(handle);
+        return true;
+    }
+
+    private static GpuVendor VendorFromPciId(string id) => id.ToLowerInvariant() switch
+    {
+        "0x10de" => GpuVendor.Nvidia,
+        "0x1002" or "0x1022" => GpuVendor.Amd,
+        "0x8086" => GpuVendor.Intel,
+        "0x5143" => GpuVendor.Qualcomm,
+        _ => GpuVendor.Unknown,
+    };
+
+    private static string VendorName(GpuVendor vendor) => vendor switch
+    {
+        GpuVendor.Nvidia => "NVIDIA",
+        GpuVendor.Amd => "AMD",
+        GpuVendor.Intel => "Intel",
+        GpuVendor.Qualcomm => "Qualcomm",
+        _ => "Unknown",
+    };
+
+    private static string Hex(string? id) =>
+        id is null ? "?" : id.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? id[2..] : id;
+
+    /// <summary>The kernel driver bound to the device, from its uevent file (DRIVER=amdgpu).</summary>
+    private static string? ReadDriver(string device)
+    {
+        try
+        {
+            var uevent = Path.Combine(device, "uevent");
+            if (!File.Exists(uevent)) return null;
+            return File.ReadLines(uevent)
+                .FirstOrDefault(l => l.StartsWith("DRIVER=", StringComparison.Ordinal))?["DRIVER=".Length..].Trim() is { Length: > 0 } d
+                ? d : null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return null; }
+    }
+
+    private static string? ReadTrimmed(string file)
+    {
+        try { return File.Exists(file) ? File.ReadAllText(file).Trim() : null; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return null; }
+    }
+
+    private static IEnumerable<string> SafeDirectories(string dir, string pattern)
+    {
+        try { return Directory.Exists(dir) ? Directory.GetDirectories(dir, pattern) : []; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return []; }
+    }
+
+    private static IEnumerable<string> SafeFiles(string dir, string pattern)
+    {
+        try { return Directory.Exists(dir) ? Directory.GetFiles(dir, pattern) : []; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return []; }
+    }
+
+    // ── Windows ──────────────────────────────────────────────────────────────────────────
+
     private const string DisplayClassKey =
         @"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}";
 
-    public static GpuCapabilities Detect()
+    [SupportedOSPlatform("windows")]
+    private static GpuCapabilities DetectWindows()
     {
         var adapters = ReadAdapters();
 
@@ -86,6 +254,7 @@ public static class GpuProbe
     [DllImport(CudaDriver), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern int cuDeviceGetAttribute(out int value, int attribute, int device);
 
+    [SupportedOSPlatform("windows")]
     private static CudaSupport? ProbeCuda()
     {
         try
@@ -113,6 +282,7 @@ public static class GpuProbe
         }
     }
 
+    [SupportedOSPlatform("windows")]
     private static List<GpuInfo> ReadAdapters()
     {
         var adapters = new List<GpuInfo>();
@@ -138,6 +308,7 @@ public static class GpuProbe
     }
 
     /// <summary>True when the adapter advertises a Vulkan ICD manifest that is actually on disk.</summary>
+    [SupportedOSPlatform("windows")]
     private static bool HasVulkanIcd(RegistryKey adapterKey)
     {
         foreach (var name in new[] { "VulkanDriverName", "VulkanDriverNameWoW" })
@@ -160,6 +331,7 @@ public static class GpuProbe
         return false;
     }
 
+    [SupportedOSPlatform("windows")]
     private static int CountLegacyIcds()
     {
         var count = 0;

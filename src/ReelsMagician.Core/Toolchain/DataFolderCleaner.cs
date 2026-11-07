@@ -43,9 +43,7 @@ public sealed class DataFolderCleaner(ToolPaths paths, IProgressSink sink)
             "Whisper, Qwen and the face detector. The big one — several gigabytes.",
             paths.Models, selectedByDefault: false),
 
-        Describe(ToolsKey, "Downloaded tools",
-            "ffmpeg, yt-dlp, whisper.cpp, llama.cpp and the JavaScript runtime.",
-            paths.Tools, selectedByDefault: false),
+        Describe(ToolsKey, "Downloaded tools", ToolsDetail(), paths.Tools, selectedByDefault: false),
 
         Describe(WorkingKey, "Working files",
             "Extracted audio, sampled frames, clip intermediates and half-finished downloads. " +
@@ -59,6 +57,35 @@ public sealed class DataFolderCleaner(ToolPaths paths, IProgressSink sink)
             "Your model choices, output folder and recent sources. Removing this resets the app.",
             paths.SettingsFile, selectedByDefault: false),
     ];
+
+    /// <summary>
+    /// Names the tools actually on disk. yt-dlp and its runtime are downloaded only if the user
+    /// agreed, so naming them unconditionally would claim a download that never happened.
+    /// </summary>
+    private string ToolsDetail()
+    {
+        var present = new (string Dir, string Name)[]
+            {
+                (paths.FfmpegDir, "ffmpeg"), (paths.WhisperDir, "whisper.cpp"), (paths.LlamaDir, "llama.cpp"),
+                (paths.YtDlpDir, "yt-dlp"), (paths.JsRuntimeDir, "the JavaScript runtime"),
+            }
+            .Where(t => HasContent(t.Dir))
+            .Select(t => t.Name)
+            .ToList();
+
+        return present.Count switch
+        {
+            0 => "ffmpeg, whisper.cpp and llama.cpp, once they are downloaded.",
+            1 => present[0] + ".",
+            _ => string.Join(", ", present[..^1]) + " and " + present[^1] + ".",
+        };
+    }
+
+    private static bool HasContent(string dir)
+    {
+        try { return Directory.Exists(dir) && Directory.EnumerateFileSystemEntries(dir).Any(); }
+        catch (Exception) { return false; }
+    }
 
     private DataFolderItem Describe(
         string key, string name, string detail, string path,
@@ -177,9 +204,11 @@ public sealed class DataFolderCleaner(ToolPaths paths, IProgressSink sink)
             var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
 
             // The root itself is not a valid target: this clears parts, never the whole tree.
-            if (string.Equals(full, root, StringComparison.OrdinalIgnoreCase)) return false;
+            if (string.Equals(full, root, ToolPaths.PathComparison)) return false;
 
-            return full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+            // Ignoring case where the file system doesn't would let a differently cased path,
+            // which on Linux is a different folder, pass as one inside the data folder.
+            return full.StartsWith(root + Path.DirectorySeparatorChar, ToolPaths.PathComparison);
         }
         catch (Exception) { return false; }
     }

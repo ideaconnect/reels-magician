@@ -1,0 +1,628 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:ReelsMagician.App"
+        xmlns:vm="using:ReelsMagician.App.ViewModels"
+        xmlns:core="using:ReelsMagician.Core.Toolchain"
+        xmlns:rendering="using:ReelsMagician.Core.Rendering"
+        x:Class="ReelsMagician.App.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="ReelsMagician — reels from long videos"
+        Icon="/Assets/reelsmagician-256.png"
+        Width="1360" Height="900" MinWidth="1120" MinHeight="680"
+        WindowStartupLocation="CenterScreen">
+
+  <Window.Resources>
+    <local:ReadyToBrushConverter x:Key="ReadyBrush" />
+    <local:ConfidenceToBrushConverter x:Key="ConfidenceBrush" />
+
+    <DataTemplate x:Key="ComponentRow" x:DataType="vm:ComponentRowViewModel">
+      <StackPanel Margin="0,4">
+        <Grid ColumnDefinitions="14,320,*,140,90">
+          <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                   Fill="{Binding IsReady, Converter={StaticResource ReadyBrush}}" />
+          <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"
+                     Margin="0,0,12,0" TextTrimming="CharacterEllipsis" />
+          <TextBlock Grid.Column="2" Text="{Binding Detail}" Classes="hint" TextWrapping="NoWrap"
+                     VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+          <TextBlock Grid.Column="3" Text="{Binding StateText}" Classes="hint" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="4" Text="{Binding SizeText}" Classes="hint"
+                     VerticalAlignment="Center" HorizontalAlignment="Right" />
+        </Grid>
+        <TextBlock Text="{Binding Warning}" Classes="warn" Margin="14,4,0,0"
+                   IsVisible="{Binding Warning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      </StackPanel>
+    </DataTemplate>
+  </Window.Resources>
+
+  <Grid Margin="16" RowDefinitions="Auto,*,Auto">
+
+    <!-- Header -->
+    <Grid Grid.Row="0" Margin="0,0,0,10" ColumnDefinitions="*,Auto">
+      <StackPanel>
+        <TextBlock Text="ReelsMagician" Classes="h1" />
+        <TextBlock Classes="hint"
+                   Text="Turn a long video into a vertical 1080×1920 reel: transcribe, review the subtitles, let Qwen pick the best stretch, keep the subject centred, and burn in captions." />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
+        <TextBlock Text="{Binding GpuText}" Classes="hint" VerticalAlignment="Center" MaxWidth="460" />
+        <Button Content="Open data folder" Command="{Binding OpenToolsFolderCommand}"
+                IsVisible="{Binding CanOpenFolders}" />
+      </StackPanel>
+    </Grid>
+
+    <!-- Main tabs -->
+    <TabControl Grid.Row="1" SelectedIndex="{Binding ActiveTab}">
+
+      <!-- ══ Setup ══ -->
+      <TabItem Header="1 · Setup">
+        <ScrollViewer Padding="0,12,8,0">
+          <StackPanel>
+            <Border Classes="card">
+              <StackPanel>
+                <TextBlock Text="Required tools" Classes="h2" />
+                <TextBlock Classes="hint" Margin="0,0,0,10"
+                           Text="Everything installs into the app's own data folder: no admin rights, no system changes. Anything already on your PATH is reused instead of downloaded." />
+
+                <ItemsControl ItemsSource="{Binding Components}" ItemTemplate="{StaticResource ComponentRow}" />
+
+                <TextBlock Text="{Binding MissingText}" Classes="hint" Margin="0,12,0,0" />
+                <TextBlock Text="{Binding BackendText}" Classes="hint" Margin="0,4,0,0" />
+
+                <StackPanel Orientation="Horizontal" Margin="0,14,0,0" Spacing="8">
+                  <Button Content="Install everything missing" Classes="accent" Command="{Binding InstallCommand}" />
+                  <Button Content="Re-check" Command="{Binding RefreshToolsCommand}" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <Border Classes="card">
+              <StackPanel>
+                <TextBlock Text="Video links (optional)" Classes="h2" />
+                <TextBlock Classes="hint" Margin="0,0,0,10"
+                           Text="Only needed to load a video from a link; local video files work without it. yt-dlp is a separate third-party tool that is not part of ReelsMagician, so it is not installed with the required tools, and you are asked before it is downloaded." />
+
+                <ItemsControl ItemsSource="{Binding LinkComponents}" ItemTemplate="{StaticResource ComponentRow}" />
+
+                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                  <Button Content="Download…" Command="{Binding InstallLinkToolsCommand}" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <Border Classes="card">
+              <StackPanel>
+                <TextBlock Text="Models" Classes="h2" />
+                <Grid ColumnDefinitions="*,16,*">
+                  <StackPanel>
+                    <TextBlock Text="Speech recognition (Whisper)" Classes="label" />
+                    <ComboBox ItemsSource="{Binding WhisperModels}" SelectedItem="{Binding SelectedWhisperModel}"
+                              HorizontalAlignment="Stretch">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="core:WhisperModelSpec">
+                          <TextBlock Text="{Binding DisplayName}" />
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBlock Text="{Binding SelectedWhisperModel.Notes}" Classes="hint" Margin="0,6,0,0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2">
+                    <TextBlock Text="Segment analysis (Qwen, via llama.cpp)" Classes="label" />
+                    <ComboBox ItemsSource="{Binding LlmModels}" SelectedItem="{Binding SelectedLlmModel}"
+                              HorizontalAlignment="Stretch">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="core:LlmModelSpec">
+                          <TextBlock Text="{Binding DisplayName}" />
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBlock Text="{Binding SelectedLlmModel.Notes}" Classes="hint" Margin="0,6,0,0" />
+                  </StackPanel>
+                </Grid>
+                <TextBlock Classes="hint" Margin="0,12,0,0" Text="{Binding ModelsHint}" />
+              </StackPanel>
+            </Border>
+
+            <Border Classes="card">
+              <StackPanel>
+                <TextBlock Text="Free up space" Classes="h2" />
+                <SelectableTextBlock Text="{Binding DataFolderText}" Foreground="{StaticResource Muted}"
+                                     FontSize="12" TextWrapping="Wrap" Margin="0,0,0,10" />
+
+                <ItemsControl ItemsSource="{Binding CleanupItems}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:CleanupRowViewModel">
+                      <Grid Margin="0,5" ColumnDefinitions="Auto,230,*,100">
+                        <CheckBox IsChecked="{Binding IsSelected}" IsEnabled="{Binding CanSelect}"
+                                  VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"
+                                   Margin="0,0,12,0" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="2" Text="{Binding Detail}" Classes="hint" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="3" Text="{Binding SizeText}" Classes="hint"
+                                   VerticalAlignment="Center" HorizontalAlignment="Right" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <StackPanel Orientation="Horizontal" Margin="0,14,0,0" Spacing="8">
+                  <Button Content="{Binding CleanupButtonText}" Classes="accent" Command="{Binding CleanupCommand}" />
+                  <Button Content="Re-measure" Command="{Binding RefreshCleanupCommand}" />
+                  <Button Content="Open data folder" Command="{Binding OpenToolsFolderCommand}"
+                          IsVisible="{Binding CanOpenFolders}" />
+                  <Button Content="Copy path" Command="{Binding CopyDataFolderCommand}" />
+                </StackPanel>
+
+                <TextBlock Classes="hint" Margin="0,10,0,0"
+                           Text="Only this folder is touched, and you are asked to confirm before anything is deleted. Working files are safe to clear at any time; removing the models or tools means downloading them again." />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ══ Source ══ -->
+      <TabItem Header="2 · Source">
+        <ScrollViewer Padding="0,12,8,0">
+          <StackPanel>
+            <Border Classes="card">
+              <StackPanel>
+                <TextBlock Text="Video" Classes="h2" />
+                <TextBlock Classes="hint" Margin="0,0,0,8"
+                           Text="Choose an MP4 or paste a compatible video link. Links need yt-dlp, which you are asked about the first time, and are downloaded at the highest quality available up to your cap, preferring 4K." />
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBox Text="{Binding SourceInput}" VerticalContentAlignment="Center" />
+                  <Button Grid.Column="1" Content="Browse…" Command="{Binding BrowseSourceCommand}" Margin="8,0,0,0" />
+                </Grid>
+
+                <Grid Margin="0,14,0,0" ColumnDefinitions="Auto,24,*">
+                  <StackPanel>
+                    <TextBlock Text="Download quality cap" Classes="label" />
+                    <ComboBox ItemsSource="{Binding QualityOptions}" SelectedItem="{Binding MaxHeight}" Width="150" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2">
+                    <TextBlock Text="Reel length" Classes="label" />
+                    <Grid ColumnDefinitions="*,70">
+                      <Slider Minimum="10" Maximum="120" TickFrequency="1" Value="{Binding TargetSeconds}" />
+                      <TextBlock Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right"
+                                 Text="{Binding TargetSeconds, StringFormat={}{0:0}s}" />
+                    </Grid>
+                  </StackPanel>
+                </Grid>
+
+                <CheckBox Content="Use subtitles that come with the video when available (skips Whisper)"
+                          IsChecked="{Binding UseProvidedSubtitles}" Margin="0,14,0,0" />
+
+                <Button Content="Load source" Classes="accent" Command="{Binding LoadSourceCommand}"
+                        HorizontalAlignment="Left" Margin="0,16,0,0" />
+              </StackPanel>
+            </Border>
+
+            <Border Classes="card">
+              <StackPanel>
+                <TextBlock Text="Loaded video" Classes="h2" />
+                <TextBlock Text="{Binding SourceSummary}" TextWrapping="Wrap" />
+                <Border Classes="notice" Margin="0,10,0,0"
+                        IsVisible="{Binding SourceWarning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                  <TextBlock Text="{Binding SourceWarning}" Classes="warn" FontSize="13" />
+                </Border>
+
+                <TextBlock Text="Topic used for the analysis" Classes="label" Margin="0,14,0,4" />
+                <TextBox Text="{Binding Topic}" />
+                <TextBlock Classes="hint" Margin="0,6,0,0"
+                           Text="Taken from the video title, or from the filename for a local file. Qwen scores every paragraph against this, so correct it if it is misleading." />
+
+                <Button Content="Transcribe" Classes="accent" Command="{Binding TranscribeCommand}"
+                        HorizontalAlignment="Left" Margin="0,16,0,0" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ══ Subtitles ══ -->
+      <TabItem Header="3 · Subtitles">
+        <Grid Margin="0,12,0,0" RowDefinitions="Auto,Auto,Auto,*,Auto">
+
+          <TextBlock Grid.Row="0" Text="{Binding TranscriptSummary}" Classes="hint" Margin="0,0,0,10" />
+
+          <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10" Spacing="8">
+            <Button Content="Split" Command="{Binding SplitCueCommand}" />
+            <Button Content="Merge with next" Command="{Binding MergeCueCommand}" />
+            <Button Content="Delete" Command="{Binding DeleteCueCommand}" />
+            <Border Classes="divider" />
+            <Button Content="−100 ms" Command="{Binding ShiftEarlierCommand}" />
+            <Button Content="+100 ms" Command="{Binding ShiftLaterCommand}" />
+            <Border Classes="divider" />
+            <Button Content="Import…" Command="{Binding ImportSubtitlesCommand}" />
+            <Button Content="Export SRT…" Command="{Binding ExportSubtitlesCommand}" />
+          </StackPanel>
+
+          <!-- Column headings for the cue rows below; the widths must match the row template. -->
+          <Border Grid.Row="2" Background="{StaticResource PanelAlt}" CornerRadius="6,6,0,0" Padding="12,7">
+            <Grid ColumnDefinitions="118,118,64,54,*,60">
+              <TextBlock Text="Start" Classes="label" Margin="0" />
+              <TextBlock Grid.Column="1" Text="End" Classes="label" Margin="0" />
+              <TextBlock Grid.Column="2" Text="Length" Classes="label" Margin="0" />
+              <TextBlock Grid.Column="3" Text="Words" Classes="label" Margin="0" />
+              <TextBlock Grid.Column="4" Text="Text" Classes="label" Margin="0" />
+              <TextBlock Grid.Column="5" Text="Edited" Classes="label" Margin="0" />
+            </Grid>
+          </Border>
+
+          <!-- A plain list of editable rows, virtualised, rather than a data grid (docs/adr/0001). -->
+          <ListBox x:Name="SubtitleList" Grid.Row="3" Classes="cues" CornerRadius="0,0,6,6"
+                   ItemsSource="{Binding Subtitles}" SelectedItem="{Binding SelectedSubtitle}"
+                   ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:SubtitleRowViewModel">
+                <Grid ColumnDefinitions="118,118,64,54,*,60">
+                  <TextBox Text="{Binding StartText, UpdateSourceTrigger=LostFocus}" Margin="0,0,6,0" />
+                  <TextBox Grid.Column="1" Text="{Binding EndText, UpdateSourceTrigger=LostFocus}" Margin="0,0,6,0" />
+                  <TextBlock Grid.Column="2" Text="{Binding DurationText}" Classes="hint" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="3" Text="{Binding WordCount}" Classes="hint" VerticalAlignment="Center" />
+                  <TextBox Grid.Column="4" Text="{Binding Text, UpdateSourceTrigger=LostFocus}" TextWrapping="Wrap"
+                           AcceptsReturn="False"
+                           Foreground="{Binding LowConfidence, Converter={StaticResource ConfidenceBrush}}" />
+                  <TextBlock Grid.Column="5" Text="edited" Classes="hint" VerticalAlignment="Center"
+                             Margin="8,0,0,0" IsVisible="{Binding Edited}" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+
+          <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,12,0,0" Spacing="12">
+            <Button Content="Analyse and pick the reel" Classes="accent" Command="{Binding AnalyzeCommand}" />
+            <TextBlock Classes="hint" VerticalAlignment="Center"
+                       Text="Amber text marks cues Whisper was unsure about. Edits are applied when you analyse." />
+          </StackPanel>
+        </Grid>
+      </TabItem>
+
+      <!-- ══ Reel ══ -->
+      <TabItem Header="4 · Reel">
+        <Grid Margin="0,12,0,0" ColumnDefinitions="1.35*,16,*" RowDefinitions="Auto,*,Auto">
+
+          <TextBlock Grid.Row="0" Grid.ColumnSpan="3" Text="{Binding PlanSummary}" Classes="hint" Margin="0,0,0,10" />
+
+          <ListBox Grid.Row="1" Classes="cards" ItemsSource="{Binding Candidates}"
+                   SelectedItem="{Binding SelectedCandidate}"
+                   ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:CandidateViewModel">
+                <StackPanel>
+                  <TextBlock Text="{Binding Title}" Classes="h2" TextWrapping="Wrap" Margin="0,0,0,2" />
+                  <TextBlock Text="{Binding Summary}" Classes="hint" />
+                  <TextBlock Text="{Binding ClipList}" Classes="hint" Margin="0,4,0,0" />
+                  <TextBlock Text="{Binding Hook}" TextWrapping="Wrap" Margin="0,8,0,0" FontWeight="SemiBold"
+                             IsVisible="{Binding Hook, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <TextBlock Text="{Binding Reason}" Classes="hint" Margin="0,4,0,0" />
+                  <TextBlock Text="{Binding Preview}" Classes="hint" Margin="0,8,0,0" FontStyle="Italic" />
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+
+          <Border Grid.Row="1" Grid.Column="2" Classes="card" Margin="0">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Top" Text="Subject tracking" Classes="h2" />
+              <TextBlock DockPanel.Dock="Top" Classes="hint" Margin="0,0,0,10"
+                         Text="Each clip is sampled frame by frame. A face in the foreground wins; failing that a body; failing that the most visually dominant region — so a product or a landscape stays centred too." />
+              <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding ClipFramings}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ClipFramingViewModel">
+                      <Border Background="{StaticResource PanelAlt}" CornerRadius="6" Padding="10" Margin="0,0,0,8">
+                        <StackPanel>
+                          <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding SubjectText}" Foreground="{StaticResource Accent}" />
+                            <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                          </DockPanel>
+                          <TextBlock Text="{Binding TimeLabel}" Classes="hint" Margin="0,4,0,0" />
+                          <TextBlock Text="{Binding TrackingText}" Classes="hint" />
+                          <TextBlock Classes="hint">
+                            <TextBlock.Text>
+                              <MultiBinding StringFormat="Crop {0}  ·  {1}">
+                                <Binding Path="CropText" />
+                                <Binding Path="DurationText" />
+                              </MultiBinding>
+                            </TextBlock.Text>
+                          </TextBlock>
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </DockPanel>
+          </Border>
+
+          <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,12,0,0" Spacing="12">
+            <Button Content="Plan framing for this reel" Classes="accent" Command="{Binding FramingCommand}" />
+            <TextBlock Classes="hint" VerticalAlignment="Center"
+                       Text="Choosing a different reel clears the framing, so re-run this after switching." />
+          </StackPanel>
+        </Grid>
+      </TabItem>
+
+      <!-- ══ Captions ══ -->
+      <TabItem Header="5 · Captions">
+        <Grid Margin="0,12,0,0" ColumnDefinitions="*,16,380">
+
+          <ScrollViewer Padding="0,0,8,0">
+            <StackPanel>
+              <Border Classes="card">
+                <StackPanel>
+                  <TextBlock Text="Preset" Classes="h2" />
+                  <Grid ColumnDefinitions="*,Auto">
+                    <ComboBox ItemsSource="{Binding Presets}" SelectedItem="{Binding SelectedPreset}"
+                              HorizontalAlignment="Stretch">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="rendering:SubtitleStyle">
+                          <TextBlock Text="{Binding Name}" />
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button Grid.Column="1" Content="Apply preset" Margin="8,0,0,0" Command="{Binding ApplyPresetCommand}" />
+                  </Grid>
+                </StackPanel>
+              </Border>
+
+              <Border Classes="card">
+                <StackPanel>
+                  <TextBlock Text="Caption style" Classes="h2" />
+
+                  <Grid Margin="0,0,0,10" ColumnDefinitions="*,12,*">
+                    <StackPanel>
+                      <TextBlock Text="Mode" Classes="label" />
+                      <ComboBox ItemsSource="{x:Static vm:StyleEditorViewModel.Modes}"
+                                SelectedItem="{Binding StyleEditor.Mode}" HorizontalAlignment="Stretch" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                      <TextBlock Text="Entrance animation" Classes="label" />
+                      <ComboBox ItemsSource="{x:Static vm:StyleEditorViewModel.Animations}"
+                                SelectedItem="{Binding StyleEditor.Animation}" HorizontalAlignment="Stretch" />
+                    </StackPanel>
+                  </Grid>
+
+                  <TextBlock Classes="hint" Margin="0,0,0,12"
+                             Text="Plain text draws one static line per caption. Word highlight recolours and enlarges each word exactly as it is spoken, the way CapCut and Filmora do it." />
+
+                  <Grid Margin="0,0,0,10" ColumnDefinitions="2*,12,*">
+                    <StackPanel>
+                      <TextBlock Text="Font" Classes="label" />
+                      <!-- Typed or picked: a preset may name a font this computer does not have. -->
+                      <AutoCompleteBox ItemsSource="{Binding StyleEditor.AvailableFonts}"
+                                       Text="{Binding StyleEditor.FontName, Mode=TwoWay}"
+                                       FilterMode="ContainsOrdinal" MinimumPrefixLength="0" MaxDropDownHeight="280" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                      <TextBlock Text="Size" Classes="label" />
+                      <TextBox Text="{Binding StyleEditor.FontSize, UpdateSourceTrigger=LostFocus}" />
+                    </StackPanel>
+                  </Grid>
+
+                  <StackPanel Orientation="Horizontal" Margin="0,0,0,12" Spacing="16">
+                    <CheckBox Content="Bold" IsChecked="{Binding StyleEditor.Bold}" />
+                    <CheckBox Content="Italic" IsChecked="{Binding StyleEditor.Italic}" />
+                    <CheckBox Content="UPPERCASE" IsChecked="{Binding StyleEditor.Uppercase}" />
+                  </StackPanel>
+
+                  <Grid Margin="0,0,0,10" ColumnDefinitions="*,12,*">
+                    <StackPanel>
+                      <TextBlock Text="Text colour" Classes="label" />
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBox Text="{Binding StyleEditor.PrimaryColor, UpdateSourceTrigger=LostFocus}" />
+                        <Border Grid.Column="1" Width="30" Margin="6,0,0,0" CornerRadius="4" BorderThickness="1"
+                                Background="{Binding StyleEditor.PrimaryBrush}" BorderBrush="{StaticResource BorderBrush2}" />
+                      </Grid>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" IsEnabled="{Binding StyleEditor.IsHighlightMode}">
+                      <TextBlock Text="Spoken-word colour" Classes="label" />
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBox Text="{Binding StyleEditor.HighlightColor, UpdateSourceTrigger=LostFocus}" />
+                        <Border Grid.Column="1" Width="30" Margin="6,0,0,0" CornerRadius="4" BorderThickness="1"
+                                Background="{Binding StyleEditor.HighlightBrush}" BorderBrush="{StaticResource BorderBrush2}" />
+                      </Grid>
+                    </StackPanel>
+                  </Grid>
+
+                  <Grid Margin="0,0,0,10" ColumnDefinitions="*,12,*">
+                    <StackPanel>
+                      <TextBlock Text="Outline colour" Classes="label" />
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBox Text="{Binding StyleEditor.OutlineColor, UpdateSourceTrigger=LostFocus}" />
+                        <Border Grid.Column="1" Width="30" Margin="6,0,0,0" CornerRadius="4" BorderThickness="1"
+                                Background="{Binding StyleEditor.OutlineBrush}" BorderBrush="{StaticResource BorderBrush2}" />
+                      </Grid>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                      <TextBlock Text="Outline width" Classes="label" />
+                      <Grid ColumnDefinitions="*,44">
+                        <Slider Minimum="0" Maximum="20" TickFrequency="0.5" Value="{Binding StyleEditor.OutlineWidth}" />
+                        <TextBlock Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   Text="{Binding StyleEditor.OutlineWidth, StringFormat={}{0:0.#}}" />
+                      </Grid>
+                    </StackPanel>
+                  </Grid>
+
+                  <Grid Margin="0,0,0,10" ColumnDefinitions="*,12,*">
+                    <StackPanel>
+                      <TextBlock Text="Shadow depth" Classes="label" />
+                      <Grid ColumnDefinitions="*,44">
+                        <Slider Minimum="0" Maximum="12" TickFrequency="0.5" Value="{Binding StyleEditor.ShadowDepth}" />
+                        <TextBlock Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   Text="{Binding StyleEditor.ShadowDepth, StringFormat={}{0:0.#}}" />
+                      </Grid>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" IsEnabled="{Binding StyleEditor.IsHighlightMode}">
+                      <TextBlock Text="Spoken-word emphasis" Classes="label" />
+                      <ComboBox ItemsSource="{x:Static vm:StyleEditorViewModel.Emphases}"
+                                SelectedItem="{Binding StyleEditor.Emphasis}" HorizontalAlignment="Stretch" />
+                    </StackPanel>
+                  </Grid>
+
+                  <Grid Margin="0,0,0,10" ColumnDefinitions="*,12,*">
+                    <TextBlock Classes="hint" VerticalAlignment="Center"
+                               Text="Colour recolours the spoken word and nothing moves. Grow also enlarges it — vertically only, so the line never changes width and the caption stays put." />
+                    <StackPanel Grid.Column="2">
+                      <TextBlock Text="Grow amount" Classes="label" />
+                      <Grid ColumnDefinitions="*,44" IsEnabled="{Binding StyleEditor.GrowsWord}">
+                        <Slider Minimum="1" Maximum="1.35" TickFrequency="0.01" Value="{Binding StyleEditor.HighlightScale}" />
+                        <TextBlock Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   Text="{Binding StyleEditor.HighlightScale, StringFormat={}{0:0.00}×}" />
+                      </Grid>
+                    </StackPanel>
+                  </Grid>
+
+                  <CheckBox Content="Draw a filled box behind the text instead of an outline"
+                            IsChecked="{Binding StyleEditor.BackgroundBox}" Margin="0,0,0,8" />
+                  <Grid Margin="0,0,0,10" ColumnDefinitions="*,12,*" IsEnabled="{Binding StyleEditor.BackgroundBox}">
+                    <StackPanel>
+                      <TextBlock Text="Box colour" Classes="label" />
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBox Text="{Binding StyleEditor.BackgroundColor, UpdateSourceTrigger=LostFocus}" />
+                        <Border Grid.Column="1" Width="30" Margin="6,0,0,0" CornerRadius="4" BorderThickness="1"
+                                Background="{Binding StyleEditor.BackgroundBrush}" BorderBrush="{StaticResource BorderBrush2}" />
+                      </Grid>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                      <TextBlock Text="Box opacity" Classes="label" />
+                      <Grid ColumnDefinitions="*,44">
+                        <Slider Minimum="0" Maximum="1" TickFrequency="0.05" Value="{Binding StyleEditor.BackgroundOpacity}" />
+                        <TextBlock Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   Text="{Binding StyleEditor.BackgroundOpacity, StringFormat={}{0:0.00}}" />
+                      </Grid>
+                    </StackPanel>
+                  </Grid>
+
+                  <Grid ColumnDefinitions="*,12,*">
+                    <StackPanel>
+                      <TextBlock Text="Height on screen (% from top)" Classes="label" />
+                      <Grid ColumnDefinitions="*,44">
+                        <Slider Minimum="10" Maximum="92" TickFrequency="1" Value="{Binding StyleEditor.VerticalPositionPercent}" />
+                        <TextBlock Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   Text="{Binding StyleEditor.VerticalPositionPercent, StringFormat={}{0:0}%}" />
+                      </Grid>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                      <TextBlock Text="Words per caption" Classes="label" />
+                      <Grid ColumnDefinitions="*,44">
+                        <Slider Minimum="1" Maximum="12" TickFrequency="1" Value="{Binding StyleEditor.MaxWordsPerCaption}" />
+                        <TextBlock Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   Text="{Binding StyleEditor.MaxWordsPerCaption}" />
+                      </Grid>
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+              </Border>
+
+              <Border Classes="card">
+                <StackPanel>
+                  <TextBlock Text="Time on screen" Classes="h2" />
+                  <Grid ColumnDefinitions="*,12,*">
+                    <StackPanel>
+                      <TextBlock Text="Shortest a line may stay up" Classes="label" />
+                      <Grid ColumnDefinitions="*,48">
+                        <Slider Minimum="0.3" Maximum="3" TickFrequency="0.1" Value="{Binding StyleEditor.MinCaptionSeconds}" />
+                        <TextBlock Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   Text="{Binding StyleEditor.MinCaptionSeconds, StringFormat={}{0:0.0}s}" />
+                      </Grid>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                      <TextBlock Text="Fastest reading rate" Classes="label" />
+                      <Grid ColumnDefinitions="*,52">
+                        <Slider Minimum="10" Maximum="45" TickFrequency="1" Value="{Binding StyleEditor.MaxReadingCharsPerSecond}" />
+                        <TextBlock Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   Text="{Binding StyleEditor.MaxReadingCharsPerSecond, StringFormat={}{0:0} cps}" />
+                      </Grid>
+                    </StackPanel>
+                  </Grid>
+                  <TextBlock Classes="hint" Margin="0,8,0,0"
+                             Text="A line that cannot get this much time is joined to its neighbour rather than flashing past — the words keep their own timings, so the highlight stays in sync and only the line break moves. Broadcast specs put the floor at 0.8–1.0s; burned-in captions can read faster because you also hear the words." />
+                </StackPanel>
+              </Border>
+
+              <Border Classes="card">
+                <StackPanel>
+                  <TextBlock Text="Transitions" Classes="h2" />
+                  <Grid ColumnDefinitions="*,60">
+                    <Slider Minimum="20" Maximum="350" TickFrequency="5" Value="{Binding CrossfadeMs}" />
+                    <TextBlock Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
+                               Text="{Binding CrossfadeMs, StringFormat={}{0:0} ms}" />
+                  </Grid>
+                  <TextBlock Classes="hint" Margin="0,6,0,0" Text="{Binding CrossfadeHint}" />
+                  <TextBlock Classes="hint" Margin="0,4,0,0"
+                             Text="The audio is crossfaded by the same amount, which keeps sound and picture locked together across every cut." />
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+
+          <DockPanel Grid.Column="2">
+            <TextBlock DockPanel.Dock="Top" Text="Preview" Classes="h2" />
+            <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+              <Button Content="Refresh preview" Command="{Binding RefreshPreviewCommand}" />
+              <TextBlock Text="{Binding PreviewStatus}" Classes="hint" Margin="0,8,0,0" />
+            </StackPanel>
+            <Border Background="#0D0D14" CornerRadius="8" BorderThickness="1"
+                    BorderBrush="{StaticResource BorderBrush2}" Padding="8">
+              <Image Source="{Binding PreviewImage}" Stretch="Uniform"
+                     RenderOptions.BitmapInterpolationMode="HighQuality" />
+            </Border>
+          </DockPanel>
+        </Grid>
+      </TabItem>
+
+      <!-- ══ Render ══ -->
+      <TabItem Header="6 · Render">
+        <ScrollViewer Padding="0,12,8,0">
+          <StackPanel>
+            <Border Classes="card">
+              <StackPanel>
+                <TextBlock Text="Output" Classes="h2" />
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBox Text="{Binding OutputFolder}" VerticalContentAlignment="Center" />
+                  <Button Grid.Column="1" Content="Choose folder…" Command="{Binding BrowseOutputCommand}" Margin="8,0,0,0" />
+                </Grid>
+                <StackPanel Orientation="Horizontal" Margin="0,16,0,0" Spacing="8">
+                  <Button Content="Render the reel" Classes="accent" Command="{Binding RenderCommand}" />
+                  <Button Content="Open folder" Command="{Binding OpenOutputCommand}" IsVisible="{Binding CanOpenFolders}" />
+                  <Button Content="Copy path" Command="{Binding CopyOutputPathCommand}" />
+                </StackPanel>
+                <TextBlock Classes="hint" Margin="0,10,0,0"
+                           Text="Renders 1080×1920 H.264 at 30 fps with AAC audio, normalised to −14 LUFS — the loudness target the social platforms use." />
+              </StackPanel>
+            </Border>
+
+            <Border Classes="card">
+              <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Activity" Classes="h2" />
+                <ListBox Classes="log" ItemsSource="{Binding Log}" Height="360"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                      <TextBlock Text="{Binding}" Classes="mono" Foreground="{StaticResource Muted}" />
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </DockPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+
+    <!-- Status bar -->
+    <Border Grid.Row="2" Classes="card" Margin="0,12,0,0" Padding="12">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel>
+          <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" />
+          <ProgressBar Margin="0,8,0,0" Minimum="0" Maximum="100" Value="{Binding Progress}"
+                       IsIndeterminate="{Binding Indeterminate}" IsVisible="{Binding IsBusy}" />
+        </StackPanel>
+        <Button Grid.Column="1" Content="Cancel" Command="{Binding CancelCommand}" Margin="12,0,0,0"
+                VerticalAlignment="Center" IsVisible="{Binding IsBusy}" />
+      </Grid>
+    </Border>
+  </Grid>
+</Window>

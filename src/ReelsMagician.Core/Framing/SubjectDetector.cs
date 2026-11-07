@@ -118,7 +118,8 @@ public sealed class SubjectDetector : IDisposable
             using var detections = output.Reshape(1, output.Size(2));
 
             var best = (Score: double.MinValue, Row: -1);
-            for (var i = 0; i < detections.Rows; i++)
+            var rows = detections.Rows;
+            for (var i = 0; i < rows; i++)
             {
                 var confidence = detections.At<float>(i, 2);
                 if (confidence < FaceConfidenceThreshold) continue;

@@ -38,6 +38,15 @@ public sealed partial class SourceResolver(Toolset tools, IProgressSink sink)
     public static bool LooksLikeUrl(string input) =>
         !string.IsNullOrWhiteSpace(input) && UrlPattern().IsMatch(input.Trim());
 
+    /// <summary>
+    /// The source the user typed or pasted, without surrounding whitespace or quotes. Paths copied
+    /// from Explorer come in double quotes and paths copied from a Linux terminal often in single
+    /// ones. Everything that decides between a link and a file must look at this same string,
+    /// or a quoted link would count as a file in one place and a link in another.
+    /// </summary>
+    public static string NormaliseInput(string? input) =>
+        (input ?? "").Trim().Trim('"', '\'').Trim();
+
     /// <param name="fetchSubtitles">
     /// When false, the caption round trip is skipped entirely. Worth honouring: it is an extra
     /// request that can be rate limited, and it is pure waste when the user intends to transcribe.
@@ -45,7 +54,7 @@ public sealed partial class SourceResolver(Toolset tools, IProgressSink sink)
     public async Task<ResolvedSource> ResolveAsync(
         string input, string workDir, int maxHeight, CancellationToken ct, bool fetchSubtitles = true)
     {
-        input = input.Trim().Trim('"');
+        input = NormaliseInput(input);
         return LooksLikeUrl(input)
             ? await DownloadAsync(input, workDir, maxHeight, fetchSubtitles, ct).ConfigureAwait(false)
             : await UseLocalFileAsync(input, ct).ConfigureAwait(false);

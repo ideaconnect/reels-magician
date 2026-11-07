@@ -1,11 +1,26 @@
 namespace ReelsMagician.Core.Toolchain;
 
 /// <summary>
-/// Every path the app owns. Everything lives under %LOCALAPPDATA%\ReelsMagician so the app
-/// stays fully self-contained and never needs an installer or admin rights.
+/// Every path the app owns. Everything lives in one folder, %LOCALAPPDATA%\ReelsMagician on
+/// Windows and ~/.local/share/ReelsMagician on Linux, so the app stays self-contained and
+/// never needs an installer or admin rights.
 /// </summary>
 public sealed class ToolPaths
 {
+    /// <summary>
+    /// How paths compare on this system. Windows and macOS file systems ignore case by
+    /// default; Linux file systems don't, so there two paths differing only in case are
+    /// different places.
+    /// </summary>
+    public static StringComparison PathComparison { get; } =
+        OperatingSystem.IsWindows() || OperatingSystem.IsMacOS()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+
+    /// <summary>The file name of an executable on this system: <c>ffmpeg.exe</c> on Windows, <c>ffmpeg</c> elsewhere.</summary>
+    public static string ExeName(string baseName) =>
+        OperatingSystem.IsWindows() ? baseName + ".exe" : baseName;
+
     public const string FolderName = "ReelsMagician";
 
     /// <summary>Written next to an installed whisper.cpp or llama.cpp, naming the build it came from.</summary>
@@ -109,10 +124,35 @@ public sealed class ToolPaths
             try
             {
                 var candidate = Path.Combine(dir.Trim('"'), exeName);
-                if (File.Exists(candidate)) return candidate;
+                if (File.Exists(candidate) && IsExecutable(candidate)) return candidate;
             }
             catch (ArgumentException) { /* malformed PATH entry */ }
         }
         return null;
+    }
+
+    private const UnixFileMode AnyExecute =
+        UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute;
+
+    /// <summary>
+    /// Whether the file may be run. Windows decides by extension, so any file counts there;
+    /// elsewhere a file needs an execute bit, or starting it fails.
+    /// </summary>
+    public static bool IsExecutable(string file)
+    {
+        if (OperatingSystem.IsWindows()) return true;
+        try { return (File.GetUnixFileMode(file) & AnyExecute) != 0; }
+        catch (IOException) { return false; }
+        catch (UnauthorizedAccessException) { return false; }
+    }
+
+    /// <summary>
+    /// Lets the owner run a downloaded program. A single-file download arrives without an
+    /// execute bit on Linux; archives carry their own. Does nothing on Windows.
+    /// </summary>
+    public static void MakeExecutable(string file)
+    {
+        if (OperatingSystem.IsWindows()) return;
+        File.SetUnixFileMode(file, File.GetUnixFileMode(file) | UnixFileMode.UserExecute);
     }
 }
