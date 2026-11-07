@@ -33,14 +33,25 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         paths.EnsureCreated();
         var ts = new Toolset { Gpu = GpuProbe.Detect() };
 
+        // The app's own copies are made runnable again if they lost their execute bit. A folder
+        // the user chose is theirs, and is left as it is.
+        string[] own = [paths.FfmpegDir, paths.YtDlpDir, paths.JsRuntimeDir, paths.WhisperDir, paths.LlamaDir];
+        string? Find(string dir, params string[] names)
+        {
+            var exe = ToolPaths.FindExe(dir, names);
+            return exe is not null && own.Any(o => string.Equals(o, dir, ToolPaths.PathComparison))
+                ? ToolPaths.Runnable(exe)
+                : exe;
+        }
+
         // ffmpeg: an explicit override wins, then our private copy, then a system install.
         var ffmpeg = ToolPaths.ExeName("ffmpeg");
         var ffprobe = ToolPaths.ExeName("ffprobe");
         foreach (var dir in new[] { settings.CustomFfmpegDir, paths.FfmpegDir })
         {
             if (dir is null || !Directory.Exists(dir)) continue;
-            ts.FfmpegPath ??= ToolPaths.FindExe(dir, ffmpeg);
-            ts.FfprobePath ??= ToolPaths.FindExe(dir, ffprobe);
+            ts.FfmpegPath ??= Find(dir, ffmpeg);
+            ts.FfprobePath ??= Find(dir, ffprobe);
         }
         if (settings.PreferSystemFfmpeg && (ts.FfmpegPath is null || ts.FfprobePath is null))
         {
@@ -52,19 +63,19 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
 
         var ytDlp = ToolPaths.ExeName("yt-dlp");
         var deno = ToolPaths.ExeName("deno");
-        ts.YtDlpPath = ToolPaths.FindExe(paths.YtDlpDir, ytDlp) ?? ToolPaths.FindOnPath(ytDlp);
-        ts.JsRuntimePath = ToolPaths.FindExe(paths.JsRuntimeDir, deno) ?? ToolPaths.FindOnPath(deno);
+        ts.YtDlpPath = Find(paths.YtDlpDir, ytDlp) ?? ToolPaths.FindOnPath(ytDlp);
+        ts.JsRuntimePath = Find(paths.JsRuntimeDir, deno) ?? ToolPaths.FindOnPath(deno);
 
         var os = OperatingSystem.IsWindows() ? TargetOs.Windows : TargetOs.Linux;
 
         var whisperDir = Directory.Exists(settings.CustomWhisperDir ?? "") ? settings.CustomWhisperDir! : paths.WhisperDir;
-        ts.WhisperCliPath = ToolPaths.FindExe(whisperDir, ToolPaths.ExeName("whisper-cli"), ToolPaths.ExeName("main"));
+        ts.WhisperCliPath = Find(whisperDir, ToolPaths.ExeName("whisper-cli"), ToolPaths.ExeName("main"));
         ts.WhisperBackend = DescribeBackend(whisperDir, ts.WhisperCliPath);
         if (ts.WhisperCliPath is not null && InstalledAsset(whisperDir) is { } whisperAsset)
             ts.WhisperWarning = ToolBuilds.FallbackWarning("whisper.cpp", whisperAsset, ToolBuilds.ExpectedWhisper(ts.Gpu, os));
 
         var llamaDir = Directory.Exists(settings.CustomLlamaDir ?? "") ? settings.CustomLlamaDir! : paths.LlamaDir;
-        ts.LlamaServerPath = ToolPaths.FindExe(llamaDir, ToolPaths.ExeName("llama-server"));
+        ts.LlamaServerPath = Find(llamaDir, ToolPaths.ExeName("llama-server"));
         ts.LlamaBackend = DescribeBackend(llamaDir, ts.LlamaServerPath);
         if (ts.LlamaServerPath is not null && InstalledAsset(llamaDir) is { } llamaAsset)
             ts.LlamaWarning = ToolBuilds.FallbackWarning("llama.cpp", llamaAsset, ToolBuilds.ExpectedLlama(ts.Gpu, os));
