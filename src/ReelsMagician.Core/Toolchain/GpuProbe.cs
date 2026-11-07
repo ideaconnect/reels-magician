@@ -54,7 +54,8 @@ public static class GpuProbe
     public static GpuCapabilities Detect()
     {
         if (OperatingSystem.IsWindows()) return DetectWindows();
-        if (OperatingSystem.IsLinux()) return DetectLinux("/sys/class/drm", LinuxIcdManifests(), HasLinuxVulkanLoader());
+        if (OperatingSystem.IsLinux())
+            return DetectLinux("/sys/class/drm", LinuxIcdManifests(Environment.GetEnvironmentVariable), HasLinuxVulkanLoader());
         return new GpuCapabilities([], HasVulkanLoader: false, VulkanIcdCount: 0);
     }
 
@@ -124,30 +125,45 @@ public static class GpuProbe
     }
 
     /// <summary>
-    /// The driver manifests the Vulkan loader would find: the files named in VK_DRIVER_FILES
-    /// or VK_ICD_FILENAMES when set, otherwise the icd.d folders on its search path.
+    /// The driver manifests the Vulkan loader would find, read the way the loader reads them.
+    /// VK_DRIVER_FILES, or the older VK_ICD_FILENAMES when it is not set, replaces the search
+    /// and may name manifest files or folders of them. Otherwise the manifests named in
+    /// VK_ADD_DRIVER_FILES come first, then the icd.d folders on the loader's search path.
     /// </summary>
-    private static List<string> LinuxIcdManifests()
+    /// <param name="env">Reads an environment variable; the probe passes the process's own.</param>
+    public static List<string> LinuxIcdManifests(Func<string, string?> env)
     {
-        var overrides = Environment.GetEnvironmentVariable("VK_DRIVER_FILES") ??
-                        Environment.GetEnvironmentVariable("VK_ICD_FILENAMES");
-        if (!string.IsNullOrWhiteSpace(overrides))
-            return overrides.Split(':', StringSplitOptions.RemoveEmptyEntries).Where(File.Exists).ToList();
+        string? Var(string name) => env(name) is { } v && !string.IsNullOrWhiteSpace(v) ? v : null;
 
-        var home = Environment.GetEnvironmentVariable("HOME") ?? "";
-        string Env(string name, string fallback) =>
-            Environment.GetEnvironmentVariable(name) is { Length: > 0 } v ? v : fallback;
+        // Lists are separated as on PATH: by ':' on Linux.
+        string[] Split(string list) =>
+            list.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-        var roots = new List<string> { Env("XDG_CONFIG_HOME", Path.Combine(home, ".config")) };
-        roots.AddRange(Env("XDG_CONFIG_DIRS", "/etc/xdg").Split(':', StringSplitOptions.RemoveEmptyEntries));
+        IEnumerable<string> Listed(string list)
+        {
+            foreach (var entry in Split(list))
+            {
+                if (Directory.Exists(entry)) foreach (var file in SafeFiles(entry, "*.json")) yield return file;
+                else if (File.Exists(entry)) yield return entry;
+            }
+        }
+
+        if ((Var("VK_DRIVER_FILES") ?? Var("VK_ICD_FILENAMES")) is { } overrides)
+            return Listed(overrides).ToList();
+
+        var home = env("HOME") ?? "";
+        var roots = new List<string> { Var("XDG_CONFIG_HOME") ?? Path.Combine(home, ".config") };
+        roots.AddRange(Split(Var("XDG_CONFIG_DIRS") ?? "/etc/xdg"));
         roots.Add("/etc");
-        roots.Add(Env("XDG_DATA_HOME", Path.Combine(home, ".local", "share")));
-        roots.AddRange(Env("XDG_DATA_DIRS", "/usr/local/share:/usr/share").Split(':', StringSplitOptions.RemoveEmptyEntries));
+        roots.Add(Var("XDG_DATA_HOME") ?? Path.Combine(home, ".local", "share"));
+        roots.AddRange(Split(Var("XDG_DATA_DIRS") ?? string.Join(Path.PathSeparator, "/usr/local/share", "/usr/share")));
 
-        return roots
-            .Select(r => Path.Combine(r, "vulkan", "icd.d"))
-            .Distinct()
-            .SelectMany(d => SafeFiles(d, "*.json"))
+        var added = Var("VK_ADD_DRIVER_FILES") is { } extra ? Listed(extra) : [];
+        return added
+            .Concat(roots
+                .Select(r => Path.Combine(r, "vulkan", "icd.d"))
+                .Distinct()
+                .SelectMany(d => SafeFiles(d, "*.json")))
             .ToList();
     }
 
