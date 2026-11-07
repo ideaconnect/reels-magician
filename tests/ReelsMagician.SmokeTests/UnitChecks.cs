@@ -906,7 +906,7 @@ public static class UnitChecks
             "the data folder root itself is refused — this clears parts, never the whole tree");
         Check.True(!cleaner.IsInsideDataFolder(Path.Combine(root, "..", "somewhere-else")),
             "a traversal out of the folder is refused");
-        Check.True(!cleaner.IsInsideDataFolder(@"C:\Windows\System32"),
+        Check.True(!cleaner.IsInsideDataFolder(OperatingSystem.IsWindows() ? @"C:\Windows\System32" : "/usr/bin"),
             "an unrelated system path is refused");
         Check.True(cleaner.IsInsideDataFolder(paths.Models), "a real category inside the folder is allowed");
         Check.True(cleaner.IsInsideDataFolder(Path.Combine(paths.Cache, "deep", "file.bin")),
@@ -942,14 +942,18 @@ public static class UnitChecks
         Directory.CreateDirectory(legacy.WhisperDir);
         File.WriteAllText(Path.Combine(legacy.WhisperDir, "selfroller-backend.txt"), "whisper-blas-bin-x64.zip");
 
-        // A file held open blocks the move; the old folder must then be used where it is.
-        using (File.Open(Path.Combine(legacy.Models, "big-model.bin"), FileMode.Open, FileAccess.Read, FileShare.Read))
+        // On Windows a file held open blocks the move, and the old folder must then be used where
+        // it is. Linux renames a folder whatever is open inside it, so there is nothing to block.
+        if (OperatingSystem.IsWindows())
         {
-            Check.Equal(legacy.Root, ToolPaths.ResolveRoot(parent), "a locked old folder is used in place");
+            using (File.Open(Path.Combine(legacy.Models, "big-model.bin"), FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                Check.Equal(legacy.Root, ToolPaths.ResolveRoot(parent), "a locked old folder is used in place");
+            }
+            Check.True(!Directory.Exists(Path.Combine(parent, ToolPaths.FolderName)), "and nothing is half-moved");
+            Check.True(File.Exists(Path.Combine(legacy.WhisperDir, ToolPaths.BackendMarkerName)),
+                "its backend marker still takes the new name");
         }
-        Check.True(!Directory.Exists(Path.Combine(parent, ToolPaths.FolderName)), "and nothing is half-moved");
-        Check.True(File.Exists(Path.Combine(legacy.WhisperDir, ToolPaths.BackendMarkerName)),
-            "its backend marker still takes the new name");
 
         var root = ToolPaths.ResolveRoot(parent);
         var paths = new ToolPaths(root);
@@ -1048,16 +1052,16 @@ public static class UnitChecks
         }
 
         var target = Path.Combine(root, "llama");
-        ArchiveExtractor.ExtractZip(Zip("build.zip", "llama-server.exe", "ggml-cuda.dll"),
+        ArchiveExtractor.Extract(Zip("build.zip", "llama-server.exe", "ggml-cuda.dll"),
             target, NullProgressSink.Instance, "build");
-        ArchiveExtractor.ExtractZip(Zip("runtime.zip", "cudart64_13.dll", "cublas64_13.dll"),
+        ArchiveExtractor.Extract(Zip("runtime.zip", "cudart64_13.dll", "cublas64_13.dll"),
             target, NullProgressSink.Instance, "runtime", merge: true);
 
         Check.True(File.Exists(Path.Combine(target, "llama-server.exe")), "merging keeps what was there");
         Check.True(File.Exists(Path.Combine(target, "cudart64_13.dll")), "and lays the runtime next to it");
         Check.True(!Directory.Exists(target + ".staging"), "no staging folder is left behind");
 
-        ArchiveExtractor.ExtractZip(Zip("next.zip", "llama-server.exe"), target, NullProgressSink.Instance, "build");
+        ArchiveExtractor.Extract(Zip("next.zip", "llama-server.exe"), target, NullProgressSink.Instance, "build");
         Check.True(!File.Exists(Path.Combine(target, "cudart64_13.dll")), "a plain extract still replaces the folder");
 
         Directory.Delete(root, recursive: true);

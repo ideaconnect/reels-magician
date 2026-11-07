@@ -305,6 +305,9 @@ tools/make-speech-video.ps1 generates a narrated 4K test video
 # Logic checks, plus a real ffmpeg render of a synthetic 4K source
 dotnet run --project tests/ReelsMagician.SmokeTests -c Release
 
+# Logic checks only, needing no tools; this is what CI runs on Windows and Ubuntu
+dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- logic
+
 # Install the whole toolchain and assert the right backends were chosen
 dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- install
 

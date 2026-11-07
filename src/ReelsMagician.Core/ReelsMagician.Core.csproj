@@ -1,11 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>ReelsMagician.Core</AssemblyName>
     <RootNamespace>ReelsMagician.Core</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="OpenCvSharp4" Version="4.11.0.20250507" />
-    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.11.0.20250507" />
+    <PackageReference Include="OpenCvSharp4" Version="4.13.0.20261107" />
+    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.13.0.20261107" />
+    <PackageReference Include="OpenCvSharp4.official.runtime.linux-x64" Version="4.13.0.20261107" />
+    <!-- .NET reads zip and gzip itself; ffmpeg's Linux builds come as .tar.xz. -->
+    <PackageReference Include="SharpCompress" Version="0.50.8" />
   </ItemGroup>
 </Project>

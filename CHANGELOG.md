@@ -4,6 +4,13 @@ Changes to ReelsMagician, newest first. Version numbers will be assigned once th
 
 ## Unreleased
 
+### Windows and Linux port, in progress
+
+- **Processing core:** the core now builds for Linux as well as Windows, and passes the same checks on both.
+- **Linux graphics:** on Linux the app finds the graphics card, and Vulkan support, from the system itself.
+- **Linux archives:** tool archives in the formats Linux builds use (`.tar.gz`, `.tar.xz`) unpack with their permissions and links intact.
+- **OpenCV:** face and people detection now use OpenCvSharp 4.13.
+
 ### Changed
 
 - **Video links:** yt-dlp and Deno are no longer part of the default install. **Install everything missing** never fetches them. The app downloads them only after you agree, either the first time you load a compatible video link or from the optional card on the Setup tab. A yt-dlp already on your PATH is used without asking.

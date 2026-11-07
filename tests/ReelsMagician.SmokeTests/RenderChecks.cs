@@ -135,7 +135,8 @@ public static class RenderChecks
         Cv2.Reduce(mask, colSums, ReduceDimension.Row, ReduceTypes.Max, MatType.CV_8U);
 
         int left = -1, right = -1;
-        for (var x = 0; x < colSums.Cols; x++)
+        var cols = colSums.Cols;
+        for (var x = 0; x < cols; x++)
         {
             if (colSums.At<byte>(0, x) == 0) continue;
             if (left < 0) left = x;
@@ -148,10 +149,10 @@ public static class RenderChecks
     {
         Check.Section("End-to-end render (real ffmpeg)");
 
-        var ffmpegPath = ToolPaths.FindOnPath("ffmpeg.exe")
-                      ?? ToolPaths.FindExe(new ToolPaths().FfmpegDir, "ffmpeg.exe");
-        var ffprobePath = ToolPaths.FindOnPath("ffprobe.exe")
-                       ?? ToolPaths.FindExe(new ToolPaths().FfmpegDir, "ffprobe.exe");
+        var ffmpegPath = ToolPaths.FindOnPath(ToolPaths.ExeName("ffmpeg"))
+                      ?? ToolPaths.FindExe(new ToolPaths().FfmpegDir, ToolPaths.ExeName("ffmpeg"));
+        var ffprobePath = ToolPaths.FindOnPath(ToolPaths.ExeName("ffprobe"))
+                       ?? ToolPaths.FindExe(new ToolPaths().FfmpegDir, ToolPaths.ExeName("ffprobe"));
 
         if (ffmpegPath is null || ffprobePath is null)
         {

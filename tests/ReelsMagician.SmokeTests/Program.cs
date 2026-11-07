@@ -2,6 +2,7 @@ using ReelsMagician.SmokeTests;
 
 // Modes:
 //   (none)     pure-logic checks plus a real ffmpeg render of a synthetic source
+//   logic      the pure-logic checks only, needing no tools at all (what CI runs)
 //   install    downloads and installs the whole toolchain, then reports what was selected
 //   e2e        full pipeline over a generated speech video: Whisper, Qwen, framing, render
 //   link       resolve a real compatible video link end to end (download, probe, subtitles)
@@ -26,8 +27,15 @@ switch (mode)
         await EndToEnd.RunAsync(args.Length > 1 ? args[1] : null);
         break;
 
+    case "logic":
+        UnitChecks.Run();
+        PlatformChecks.Run();
+        LinkToolChecks.Run();
+        break;
+
     default:
         UnitChecks.Run();
+        PlatformChecks.Run();
         LinkToolChecks.Run();
         await RenderChecks.RunAsync();
         break;

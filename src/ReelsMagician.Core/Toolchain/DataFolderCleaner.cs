@@ -177,9 +177,11 @@ public sealed class DataFolderCleaner(ToolPaths paths, IProgressSink sink)
             var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
 
             // The root itself is not a valid target: this clears parts, never the whole tree.
-            if (string.Equals(full, root, StringComparison.OrdinalIgnoreCase)) return false;
+            if (string.Equals(full, root, ToolPaths.PathComparison)) return false;
 
-            return full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+            // Ignoring case where the file system doesn't would let a differently cased path,
+            // which on Linux is a different folder, pass as one inside the data folder.
+            return full.StartsWith(root + Path.DirectorySeparatorChar, ToolPaths.PathComparison);
         }
         catch (Exception) { return false; }
     }

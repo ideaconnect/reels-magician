@@ -46,29 +46,33 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         var ts = new Toolset { Gpu = GpuProbe.Detect() };
 
         // ffmpeg: an explicit override wins, then our private copy, then a system install.
+        var ffmpeg = ToolPaths.ExeName("ffmpeg");
+        var ffprobe = ToolPaths.ExeName("ffprobe");
         foreach (var dir in new[] { settings.CustomFfmpegDir, paths.FfmpegDir })
         {
             if (dir is null || !Directory.Exists(dir)) continue;
-            ts.FfmpegPath ??= ToolPaths.FindExe(dir, "ffmpeg.exe");
-            ts.FfprobePath ??= ToolPaths.FindExe(dir, "ffprobe.exe");
+            ts.FfmpegPath ??= ToolPaths.FindExe(dir, ffmpeg);
+            ts.FfprobePath ??= ToolPaths.FindExe(dir, ffprobe);
         }
         if (settings.PreferSystemFfmpeg && (ts.FfmpegPath is null || ts.FfprobePath is null))
         {
-            ts.FfmpegPath ??= ToolPaths.FindOnPath("ffmpeg.exe");
-            ts.FfprobePath ??= ToolPaths.FindOnPath("ffprobe.exe");
+            ts.FfmpegPath ??= ToolPaths.FindOnPath(ffmpeg);
+            ts.FfprobePath ??= ToolPaths.FindOnPath(ffprobe);
         }
         // ffprobe without ffmpeg (or the reverse) is unusable — treat the pair as absent.
         if (ts.FfmpegPath is null || ts.FfprobePath is null) { ts.FfmpegPath = null; ts.FfprobePath = null; }
 
-        ts.YtDlpPath = ToolPaths.FindExe(paths.YtDlpDir, "yt-dlp.exe") ?? ToolPaths.FindOnPath("yt-dlp.exe");
-        ts.JsRuntimePath = ToolPaths.FindExe(paths.JsRuntimeDir, "deno.exe") ?? ToolPaths.FindOnPath("deno.exe");
+        var ytDlp = ToolPaths.ExeName("yt-dlp");
+        var deno = ToolPaths.ExeName("deno");
+        ts.YtDlpPath = ToolPaths.FindExe(paths.YtDlpDir, ytDlp) ?? ToolPaths.FindOnPath(ytDlp);
+        ts.JsRuntimePath = ToolPaths.FindExe(paths.JsRuntimeDir, deno) ?? ToolPaths.FindOnPath(deno);
 
         var whisperDir = Directory.Exists(settings.CustomWhisperDir ?? "") ? settings.CustomWhisperDir! : paths.WhisperDir;
-        ts.WhisperCliPath = ToolPaths.FindExe(whisperDir, "whisper-cli.exe", "main.exe");
+        ts.WhisperCliPath = ToolPaths.FindExe(whisperDir, ToolPaths.ExeName("whisper-cli"), ToolPaths.ExeName("main"));
         ts.WhisperBackend = DescribeBackend(whisperDir, ts.WhisperCliPath);
 
         var llamaDir = Directory.Exists(settings.CustomLlamaDir ?? "") ? settings.CustomLlamaDir! : paths.LlamaDir;
-        ts.LlamaServerPath = ToolPaths.FindExe(llamaDir, "llama-server.exe");
+        ts.LlamaServerPath = ToolPaths.FindExe(llamaDir, ToolPaths.ExeName("llama-server"));
         ts.LlamaBackend = DescribeBackend(llamaDir, ts.LlamaServerPath);
 
         var whisperModel = ModelCatalog.ResolveWhisper(settings.WhisperModelId);
@@ -93,7 +97,7 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         var whisperModel = ModelCatalog.ResolveWhisper(settings.WhisperModelId);
         var llm = ModelCatalog.ResolveLlm(settings.LlmModelId);
         var systemFfmpeg = ts.FfmpegPath is not null &&
-            !ts.FfmpegPath.StartsWith(paths.Root, StringComparison.OrdinalIgnoreCase);
+            !ts.FfmpegPath.StartsWith(paths.Root, ToolPaths.PathComparison);
 
         return
         [
@@ -206,14 +210,16 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
     {
         var zip = Path.Combine(paths.Downloads, "ffmpeg-win64-gpl.zip");
         await dl.DownloadAsync(FfmpegZipUrl, zip, "ffmpeg", ct).ConfigureAwait(false);
-        ArchiveExtractor.ExtractZip(zip, paths.FfmpegDir, sink, "ffmpeg");
+        ArchiveExtractor.Extract(zip, paths.FfmpegDir, sink, "ffmpeg");
         TryDelete(zip);
     }
 
     private async Task InstallYtDlpAsync(AssetDownloader dl, CancellationToken ct)
     {
         Directory.CreateDirectory(paths.YtDlpDir);
-        await dl.DownloadAsync(YtDlpUrl, Path.Combine(paths.YtDlpDir, "yt-dlp.exe"), "yt-dlp", ct).ConfigureAwait(false);
+        var target = Path.Combine(paths.YtDlpDir, ToolPaths.ExeName("yt-dlp"));
+        await dl.DownloadAsync(YtDlpUrl, target, "yt-dlp", ct).ConfigureAwait(false);
+        ToolPaths.MakeExecutable(target);
     }
 
     /// <summary>
@@ -226,7 +232,7 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         {
             var zip = Path.Combine(paths.Downloads, "deno-win-x64.zip");
             await dl.DownloadAsync(DenoUrl, zip, "JavaScript runtime (Deno)", ct).ConfigureAwait(false);
-            ArchiveExtractor.ExtractZip(zip, paths.JsRuntimeDir, sink, "Deno");
+            ArchiveExtractor.Extract(zip, paths.JsRuntimeDir, sink, "Deno");
             TryDelete(zip);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
@@ -255,7 +261,7 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         sink.Info("install", $"whisper.cpp {picked.Tag}: {picked.AssetName}");
         var zip = Path.Combine(paths.Downloads, picked.AssetName);
         await dl.DownloadAsync(picked.Url, zip, $"whisper.cpp ({picked.Tag})", ct).ConfigureAwait(false);
-        ArchiveExtractor.ExtractZip(zip, paths.WhisperDir, sink, "whisper.cpp");
+        ArchiveExtractor.Extract(zip, paths.WhisperDir, sink, "whisper.cpp");
         File.WriteAllText(Path.Combine(paths.WhisperDir, ToolPaths.BackendMarkerName), picked.AssetName);
         TryDelete(zip);
     }
@@ -285,10 +291,10 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
                 runtimeZip, $"CUDA {cuda} runtime", ct).ConfigureAwait(false);
         }
 
-        ArchiveExtractor.ExtractZip(zip, paths.LlamaDir, sink, "llama.cpp");
+        ArchiveExtractor.Extract(zip, paths.LlamaDir, sink, "llama.cpp");
         if (runtimeZip is not null)
         {
-            ArchiveExtractor.ExtractZip(runtimeZip, paths.LlamaDir, sink, "CUDA runtime", merge: true);
+            ArchiveExtractor.Extract(runtimeZip, paths.LlamaDir, sink, "CUDA runtime", merge: true);
             TryDelete(runtimeZip);
         }
         File.WriteAllText(Path.Combine(paths.LlamaDir, ToolPaths.BackendMarkerName), picked.AssetName);
@@ -383,10 +389,12 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
 
     private static bool HasVulkanRuntime(string dir)
     {
+        // ggml-vulkan.dll on Windows, libggml-vulkan.so (sometimes versioned) on Linux.
+        var pattern = OperatingSystem.IsWindows() ? "*vulkan*.dll" : "*vulkan*.so*";
         try
         {
             return Directory.Exists(dir) &&
-                   Directory.EnumerateFiles(dir, "*vulkan*.dll", SearchOption.AllDirectories).Any();
+                   Directory.EnumerateFiles(dir, pattern, SearchOption.AllDirectories).Any();
         }
         catch (IOException) { return false; }
     }

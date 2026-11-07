@@ -28,10 +28,10 @@ public static class LinkToolChecks
             File.WriteAllBytes(Path.Combine(dir, name), []);
         }
 
-        Seed(paths.FfmpegDir, "ffmpeg.exe");
-        Seed(paths.FfmpegDir, "ffprobe.exe");
-        Seed(paths.WhisperDir, "whisper-cli.exe");
-        Seed(paths.LlamaDir, "llama-server.exe");
+        Seed(paths.FfmpegDir, ToolPaths.ExeName("ffmpeg"));
+        Seed(paths.FfmpegDir, ToolPaths.ExeName("ffprobe"));
+        Seed(paths.WhisperDir, ToolPaths.ExeName("whisper-cli"));
+        Seed(paths.LlamaDir, ToolPaths.ExeName("llama-server"));
         Seed(paths.Models, ModelCatalog.ResolveWhisper(settings.WhisperModelId).FileName);
         Seed(paths.Models, ModelCatalog.ResolveLlm(settings.LlmModelId).FileName);
         Seed(paths.Models, ModelCatalog.FaceProtoFileName);
@@ -41,8 +41,8 @@ public static class LinkToolChecks
         var installed = manager.EnsureAsync(settings, CancellationToken.None).GetAwaiter().GetResult();
 
         Check.True(installed.IsComplete, "the required tools alone make the toolchain complete");
-        Check.True(ToolPaths.FindExe(paths.YtDlpDir, "yt-dlp.exe") is null, "the default install does not fetch yt-dlp");
-        Check.True(ToolPaths.FindExe(paths.JsRuntimeDir, "deno.exe") is null, "the default install does not fetch Deno");
+        Check.True(ToolPaths.FindExe(paths.YtDlpDir, ToolPaths.ExeName("yt-dlp")) is null, "the default install does not fetch yt-dlp");
+        Check.True(ToolPaths.FindExe(paths.JsRuntimeDir, ToolPaths.ExeName("deno")) is null, "the default install does not fetch Deno");
 
         Check.True(manager.Describe(settings, installed).All(c => c.Key is not ("ytdlp" or "jsruntime")),
             "the link tools are not listed among the required tools");
