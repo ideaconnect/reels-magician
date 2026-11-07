@@ -18,6 +18,13 @@ public sealed class Toolset
 
     public string WhisperBackend { get; set; } = "not installed";
     public string LlamaBackend { get; set; } = "not installed";
+
+    /// <summary>Set when whisper.cpp is a Fallback build: a lesser build than this machine supports.</summary>
+    public string? WhisperWarning { get; set; }
+
+    /// <summary>Set when llama.cpp is a Fallback build: a lesser build than this machine supports.</summary>
+    public string? LlamaWarning { get; set; }
+
     public GpuCapabilities? Gpu { get; set; }
 
     public bool HasFfmpeg => FfmpegPath is not null && FfprobePath is not null;
@@ -59,8 +66,9 @@ public enum ComponentState
     NotInstalled,
 }
 
+/// <param name="Warning">Shown next to the component when it works but not as well as it could, such as a Fallback build.</param>
 public sealed record ComponentStatus(
-    string Key, string Name, ComponentState State, string Detail, long ApproxBytes)
+    string Key, string Name, ComponentState State, string Detail, long ApproxBytes, string? Warning = null)
 {
     public bool NeedsDownload => State is ComponentState.Missing or ComponentState.NotInstalled;
 }

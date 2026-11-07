@@ -7,12 +7,10 @@ namespace ReelsMagician.Core.Toolchain;
 /// Finds — and when missing, downloads and unpacks — every external dependency:
 /// ffmpeg/ffprobe, yt-dlp, whisper.cpp, llama.cpp and the model weights.
 ///
-/// Backend selection is GPU-aware. llama.cpp publishes official Windows CUDA and Vulkan builds:
-/// an NVIDIA card gets CUDA, which uses it fully, and every other GPU gets Vulkan, so the Qwen
-/// model runs on the GPU on any vendor. whisper.cpp currently publishes only CPU,
-/// OpenBLAS and cuBLAS Windows builds, so it falls back in that order — but the preference
-/// list is matched by pattern, so a Vulkan asset is adopted automatically if one appears,
-/// and <see cref="AppSettings.CustomWhisperDir"/> lets a hand-built Vulkan binary be used today.
+/// Which build of each tool this machine gets is decided by <see cref="ToolBuilds"/>, per
+/// Target OS and GPU. When the best build this machine supports cannot be found and a lesser
+/// one is installed instead, that Fallback build is reported both during the install and on
+/// the Setup tab afterwards, never silently.
 ///
 /// yt-dlp and its JavaScript runtime are deliberately kept apart from all of this. They are
 /// third-party tools that ReelsMagician neither includes nor installs by default, so
@@ -21,22 +19,6 @@ namespace ReelsMagician.Core.Toolchain;
 /// </summary>
 public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
 {
-    private const string WhisperRepo = "ggml-org/whisper.cpp";
-    private const string LlamaRepo = "ggml-org/llama.cpp";
-    private const string FfmpegZipUrl =
-        "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip";
-    private const string YtDlpUrl =
-        "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe";
-
-    // yt-dlp needs a JavaScript runtime to extract YouTube formats; without one it warns that
-    // extraction is deprecated and quietly drops formats, sometimes every 4K variant.
-    private const string DenoUrl =
-        "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip";
-
-    // Used when the GitHub API is unreachable or rate limited (60 anonymous calls/hour).
-    private const string WhisperFallbackTag = "v1.9.2";
-    private const string LlamaFallbackTag = "b10760";
-
     public ToolPaths Paths => paths;
 
     /// <summary>Locates already-present tools without touching the network.</summary>
@@ -67,13 +49,19 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         ts.YtDlpPath = ToolPaths.FindExe(paths.YtDlpDir, ytDlp) ?? ToolPaths.FindOnPath(ytDlp);
         ts.JsRuntimePath = ToolPaths.FindExe(paths.JsRuntimeDir, deno) ?? ToolPaths.FindOnPath(deno);
 
+        var os = OperatingSystem.IsWindows() ? TargetOs.Windows : TargetOs.Linux;
+
         var whisperDir = Directory.Exists(settings.CustomWhisperDir ?? "") ? settings.CustomWhisperDir! : paths.WhisperDir;
         ts.WhisperCliPath = ToolPaths.FindExe(whisperDir, ToolPaths.ExeName("whisper-cli"), ToolPaths.ExeName("main"));
         ts.WhisperBackend = DescribeBackend(whisperDir, ts.WhisperCliPath);
+        if (ts.WhisperCliPath is not null && InstalledAsset(whisperDir) is { } whisperAsset)
+            ts.WhisperWarning = ToolBuilds.FallbackWarning("whisper.cpp", whisperAsset, ToolBuilds.ExpectedWhisper(ts.Gpu, os));
 
         var llamaDir = Directory.Exists(settings.CustomLlamaDir ?? "") ? settings.CustomLlamaDir! : paths.LlamaDir;
         ts.LlamaServerPath = ToolPaths.FindExe(llamaDir, ToolPaths.ExeName("llama-server"));
         ts.LlamaBackend = DescribeBackend(llamaDir, ts.LlamaServerPath);
+        if (ts.LlamaServerPath is not null && InstalledAsset(llamaDir) is { } llamaAsset)
+            ts.LlamaWarning = ToolBuilds.FallbackWarning("llama.cpp", llamaAsset, ToolBuilds.ExpectedLlama(ts.Gpu, os));
 
         var whisperModel = ModelCatalog.ResolveWhisper(settings.WhisperModelId);
         var whisperModelPath = Path.Combine(paths.Models, whisperModel.FileName);
@@ -98,6 +86,7 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         var llm = ModelCatalog.ResolveLlm(settings.LlmModelId);
         var systemFfmpeg = ts.FfmpegPath is not null &&
             !ts.FfmpegPath.StartsWith(paths.Root, ToolPaths.PathComparison);
+        var cuda = ToolBuilds.ExpectsLlamaCuda(ts.Gpu, OperatingSystem.IsWindows() ? TargetOs.Windows : TargetOs.Linux);
 
         return
         [
@@ -107,15 +96,17 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
 
             new("whisper", "whisper.cpp",
                 ts.WhisperCliPath is not null ? ComponentState.Installed : ComponentState.Missing,
-                ts.WhisperCliPath is null ? "auto-selects the best Windows build" : ts.WhisperBackend, 30_000_000),
+                ts.WhisperCliPath is null ? "auto-selects the best build for this machine" : ts.WhisperBackend, 30_000_000,
+                ts.WhisperWarning),
 
             // The CUDA build brings its own cudart and cuBLAS, which is most of its size.
             new("llama", "llama.cpp",
                 ts.LlamaServerPath is not null ? ComponentState.Installed : ComponentState.Missing,
                 ts.LlamaServerPath is null
-                    ? (ExpectsLlamaCuda(ts.Gpu) ? "CUDA build for your NVIDIA card" : "Vulkan build when a driver is present")
+                    ? (cuda ? "CUDA build for your NVIDIA card" : "Vulkan build when a driver is present")
                     : ts.LlamaBackend,
-                ExpectsLlamaCuda(ts.Gpu) ? 600_000_000 : 130_000_000),
+                cuda ? 600_000_000 : 130_000_000,
+                ts.LlamaWarning),
 
             new("whisper-model", whisperModel.DisplayName,
                 ts.WhisperModelPath is not null ? ComponentState.Installed : ComponentState.Missing,
@@ -183,6 +174,8 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         sink.Report("install", "Toolchain ready", 1.0);
         sink.Info("install", $"Whisper backend: {final.WhisperBackend}");
         sink.Info("install", $"llama.cpp backend: {final.LlamaBackend}");
+        if (final.WhisperWarning is { } whisperWarning) sink.Warn("install", whisperWarning);
+        if (final.LlamaWarning is { } llamaWarning) sink.Warn("install", llamaWarning);
         if (!final.IsComplete)
             sink.Warn("install", "Still missing: " + string.Join(", ", final.MissingComponents()));
         return final;
@@ -208,31 +201,34 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
 
     private async Task InstallFfmpegAsync(AssetDownloader dl, CancellationToken ct)
     {
-        var zip = Path.Combine(paths.Downloads, "ffmpeg-win64-gpl.zip");
-        await dl.DownloadAsync(FfmpegZipUrl, zip, "ffmpeg", ct).ConfigureAwait(false);
-        ArchiveExtractor.Extract(zip, paths.FfmpegDir, sink, "ffmpeg");
-        TryDelete(zip);
+        var url = ToolBuilds.FfmpegUrl(ToolBuilds.Current);
+        var archive = Path.Combine(paths.Downloads, Path.GetFileName(url));
+        await dl.DownloadAsync(url, archive, "ffmpeg", ct).ConfigureAwait(false);
+        ArchiveExtractor.Extract(archive, paths.FfmpegDir, sink, "ffmpeg");
+        TryDelete(archive);
     }
 
     private async Task InstallYtDlpAsync(AssetDownloader dl, CancellationToken ct)
     {
         Directory.CreateDirectory(paths.YtDlpDir);
         var target = Path.Combine(paths.YtDlpDir, ToolPaths.ExeName("yt-dlp"));
-        await dl.DownloadAsync(YtDlpUrl, target, "yt-dlp", ct).ConfigureAwait(false);
+        await dl.DownloadAsync(ToolBuilds.YtDlpUrl(ToolBuilds.Current), target, "yt-dlp", ct).ConfigureAwait(false);
         ToolPaths.MakeExecutable(target);
     }
 
     /// <summary>
-    /// Installs Deno for yt-dlp. Downloads fail softly: a missing runtime only degrades YouTube
-    /// extraction, so it must never stop the rest of the toolchain from installing.
+    /// Installs Deno for yt-dlp. Downloads fail softly: a missing runtime only degrades some
+    /// compatible video links, so it must never stop the rest of the toolchain from installing.
     /// </summary>
     private async Task InstallJsRuntimeAsync(AssetDownloader dl, CancellationToken ct)
     {
         try
         {
-            var zip = Path.Combine(paths.Downloads, "deno-win-x64.zip");
-            await dl.DownloadAsync(DenoUrl, zip, "JavaScript runtime (Deno)", ct).ConfigureAwait(false);
+            var url = ToolBuilds.DenoUrl(ToolBuilds.Current);
+            var zip = Path.Combine(paths.Downloads, Path.GetFileName(url));
+            await dl.DownloadAsync(url, zip, "JavaScript runtime (Deno)", ct).ConfigureAwait(false);
             ArchiveExtractor.Extract(zip, paths.JsRuntimeDir, sink, "Deno");
+            if (ToolPaths.FindExe(paths.JsRuntimeDir, ToolPaths.ExeName("deno")) is { } deno) ToolPaths.MakeExecutable(deno);
             TryDelete(zip);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
@@ -246,110 +242,56 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
 
     private async Task InstallWhisperAsync(AssetDownloader dl, GpuCapabilities gpu, CancellationToken ct)
     {
-        // Preference order. Vulkan is listed first so a future official build is adopted with no code change.
-        var rules = new List<Func<string, bool>>();
-        if (gpu.VulkanAvailable) rules.Add(n => n.Contains("vulkan") && n.Contains("x64") && n.EndsWith(".zip"));
-        if (gpu.HasNvidia) rules.Add(n => n.Contains("cublas") && n.Contains("12.") && n.Contains("bin-x64.zip"));
-        rules.Add(n => n == "whisper-blas-bin-x64.zip");
-        rules.Add(n => n == "whisper-bin-x64.zip");
-
-        var picked = await ResolveAsync(dl, WhisperRepo, rules, 20, ct).ConfigureAwait(false)
-            ?? (WhisperFallbackTag,
-                $"https://github.com/{WhisperRepo}/releases/download/{WhisperFallbackTag}/whisper-blas-bin-x64.zip",
-                "whisper-blas-bin-x64.zip");
+        var os = ToolBuilds.Current;
+        var (fallbackTag, fallbackAsset) = ToolBuilds.WhisperFallback(os);
+        var picked = await ResolveAsync(dl, ToolBuilds.WhisperRepo, ToolBuilds.WhisperRules(gpu, os), 20, ct).ConfigureAwait(false)
+            ?? (fallbackTag,
+                $"https://github.com/{ToolBuilds.WhisperRepo}/releases/download/{fallbackTag}/{fallbackAsset}",
+                fallbackAsset);
 
         sink.Info("install", $"whisper.cpp {picked.Tag}: {picked.AssetName}");
-        var zip = Path.Combine(paths.Downloads, picked.AssetName);
-        await dl.DownloadAsync(picked.Url, zip, $"whisper.cpp ({picked.Tag})", ct).ConfigureAwait(false);
-        ArchiveExtractor.Extract(zip, paths.WhisperDir, sink, "whisper.cpp");
+        var archive = Path.Combine(paths.Downloads, picked.AssetName);
+        await dl.DownloadAsync(picked.Url, archive, $"whisper.cpp ({picked.Tag})", ct).ConfigureAwait(false);
+        ArchiveExtractor.Extract(archive, paths.WhisperDir, sink, "whisper.cpp");
         File.WriteAllText(Path.Combine(paths.WhisperDir, ToolPaths.BackendMarkerName), picked.AssetName);
-        TryDelete(zip);
+        TryDelete(archive);
     }
 
     private async Task InstallLlamaAsync(AssetDownloader dl, GpuCapabilities gpu, CancellationToken ct)
     {
-        // The pinned fallback is the Vulkan build, because it runs on every vendor's GPU.
-        var picked = await ResolveAsync(dl, LlamaRepo, LlamaRules(gpu), 6, ct).ConfigureAwait(false)
-            ?? (LlamaFallbackTag,
-                $"https://github.com/{LlamaRepo}/releases/download/{LlamaFallbackTag}/llama-{LlamaFallbackTag}-bin-win-vulkan-x64.zip",
-                $"llama-{LlamaFallbackTag}-bin-win-vulkan-x64.zip");
+        var os = ToolBuilds.Current;
+        var (fallbackTag, fallbackAsset) = ToolBuilds.LlamaFallback(os);
+        var picked = await ResolveAsync(dl, ToolBuilds.LlamaRepo, ToolBuilds.LlamaRules(gpu, os), 6, ct).ConfigureAwait(false)
+            ?? (fallbackTag,
+                $"https://github.com/{ToolBuilds.LlamaRepo}/releases/download/{fallbackTag}/{fallbackAsset}",
+                fallbackAsset);
 
         sink.Info("install", $"llama.cpp {picked.Tag}: {picked.AssetName}");
-        var zip = Path.Combine(paths.Downloads, picked.AssetName);
-        await dl.DownloadAsync(picked.Url, zip, $"llama.cpp ({picked.Tag})", ct).ConfigureAwait(false);
+        var archive = Path.Combine(paths.Downloads, picked.AssetName);
+        await dl.DownloadAsync(picked.Url, archive, $"llama.cpp ({picked.Tag})", ct).ConfigureAwait(false);
 
         // A CUDA build loads cudart and cuBLAS from its own folder, and without them llama.cpp
         // quietly runs on the CPU. Both archives are downloaded before either is unpacked, so an
         // interrupted install never leaves the build without its runtime.
         string? runtimeZip = null;
-        if (LlamaCudaVersion(picked.AssetName) is { } cuda)
+        if (ToolBuilds.LlamaCudaVersion(picked.AssetName) is { } cuda)
         {
-            var runtime = LlamaCudaRuntimeAsset(cuda);
+            var runtime = ToolBuilds.LlamaCudaRuntimeAsset(cuda);
             runtimeZip = Path.Combine(paths.Downloads, runtime);
             await dl.DownloadAsync(
-                $"https://github.com/{LlamaRepo}/releases/download/{picked.Tag}/{runtime}",
+                $"https://github.com/{ToolBuilds.LlamaRepo}/releases/download/{picked.Tag}/{runtime}",
                 runtimeZip, $"CUDA {cuda} runtime", ct).ConfigureAwait(false);
         }
 
-        ArchiveExtractor.Extract(zip, paths.LlamaDir, sink, "llama.cpp");
+        ArchiveExtractor.Extract(archive, paths.LlamaDir, sink, "llama.cpp");
         if (runtimeZip is not null)
         {
             ArchiveExtractor.Extract(runtimeZip, paths.LlamaDir, sink, "CUDA runtime", merge: true);
             TryDelete(runtimeZip);
         }
         File.WriteAllText(Path.Combine(paths.LlamaDir, ToolPaths.BackendMarkerName), picked.AssetName);
-        TryDelete(zip);
+        TryDelete(archive);
     }
-
-    // The CUDA versions llama.cpp publishes Windows builds for, newest first, with the oldest
-    // card each still supports: CUDA 13 dropped Maxwell, Pascal and Volta.
-    private static readonly (int Major, Version MinCompute)[] LlamaCudaLines = [(13, new(7, 5)), (12, new(5, 0))];
-
-    /// <summary>
-    /// llama.cpp builds in order of preference for this machine. An NVIDIA card gets the newest
-    /// CUDA build its driver and card can run; any other GPU, or an NVIDIA setup too old for
-    /// every CUDA build, gets Vulkan when a driver is present and the CPU build otherwise.
-    /// </summary>
-    public static IReadOnlyList<Func<string, bool>> LlamaRules(GpuCapabilities gpu)
-    {
-        var rules = new List<Func<string, bool>>();
-        if (gpu.Cuda is { } support)
-        {
-            foreach (var (major, minCompute) in LlamaCudaLines)
-            {
-                if (support.LowestComputeCapability < minCompute) continue;
-                rules.Add(n => LlamaCudaVersion(n) is { } v && v.Major == major && support.CanRun(v));
-            }
-        }
-        if (gpu.VulkanAvailable) rules.Add(n => n.Contains("bin-win-vulkan-x64.zip"));
-        rules.Add(n => n.Contains("bin-win-cpu-x64.zip"));
-        return rules;
-    }
-
-    /// <summary>The CUDA version of a llama.cpp CUDA build, or null for any other asset.</summary>
-    public static Version? LlamaCudaVersion(string assetName)
-    {
-        const string marker = "-bin-win-cuda-", suffix = "-x64.zip";
-        var name = assetName.ToLowerInvariant();
-
-        // The cudart-llama-… runtime archives share the pattern but hold no llama-server.
-        if (!name.StartsWith("llama-") || !name.EndsWith(suffix)) return null;
-        var at = name.IndexOf(marker, StringComparison.Ordinal);
-        if (at < 0) return null;
-
-        var start = at + marker.Length;
-        var end = name.Length - suffix.Length;
-        return start < end && Version.TryParse(name[start..end], out var version) ? version : null;
-    }
-
-    /// <summary>The archive that carries cudart and cuBLAS for a CUDA build, in the same release.</summary>
-    public static string LlamaCudaRuntimeAsset(Version cuda) =>
-        $"cudart-llama-bin-win-cuda-{cuda.Major}.{cuda.Minor}-x64.zip";
-
-    /// <summary>Whether this machine will most likely get a CUDA build of llama.cpp.</summary>
-    public static bool ExpectsLlamaCuda(GpuCapabilities? gpu) =>
-        gpu?.Cuda is { } support &&
-        LlamaCudaLines.Any(l => support.LowestComputeCapability >= l.MinCompute && support.CanRun(new Version(l.Major, 0)));
 
     private async Task<(string Tag, string Url, string AssetName)?> ResolveAsync(
         AssetDownloader dl, string repo, IReadOnlyList<Func<string, bool>> rules, int pageSize, CancellationToken ct)
@@ -361,7 +303,7 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
             var releases = GitHubReleases.Parse(json);
             var hit = GitHubReleases.SelectAsset(releases, rules);
             if (hit is { } h) return (h.Release.TagName, h.Asset.Url, h.Asset.Name);
-            sink.Warn("install", $"{repo}: no matching Windows asset in the {pageSize} newest releases.");
+            sink.Warn("install", $"{repo}: no build for this system in the {pageSize} newest releases; using the pinned fallback build.");
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
         catch (Exception ex)
@@ -371,19 +313,20 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         return null;
     }
 
+    /// <summary>The asset an installed whisper.cpp or llama.cpp came from, as its marker records it.</summary>
+    private static string? InstalledAsset(string dir)
+    {
+        var marker = Path.Combine(dir, ToolPaths.BackendMarkerName);
+        try { return File.Exists(marker) && File.ReadAllText(marker).Trim() is { Length: > 0 } a ? a : null; }
+        catch (IOException) { return null; }
+    }
+
     private static string DescribeBackend(string dir, string? exePath)
     {
         if (exePath is null) return "not installed";
-        var marker = Path.Combine(dir, ToolPaths.BackendMarkerName);
-        var asset = File.Exists(marker) ? File.ReadAllText(marker).Trim().ToLowerInvariant() : "";
-
-        var kind =
-            asset.Contains("vulkan") ? "Vulkan (GPU)" :
-            asset.Contains("cublas") || asset.Contains("cuda") ? "CUDA (GPU)" :
-            asset.Contains("blas") ? "OpenBLAS (CPU)" :
-            asset.Length > 0 ? "CPU" :
-            HasVulkanRuntime(dir) ? "Vulkan (GPU)" : "custom build";
-
+        var kind = InstalledAsset(dir) is { } asset
+            ? ToolBuilds.Label(ToolBuilds.KindOf(asset))
+            : HasVulkanRuntime(dir) ? "Vulkan (GPU)" : "custom build";
         return $"{kind} — {Path.GetFileName(exePath)}";
     }
 

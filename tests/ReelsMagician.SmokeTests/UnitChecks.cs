@@ -998,7 +998,7 @@ public static class UnitChecks
 
         string? Pick(CudaSupport? cuda, bool vulkan = true) =>
             GitHubReleases.SelectAsset([release],
-                ToolchainManager.LlamaRules(new GpuCapabilities([], vulkan, vulkan ? 1 : 0, cuda)))?.Asset.Name;
+                ToolBuilds.LlamaRules(new GpuCapabilities([], vulkan, vulkan ? 1 : 0, cuda), TargetOs.Windows))?.Asset.Name;
 
         CudaSupport Nvidia(string driver, string compute) => new(Version.Parse(driver), Version.Parse(compute));
 
@@ -1018,18 +1018,18 @@ public static class UnitChecks
         Check.Equal("llama-b12032-bin-win-cpu-x64.zip", Pick(null, vulkan: false),
             "no GPU driver at all gets the CPU build");
 
-        Check.True(ToolchainManager.LlamaCudaVersion("cudart-llama-bin-win-cuda-13.4-x64.zip") is null,
+        Check.True(ToolBuilds.LlamaCudaVersion("cudart-llama-bin-win-cuda-13.4-x64.zip") is null,
             "a runtime archive is never taken for the build itself");
-        Check.True(ToolchainManager.LlamaCudaVersion("llama-b12032-bin-win-cuda-13.4-arm64.zip") is null,
+        Check.True(ToolBuilds.LlamaCudaVersion("llama-b12032-bin-win-cuda-13.4-arm64.zip") is null,
             "nor is an ARM build");
-        var build = ToolchainManager.LlamaCudaVersion("llama-b12032-bin-win-cuda-13.4-x64.zip");
+        var build = ToolBuilds.LlamaCudaVersion("llama-b12032-bin-win-cuda-13.4-x64.zip");
         Check.True(build is not null &&
-                   release.Assets.Any(a => a.Name == ToolchainManager.LlamaCudaRuntimeAsset(build)),
+                   release.Assets.Any(a => a.Name == ToolBuilds.LlamaCudaRuntimeAsset(build)),
             "the build's runtime archive is found in the same release");
 
-        Check.True(ToolchainManager.ExpectsLlamaCuda(new GpuCapabilities([], true, 1, Nvidia("13.0", "8.9"))),
+        Check.True(ToolBuilds.ExpectsLlamaCuda(new GpuCapabilities([], true, 1, Nvidia("13.0", "8.9")), TargetOs.Windows),
             "the setup screen expects the larger CUDA download on a CUDA-capable card");
-        Check.True(!ToolchainManager.ExpectsLlamaCuda(new GpuCapabilities([], true, 1, Nvidia("11.8", "8.9"))),
+        Check.True(!ToolBuilds.ExpectsLlamaCuda(new GpuCapabilities([], true, 1, Nvidia("11.8", "8.9")), TargetOs.Windows),
             "and not on a driver too old for it");
     }
 
