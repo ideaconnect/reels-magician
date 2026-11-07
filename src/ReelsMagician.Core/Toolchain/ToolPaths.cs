@@ -155,4 +155,18 @@ public sealed class ToolPaths
         if (OperatingSystem.IsWindows()) return;
         File.SetUnixFileMode(file, File.GetUnixFileMode(file) | UnixFileMode.UserExecute);
     }
+
+    /// <summary>
+    /// The file, made runnable first if it has lost its execute bit, or null when it cannot be.
+    /// A download stopped before <see cref="MakeExecutable"/> never got the bit, and a data
+    /// folder copied through Windows or an exFAT drive loses it. Without this such a tool would
+    /// count as installed, and every use of it would fail with "Permission denied".
+    /// </summary>
+    public static string? Runnable(string file)
+    {
+        if (IsExecutable(file)) return file;
+        try { MakeExecutable(file); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return null; }
+        return IsExecutable(file) ? file : null;
+    }
 }

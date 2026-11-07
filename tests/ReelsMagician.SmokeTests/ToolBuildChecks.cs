@@ -14,7 +14,49 @@ public static class ToolBuildChecks
         WhisperBuilds();
         LlamaLinuxBuilds();
         FallbackBuilds();
+        PicksAreNeverFallbacks();
         Downloads();
+    }
+
+    /// <summary>
+    /// What the rules pick from a real release must never be reported as a Fallback build.
+    /// Reinstalling would pick it again, so that warning could never clear (issue #19).
+    /// </summary>
+    private static void PicksAreNeverFallbacks()
+    {
+        Check.Section("The build the rules pick is never reported as a fallback");
+
+        (string Name, GpuCapabilities Gpu)[] machines =
+        [
+            ("no GPU", Gpu(vulkan: false)),
+            ("a Vulkan GPU", Gpu()),
+            ("an RTX card on a current driver", Gpu(Nvidia("13.6", "8.9"))),
+            ("an RTX card on a CUDA 13.4 driver", Gpu(Nvidia("13.4", "8.9"))),
+            ("an RTX card on a CUDA 12.2 driver", Gpu(Nvidia("12.2", "8.6"))),
+            ("an NVIDIA card on a CUDA 11.4 driver", Gpu(Nvidia("11.4", "8.6"))),
+            ("a Maxwell card", Gpu(Nvidia("13.6", "5.2"))),
+            ("a Kepler card", Gpu(Nvidia("11.8", "3.5"))),
+            ("an NVIDIA card with no Vulkan driver", Gpu(Nvidia("12.2", "8.6"), vulkan: false)),
+        ];
+
+        foreach (var os in new[] { TargetOs.Windows, TargetOs.Linux })
+        foreach (var (name, gpu) in machines)
+        {
+            foreach (var release in new[] { WhisperB5454, WhisperWithVulkan })
+            {
+                var whisper = Pick(release, ToolBuilds.WhisperRules(gpu, os));
+                Check.True(whisper is not null &&
+                           ToolBuilds.FallbackWarning("whisper.cpp", whisper, ToolBuilds.ExpectedWhisper(gpu, os)) is null,
+                    $"whisper.cpp {release.TagName} on {os}, {name}: {whisper} is what it should get");
+            }
+
+            var llama = Pick(LlamaB12189, ToolBuilds.LlamaRules(gpu, os));
+            Check.True(llama is not null &&
+                       ToolBuilds.FallbackWarning("llama.cpp", llama, ToolBuilds.ExpectedLlama(gpu, os)) is null,
+                $"llama.cpp on {os}, {name}: {llama} is what it should get");
+            Check.Equal(llama is not null && ToolBuilds.KindOf(llama) == BuildKind.Cuda, ToolBuilds.ExpectsLlamaCuda(gpu, os),
+                $"llama.cpp on {os}, {name}: the Setup tab promises the CUDA download only when it is the one picked");
+        }
     }
 
     private static GhRelease Release(string tag, params string[] assets) =>
@@ -31,6 +73,20 @@ public static class ToolBuildChecks
     private static readonly GhRelease WhisperB5130 = Release("b5130",
         "whisper-bin-ubuntu-x64.tar.gz", "whisper-bin-x64.zip", "whisper-blas-bin-x64.zip",
         "whisper-cublas-11.8.0-bin-x64.zip", "whisper-cublas-12.4.0-bin-x64.zip");
+
+    // b5454 as it would look once whisper.cpp publishes a Windows Vulkan build.
+    private static readonly GhRelease WhisperWithVulkan = Release("b9999",
+        [.. WhisperB5454.Assets.Select(a => a.Name), "whisper-bin-win-vulkan-x64.zip"]);
+
+    // The x64 Linux and Windows assets of llama.cpp b12189.
+    private static readonly GhRelease LlamaB12189 = Release("b12189",
+        "cudart-llama-b12189-bin-ubuntu-cuda-12.8-x64.tar.gz", "cudart-llama-bin-win-cuda-12.4-x64.zip",
+        "llama-b12189-bin-ubuntu-cuda-12.8-x64.tar.gz", "llama-b12189-bin-ubuntu-cuda-13.5-x64.tar.gz",
+        "llama-b12189-bin-ubuntu-openvino-2026.4.1-x64.tar.gz", "llama-b12189-bin-ubuntu-rocm-10.0-x64.tar.gz",
+        "llama-b12189-bin-ubuntu-sycl-fp16-x64.tar.gz", "llama-b12189-bin-ubuntu-vulkan-arm64.tar.gz",
+        "llama-b12189-bin-ubuntu-vulkan-x64.tar.gz", "llama-b12189-bin-ubuntu-x64.tar.gz",
+        "llama-b12189-bin-win-cpu-x64.zip", "llama-b12189-bin-win-cuda-12.4-x64.zip",
+        "llama-b12189-bin-win-cuda-13.5-x64.zip", "llama-b12189-bin-win-vulkan-x64.zip");
 
     private static CudaSupport Nvidia(string driver, string compute) => new(Version.Parse(driver), Version.Parse(compute));
 
@@ -57,6 +113,10 @@ public static class ToolBuildChecks
         Check.Equal("whisper-bin-x64.zip",
             Pick(Release("b1", "whisper-bin-x64.zip"), ToolBuilds.WhisperRules(Gpu(), TargetOs.Windows)),
             "and plain CPU when a release has no OpenBLAS build");
+        Check.Equal("whisper-bin-win-vulkan-x64.zip", Pick(WhisperWithVulkan, ToolBuilds.WhisperRules(Gpu(), TargetOs.Windows)),
+            "a Windows Vulkan build is taken once whisper.cpp publishes one");
+        Check.Equal("whisper-bin-win-cuda-12.4.0-x64.zip", Pick(WhisperWithVulkan, ToolBuilds.WhisperRules(rtx, TargetOs.Windows)),
+            "but an NVIDIA card keeps CUDA, as with llama.cpp");
 
         Check.Equal("whisper-bin-ubuntu-x64.tar.gz", Pick(WhisperB5454, ToolBuilds.WhisperRules(rtx, TargetOs.Linux)),
             "Linux gets the Ubuntu x64 build, never a Windows CUDA one");
@@ -80,15 +140,7 @@ public static class ToolBuildChecks
     {
         Check.Section("llama.cpp build selection on Linux");
 
-        // The x64 Linux and Windows assets of llama.cpp b12189.
-        var release = Release("b12189",
-            "cudart-llama-b12189-bin-ubuntu-cuda-12.8-x64.tar.gz", "cudart-llama-bin-win-cuda-12.4-x64.zip",
-            "llama-b12189-bin-ubuntu-cuda-12.8-x64.tar.gz", "llama-b12189-bin-ubuntu-cuda-13.5-x64.tar.gz",
-            "llama-b12189-bin-ubuntu-openvino-2026.4.1-x64.tar.gz", "llama-b12189-bin-ubuntu-rocm-10.0-x64.tar.gz",
-            "llama-b12189-bin-ubuntu-sycl-fp16-x64.tar.gz", "llama-b12189-bin-ubuntu-vulkan-arm64.tar.gz",
-            "llama-b12189-bin-ubuntu-vulkan-x64.tar.gz", "llama-b12189-bin-ubuntu-x64.tar.gz",
-            "llama-b12189-bin-win-cpu-x64.zip", "llama-b12189-bin-win-cuda-12.4-x64.zip",
-            "llama-b12189-bin-win-cuda-13.5-x64.zip", "llama-b12189-bin-win-vulkan-x64.zip");
+        var release = LlamaB12189;
 
         Check.Equal("llama-b12189-bin-ubuntu-vulkan-x64.tar.gz", Pick(release, ToolBuilds.LlamaRules(Gpu(), TargetOs.Linux)),
             "a Vulkan GPU on Linux gets the Vulkan build");

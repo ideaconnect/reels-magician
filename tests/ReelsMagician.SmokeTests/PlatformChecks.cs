@@ -1,6 +1,7 @@
 using System.Formats.Tar;
 using System.IO.Compression;
 using ReelsMagician.Core.Diagnostics;
+using ReelsMagician.Core.Projects;
 using ReelsMagician.Core.Toolchain;
 using SharpCompress.Compressors.Xz;
 
@@ -16,9 +17,73 @@ public static class PlatformChecks
     public static void Run()
     {
         Executables();
+        OwnToolsStayRunnable();
         PathCase();
         LinuxGpuDetection();
+        VulkanDriverVariables();
         TarArchives();
+    }
+
+    /// <summary>
+    /// The Vulkan loader's own variables change where it finds drivers, and the probe must read
+    /// them as the loader does, or a working GPU is taken for one without a driver (issue #22).
+    /// </summary>
+    private static void VulkanDriverVariables()
+    {
+        Check.Section("Vulkan driver variables");
+
+        var root = Fresh("reelsmagician-icd");
+        string Manifest(params string[] parts)
+        {
+            var file = Path.Combine([root, .. parts]);
+            Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+            File.WriteAllText(file, "{}");
+            return file;
+        }
+
+        var system = Manifest("usr", "share", "vulkan", "icd.d", "intel_icd.json");
+        var ownMesa = Manifest("opt", "mesa", "icd.d", "radeon_icd.json");
+        var extra = Manifest("extra", "nvidia_icd.json");
+        var ownFolder = Path.GetDirectoryName(ownMesa)!;
+
+        string Join(params string[] entries) => string.Join(Path.PathSeparator, entries);
+        List<string> Read(params (string Name, string Value)[] vars)
+        {
+            var values = new Dictionary<string, string>(vars.Select(v => KeyValuePair.Create(v.Name, v.Value)))
+            {
+                ["HOME"] = Path.Combine(root, "home"),
+                ["XDG_CONFIG_DIRS"] = Path.Combine(root, "etc", "xdg"),
+                ["XDG_DATA_DIRS"] = Path.Combine(root, "usr", "share"),
+            };
+            return GpuProbe.LinuxIcdManifests(name => values.GetValueOrDefault(name));
+        }
+
+        Check.Equal(ownMesa, Read(("VK_DRIVER_FILES", ownFolder)).SingleOrDefault(),
+            "VK_DRIVER_FILES may name a folder of manifests, and then only those are used");
+        Check.Equal(ownMesa, Read(("VK_DRIVER_FILES", Join(ownMesa, Path.Combine(root, "missing.json")))).SingleOrDefault(),
+            "or the manifest files themselves, skipping any that are not there");
+        Check.Equal(ownMesa, Read(("VK_DRIVER_FILES", ownFolder), ("VK_ICD_FILENAMES", system)).SingleOrDefault(),
+            "VK_DRIVER_FILES wins over the older VK_ICD_FILENAMES");
+        Check.Equal(system, Read(("VK_ICD_FILENAMES", system)).SingleOrDefault(),
+            "which is still read when it is the only one set");
+        Check.Equal(ownMesa, Read(("VK_DRIVER_FILES", ownFolder), ("VK_ADD_DRIVER_FILES", extra)).SingleOrDefault(),
+            "VK_ADD_DRIVER_FILES is ignored when the search is replaced");
+
+        var added = Read(("VK_ADD_DRIVER_FILES", extra));
+        Check.True(added.FirstOrDefault() == extra && added.Contains(system),
+            "otherwise its manifests come first, ahead of the usual search");
+        Check.True(!Read().Contains(extra) && Read().Contains(system), "and without it the usual search is all there is");
+
+        // A Radeon on Linux with only the manifests of a Mesa built by hand.
+        var drm = Path.Combine(root, "drm");
+        var device = Path.Combine(drm, "card0", "device");
+        Directory.CreateDirectory(device);
+        File.WriteAllText(Path.Combine(device, "vendor"), "0x1002\n");
+        File.WriteAllText(Path.Combine(device, "uevent"), "DRIVER=amdgpu\n");
+        Check.True(GpuProbe.DetectLinux(drm, Read(("VK_DRIVER_FILES", ownFolder)), hasLoader: true).VulkanAvailable,
+            "a Radeon is found to have Vulkan through a Mesa built by hand");
+
+        Directory.Delete(root, recursive: true);
     }
 
     private static void Executables()
@@ -53,6 +118,37 @@ public static class PlatformChecks
         {
             Environment.SetEnvironmentVariable("PATH", previous);
         }
+
+        Directory.Delete(root, recursive: true);
+    }
+
+    /// <summary>
+    /// A tool in the app's own folder that lost its execute bit is made runnable again when it
+    /// is found, instead of counting as installed and failing each time it runs (issue #21). A
+    /// folder the user chose is theirs and is left as it is.
+    /// </summary>
+    private static void OwnToolsStayRunnable()
+    {
+        Check.Section("The app's own tools stay runnable");
+
+        var root = Fresh("reelsmagician-own-tools");
+        var paths = new ToolPaths(root);
+        var ytDlp = Path.Combine(paths.YtDlpDir, ToolPaths.ExeName("yt-dlp"));
+        var custom = Path.Combine(root, "my-whisper");
+        var whisper = Path.Combine(custom, ToolPaths.ExeName("whisper-cli"));
+        foreach (var file in new[] { ytDlp, whisper })
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+            File.WriteAllText(file, "#!/bin/sh\n");
+            if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(file, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        }
+
+        var tools = new ToolchainManager(paths, NullProgressSink.Instance)
+            .Detect(new AppSettings { CustomWhisperDir = custom });
+        Check.Equal<string?>(ytDlp, tools.YtDlpPath, "yt-dlp in the app's own folder is found");
+        Check.True(ToolPaths.IsExecutable(ytDlp), "and can be run, though it had lost its execute bit");
+        Check.Equal<string?>(whisper, tools.WhisperCliPath, "whisper.cpp in a folder the user chose is found");
+        Check.Equal(OperatingSystem.IsWindows(), ToolPaths.IsExecutable(whisper), "and is left as it is");
 
         Directory.Delete(root, recursive: true);
     }

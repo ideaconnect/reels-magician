@@ -160,8 +160,8 @@ public static partial class SubtitleParser
     /// </summary>
     private static void DeduplicateRollingCaptions(List<ParsedCue> cues)
     {
-        // Each cue is compared with the last one that was kept. The snapshot in between is
-        // emptied, so comparing with the cue just before would let the repeat through.
+        // Each cue is compared with the last line of the last cue that was kept. The snapshot in
+        // between is emptied, so comparing with the cue just before would let the repeat through.
         var prev = "";
         double? previousEnd = null;
         foreach (var cue in cues)
@@ -195,7 +195,11 @@ public static partial class SubtitleParser
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(cur.Text)) prev = cur.Text.Trim();
+            // A rolling cue repeats the line the previous one ended on, as the file wrote it. The
+            // whole kept text would do only while every repeat is trimmed: one kept after a gap
+            // would then stop every later repeat from matching.
+            if (!string.IsNullOrWhiteSpace(cur.Text))
+                prev = cue.Lines.Count > 0 ? cue.Lines[^1].Text : cur.Text.Trim();
         }
     }
 

@@ -48,6 +48,14 @@ public static class CaptionParsingChecks
             "the repeated line and the snapshots go, every spoken word stays once");
         Check.Near(2.51, rolling.Segments[1].Start, 0.001, "the rolling cue starts with its first new word");
 
+        // ── A repeat kept after a gap does not stop later ones (issue #20) ──────────────
+
+        var drifted = SubtitleParser.Parse(Srt(
+            (8, 10, "line A"), (10.3, 12, "line A\nline B"), (12, 14, "line B\nline C"), (14, 16, "line C\nline D")));
+        Check.Equal("line A|line A line B|line C|line D",
+            string.Join("|", drifted.Segments.Select(s => s.Text.ReplaceLineEndings(" "))),
+            "a rolling cue that starts late keeps its repeat, and the cues after it are still trimmed");
+
         // ── A rolling cue with no word timings keeps its start (issue #4) ───────────────
 
         var oneWord = SubtitleParser.Parse("WEBVTT\n\n" +

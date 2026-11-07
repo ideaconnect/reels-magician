@@ -323,7 +323,21 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     }
 
     private Bitmap? _previewImage;
-    public Bitmap? PreviewImage { get => _previewImage; private set => Set(ref _previewImage, value); }
+
+    /// <summary>
+    /// The caption preview. Each one holds a decoded frame in native memory, about 8 MB, so the
+    /// one it replaces is freed at once rather than whenever the finalizer runs. That is safe
+    /// mid-frame: the renderer holds its own reference to a bitmap it is still drawing.
+    /// </summary>
+    public Bitmap? PreviewImage
+    {
+        get => _previewImage;
+        private set
+        {
+            var replaced = _previewImage;
+            if (Set(ref _previewImage, value)) replaced?.Dispose();
+        }
+    }
 
     private const string NoPreviewText = "Render a preview once a reel has been planned.";
 
@@ -808,8 +822,12 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         }
     }
 
-    /// <summary>Loads the PNG fully into memory so the file is not locked against re-rendering.</summary>
-    private static Bitmap LoadBitmap(string path) => new(new MemoryStream(File.ReadAllBytes(path)));
+    /// <summary>Decodes the PNG at once and closes it, so the next preview can overwrite the file.</summary>
+    private static Bitmap LoadBitmap(string path)
+    {
+        using var file = File.OpenRead(path);
+        return new Bitmap(file);
+    }
 
     // ── Shell plumbing ───────────────────────────────────────────────────────────────────
 
