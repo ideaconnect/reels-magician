@@ -345,7 +345,7 @@ dotnet run --project tests/ReelsMagician.SmokeTests -c Release
 # Logic checks only, needing no tools; this is what CI runs on Windows and Ubuntu
 dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- logic
 
-# Install the whole toolchain and assert the right backends were chosen
+# Install the whole toolchain, the optional link tools included, and assert the right backends were chosen
 dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- install
 
 # The same, but only the required tools: never yt-dlp or Deno
