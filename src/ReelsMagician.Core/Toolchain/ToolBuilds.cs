@@ -46,29 +46,32 @@ public static class ToolBuilds
 
     public const string WhisperRepo = "ggml-org/whisper.cpp";
 
-    // The CUDA lines whisper.cpp builds for Windows x64, newest first, with the oldest card each
-    // still supports. A line it does not publish today simply never matches.
-    private static readonly (int Major, Version MinCompute)[] WhisperCudaLines =
-        [(13, new(7, 5)), (12, new(5, 0)), (11, new(3, 5))];
+    // The CUDA lines whisper.cpp builds for Windows x64, newest first. A line it does not
+    // publish today has no published version and simply never matches.
+    private static readonly CudaLine[] WhisperCudaLines =
+        [new(13, new(7, 5), null), new(12, new(5, 0), new(12, 4)), new(11, new(3, 5), new(11, 8))];
 
     /// <summary>
-    /// whisper.cpp builds in order of preference. An NVIDIA card on Windows gets the newest CUDA
-    /// build its driver and card can run, then OpenBLAS, then plain CPU.
+    /// whisper.cpp builds in order of preference, which is also the order of
+    /// <see cref="BuildKind"/>, so the build the rules pick is never reported as a Fallback build.
+    /// An NVIDIA card on Windows gets the newest CUDA build its driver and card can run. Any
+    /// GPU with a Vulkan driver then gets a Windows Vulkan build, once whisper.cpp publishes one.
+    /// Then comes OpenBLAS, then plain CPU.
     /// </summary>
     public static IReadOnlyList<Func<string, bool>> WhisperRules(GpuCapabilities gpu, TargetOs os)
     {
         var rules = new List<Func<string, bool>>();
         if (os == TargetOs.Windows)
         {
-            if (gpu.VulkanAvailable) rules.Add(n => n.Contains("vulkan") && n.EndsWith("-x64.zip"));
             if (gpu.Cuda is { } support)
             {
-                foreach (var (major, minCompute) in WhisperCudaLines)
+                foreach (var line in WhisperCudaLines)
                 {
-                    if (support.LowestComputeCapability < minCompute) continue;
-                    rules.Add(n => WhisperCudaVersion(n) is { } v && v.Major == major && support.CanRun(v));
+                    if (support.LowestComputeCapability < line.MinCompute) continue;
+                    rules.Add(n => WhisperCudaVersion(n) is { } v && v.Major == line.Major && support.CanRun(v));
                 }
             }
+            if (gpu.VulkanAvailable) rules.Add(n => n.Contains("vulkan") && n.EndsWith("-x64.zip"));
             rules.Add(n => n == "whisper-blas-bin-x64.zip");
             rules.Add(n => n == "whisper-bin-x64.zip");
         }
@@ -104,21 +107,16 @@ public static class ToolBuilds
     public static BuildKind ExpectedWhisper(GpuCapabilities? gpu, TargetOs os)
     {
         if (os != TargetOs.Windows) return BuildKind.Cpu;
-
-        // whisper.cpp publishes Windows x64 CUDA builds for 12.4 and 11.8.
-        var cuda = gpu?.Cuda is { } s &&
-                   ((s.LowestComputeCapability >= new Version(5, 0) && s.CanRun(new Version(12, 4))) ||
-                    (s.LowestComputeCapability >= new Version(3, 5) && s.CanRun(new Version(11, 8))));
-        return cuda ? BuildKind.Cuda : BuildKind.Blas;
+        return gpu?.Cuda is { } support && CanRunPublished(support, WhisperCudaLines) ? BuildKind.Cuda : BuildKind.Blas;
     }
 
     // ── llama.cpp ────────────────────────────────────────────────────────────────────────
 
     public const string LlamaRepo = "ggml-org/llama.cpp";
 
-    // The CUDA versions llama.cpp publishes Windows builds for, newest first, with the oldest
-    // card each still supports: CUDA 13 dropped Maxwell, Pascal and Volta.
-    private static readonly (int Major, Version MinCompute)[] LlamaCudaLines = [(13, new(7, 5)), (12, new(5, 0))];
+    // The CUDA lines llama.cpp builds for Windows x64, newest first. CUDA 13 dropped Maxwell,
+    // Pascal and Volta.
+    private static readonly CudaLine[] LlamaCudaLines = [new(13, new(7, 5), new(13, 5)), new(12, new(5, 0), new(12, 4))];
 
     /// <summary>
     /// llama.cpp builds in order of preference. On Windows an NVIDIA card gets the newest CUDA
@@ -133,10 +131,10 @@ public static class ToolBuilds
         {
             if (gpu.Cuda is { } support)
             {
-                foreach (var (major, minCompute) in LlamaCudaLines)
+                foreach (var line in LlamaCudaLines)
                 {
-                    if (support.LowestComputeCapability < minCompute) continue;
-                    rules.Add(n => LlamaCudaVersion(n) is { } v && v.Major == major && support.CanRun(v));
+                    if (support.LowestComputeCapability < line.MinCompute) continue;
+                    rules.Add(n => LlamaCudaVersion(n) is { } v && v.Major == line.Major && support.CanRun(v));
                 }
             }
             if (gpu.VulkanAvailable) rules.Add(n => n.StartsWith("llama-") && n.EndsWith("-bin-win-vulkan-x64.zip"));
@@ -172,8 +170,7 @@ public static class ToolBuilds
 
     /// <summary>Whether this machine will most likely get a CUDA build of llama.cpp.</summary>
     public static bool ExpectsLlamaCuda(GpuCapabilities? gpu, TargetOs os) =>
-        os == TargetOs.Windows && gpu?.Cuda is { } support &&
-        LlamaCudaLines.Any(l => support.LowestComputeCapability >= l.MinCompute && support.CanRun(new Version(l.Major, 0)));
+        os == TargetOs.Windows && gpu?.Cuda is { } support && CanRunPublished(support, LlamaCudaLines);
 
     /// <summary>The pinned build used when the GitHub release list cannot be read. Vulkan, because it runs on every vendor's GPU.</summary>
     public static (string Tag, string Asset) LlamaFallback(TargetOs os) =>
@@ -184,6 +181,25 @@ public static class ToolBuilds
         ExpectsLlamaCuda(gpu, os) ? BuildKind.Cuda :
         gpu?.VulkanAvailable == true ? BuildKind.Vulkan :
         BuildKind.Cpu;
+
+    // ── CUDA ─────────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// A major CUDA version a project builds for: the oldest card it still supports, and the
+    /// version of it the project publishes today, or null when it publishes none. Update
+    /// <paramref name="Published"/> when a project moves a line on.
+    /// </summary>
+    private sealed record CudaLine(int Major, Version MinCompute, Version? Published);
+
+    /// <summary>
+    /// Whether this card and driver can run a CUDA build the project publishes. The version that
+    /// counts is the published one, not the line's .0: a driver for CUDA 12.2 cannot run the
+    /// 12.4 build, so expecting CUDA there would report the build it gets instead as a Fallback
+    /// build, and no reinstall could clear that.
+    /// </summary>
+    private static bool CanRunPublished(CudaSupport support, IEnumerable<CudaLine> lines) =>
+        lines.Any(l => l.Published is { } version &&
+                       support.LowestComputeCapability >= l.MinCompute && support.CanRun(version));
 
     // ── Fallback builds ──────────────────────────────────────────────────────────────────
 
