@@ -19,6 +19,12 @@ namespace ReelsMagician.Core.Toolchain;
 /// </summary>
 public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
 {
+    /// <summary>The <see cref="ComponentStatus.Key"/> of yt-dlp in <see cref="DescribeLinkTools"/>.</summary>
+    public const string YtDlpKey = "ytdlp";
+
+    /// <summary>The <see cref="ComponentStatus.Key"/> of the JavaScript runtime in <see cref="DescribeLinkTools"/>.</summary>
+    public const string JsRuntimeKey = "jsruntime";
+
     public ToolPaths Paths => paths;
 
     /// <summary>Locates already-present tools without touching the network.</summary>
@@ -91,17 +97,17 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         return
         [
             new("ffmpeg", "ffmpeg + ffprobe",
-                ts.HasFfmpeg ? (systemFfmpeg ? ComponentState.System : ComponentState.Installed) : ComponentState.Missing,
+                ts.HasFfmpeg ? (systemFfmpeg ? ComponentState.System : ComponentState.Installed) : ComponentState.RequiredMissing,
                 ts.FfmpegPath ?? "will download the BtbN GPL build", 95_000_000),
 
             new("whisper", "whisper.cpp",
-                ts.WhisperCliPath is not null ? ComponentState.Installed : ComponentState.Missing,
+                ts.WhisperCliPath is not null ? ComponentState.Installed : ComponentState.RequiredMissing,
                 ts.WhisperCliPath is null ? "auto-selects the best build for this machine" : ts.WhisperBackend, 30_000_000,
                 ts.WhisperWarning),
 
             // The CUDA build brings its own cudart and cuBLAS, which is most of its size.
             new("llama", "llama.cpp",
-                ts.LlamaServerPath is not null ? ComponentState.Installed : ComponentState.Missing,
+                ts.LlamaServerPath is not null ? ComponentState.Installed : ComponentState.RequiredMissing,
                 ts.LlamaServerPath is null
                     ? (cuda ? "CUDA build for your NVIDIA card" : "Vulkan build when a driver is present")
                     : ts.LlamaBackend,
@@ -109,15 +115,15 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
                 ts.LlamaWarning),
 
             new("whisper-model", whisperModel.DisplayName,
-                ts.WhisperModelPath is not null ? ComponentState.Installed : ComponentState.Missing,
+                ts.WhisperModelPath is not null ? ComponentState.Installed : ComponentState.RequiredMissing,
                 whisperModel.Notes, whisperModel.ApproxBytes),
 
             new("llm-model", llm.DisplayName,
-                ts.LlmModelPath is not null ? ComponentState.Installed : ComponentState.Missing,
+                ts.LlmModelPath is not null ? ComponentState.Installed : ComponentState.RequiredMissing,
                 llm.Notes, llm.ApproxBytes),
 
             new("face-model", "Face detector (OpenCV SSD)",
-                ts.HasFaceModel ? ComponentState.Installed : ComponentState.Missing,
+                ts.HasFaceModel ? ComponentState.Installed : ComponentState.RequiredMissing,
                 "Keeps a speaker centred in the vertical crop", ModelCatalog.FaceModelApproxBytes),
         ];
     }
@@ -125,12 +131,12 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
     /// <summary>The optional components that loading a video from a link needs.</summary>
     public IReadOnlyList<ComponentStatus> DescribeLinkTools(Toolset ts) =>
     [
-        new("ytdlp", "yt-dlp",
-            ts.HasYtDlp ? ComponentState.Installed : ComponentState.NotInstalled,
+        new(YtDlpKey, "yt-dlp",
+            ts.HasYtDlp ? ComponentState.Installed : ComponentState.OptionalMissing,
             ts.YtDlpPath ?? "downloads a video from a link", 23_600_000),
 
-        new("jsruntime", "JavaScript runtime (Deno)",
-            ts.HasJsRuntime ? ComponentState.Installed : ComponentState.NotInstalled,
+        new(JsRuntimeKey, "JavaScript runtime (Deno)",
+            ts.HasJsRuntime ? ComponentState.Installed : ComponentState.OptionalMissing,
             ts.JsRuntimePath ?? "without it yt-dlp drops formats and may miss 4K", 42_900_000),
     ];
 
@@ -140,37 +146,34 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
     /// </summary>
     public async Task<Toolset> EnsureAsync(AppSettings settings, CancellationToken ct)
     {
-        paths.EnsureCreated();
-        var ts = Detect(settings);
-        var gpu = ts.Gpu ?? GpuProbe.Detect();
-        sink.Info("install", $"GPU: {gpu.Describe()}");
-
-        using var http = AssetDownloader.CreateHttpClient();
-        var dl = new AssetDownloader(http, sink);
-
-        if (!ts.HasFfmpeg) await InstallFfmpegAsync(dl, ct).ConfigureAwait(false);
-        if (ts.WhisperCliPath is null) await InstallWhisperAsync(dl, gpu, ct).ConfigureAwait(false);
-        if (ts.LlamaServerPath is null) await InstallLlamaAsync(dl, gpu, ct).ConfigureAwait(false);
-
-        if (ts.WhisperModelPath is null)
+        var final = await InstallAsync(settings, async (ts, dl) =>
         {
-            var m = ModelCatalog.ResolveWhisper(settings.WhisperModelId);
-            await dl.DownloadAsync(m.Url, Path.Combine(paths.Models, m.FileName), m.DisplayName, ct).ConfigureAwait(false);
-        }
-        if (ts.LlmModelPath is null)
-        {
-            var m = ModelCatalog.ResolveLlm(settings.LlmModelId);
-            await dl.DownloadAsync(m.Url, Path.Combine(paths.Models, m.FileName), m.DisplayName, ct).ConfigureAwait(false);
-        }
-        if (!ts.HasFaceModel)
-        {
-            await dl.DownloadAsync(ModelCatalog.FaceProtoUrl,
-                Path.Combine(paths.Models, ModelCatalog.FaceProtoFileName), "face detector graph", ct).ConfigureAwait(false);
-            await dl.DownloadAsync(ModelCatalog.FaceWeightsUrl,
-                Path.Combine(paths.Models, ModelCatalog.FaceWeightsFileName), "face detector weights", ct).ConfigureAwait(false);
-        }
+            var gpu = ts.Gpu ?? GpuProbe.Detect();
+            sink.Info("install", $"GPU: {gpu.Describe()}");
 
-        var final = Detect(settings);
+            if (!ts.HasFfmpeg) await InstallFfmpegAsync(dl, ct).ConfigureAwait(false);
+            if (ts.WhisperCliPath is null) await InstallWhisperAsync(dl, gpu, ct).ConfigureAwait(false);
+            if (ts.LlamaServerPath is null) await InstallLlamaAsync(dl, gpu, ct).ConfigureAwait(false);
+
+            if (ts.WhisperModelPath is null)
+            {
+                var m = ModelCatalog.ResolveWhisper(settings.WhisperModelId);
+                await dl.DownloadAsync(m.Url, Path.Combine(paths.Models, m.FileName), m.DisplayName, ct).ConfigureAwait(false);
+            }
+            if (ts.LlmModelPath is null)
+            {
+                var m = ModelCatalog.ResolveLlm(settings.LlmModelId);
+                await dl.DownloadAsync(m.Url, Path.Combine(paths.Models, m.FileName), m.DisplayName, ct).ConfigureAwait(false);
+            }
+            if (!ts.HasFaceModel)
+            {
+                await dl.DownloadAsync(ModelCatalog.FaceProtoUrl,
+                    Path.Combine(paths.Models, ModelCatalog.FaceProtoFileName), "face detector graph", ct).ConfigureAwait(false);
+                await dl.DownloadAsync(ModelCatalog.FaceWeightsUrl,
+                    Path.Combine(paths.Models, ModelCatalog.FaceWeightsFileName), "face detector weights", ct).ConfigureAwait(false);
+            }
+        }).ConfigureAwait(false);
+
         sink.Report("install", "Toolchain ready", 1.0);
         sink.Info("install", $"Whisper backend: {final.WhisperBackend}");
         sink.Info("install", $"llama.cpp backend: {final.LlamaBackend}");
@@ -185,17 +188,23 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
     /// Downloads yt-dlp and its JavaScript runtime from their publishers. Call this only once the
     /// user has agreed to it.
     /// </summary>
-    public async Task<Toolset> InstallLinkToolsAsync(AppSettings settings, CancellationToken ct)
+    public Task<Toolset> InstallLinkToolsAsync(AppSettings settings, CancellationToken ct) =>
+        InstallAsync(settings, async (ts, dl) =>
+        {
+            if (!ts.HasYtDlp) await InstallYtDlpAsync(dl, ct).ConfigureAwait(false);
+            if (!ts.HasJsRuntime) await InstallJsRuntimeAsync(dl, ct).ConfigureAwait(false);
+        });
+
+    /// <summary>
+    /// What every install shares: the folders exist, what is already present is known, the
+    /// downloads go through one client, and the result is detected afresh from disk.
+    /// </summary>
+    private async Task<Toolset> InstallAsync(AppSettings settings, Func<Toolset, AssetDownloader, Task> install)
     {
         paths.EnsureCreated();
-        var ts = Detect(settings);
-
+        var present = Detect(settings);
         using var http = AssetDownloader.CreateHttpClient();
-        var dl = new AssetDownloader(http, sink);
-
-        if (!ts.HasYtDlp) await InstallYtDlpAsync(dl, ct).ConfigureAwait(false);
-        if (!ts.HasJsRuntime) await InstallJsRuntimeAsync(dl, ct).ConfigureAwait(false);
-
+        await install(present, new AssetDownloader(http, sink)).ConfigureAwait(false);
         return Detect(settings);
     }
 

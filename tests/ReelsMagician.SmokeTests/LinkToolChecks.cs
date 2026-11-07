@@ -44,17 +44,25 @@ public static class LinkToolChecks
         Check.True(ToolPaths.FindExe(paths.YtDlpDir, ToolPaths.ExeName("yt-dlp")) is null, "the default install does not fetch yt-dlp");
         Check.True(ToolPaths.FindExe(paths.JsRuntimeDir, ToolPaths.ExeName("deno")) is null, "the default install does not fetch Deno");
 
-        Check.True(manager.Describe(settings, installed).All(c => c.Key is not ("ytdlp" or "jsruntime")),
+        string[] linkKeys = [ToolchainManager.YtDlpKey, ToolchainManager.JsRuntimeKey];
+        Check.True(manager.Describe(settings, installed).All(c => !linkKeys.Contains(c.Key)),
             "the link tools are not listed among the required tools");
-        Check.True(!new Toolset().MissingComponents().Any(m => m.Contains("yt-dlp") || m.Contains("JavaScript")),
+
+        // Compared without reading any label: having the link tools or not changes nothing that
+        // counts as missing.
+        var withLinkTools = new Toolset { YtDlpPath = "yt-dlp", JsRuntimePath = "deno" };
+        Check.True(new Toolset().MissingComponents().SequenceEqual(withLinkTools.MissingComponents()),
             "an absent link tool is not reported as missing");
+        Check.True(withLinkTools.HasLinkTools && !new Toolset { YtDlpPath = "yt-dlp" }.HasLinkTools,
+            "the link tools count as present only as a pair");
 
         // A row that said Missing would promise that "Install everything missing" fetches it.
         var absent = manager.DescribeLinkTools(new Toolset());
-        Check.Equal(2, absent.Count, "yt-dlp and its runtime are both offered as optional");
-        Check.True(absent.All(c => c.State == ComponentState.NotInstalled), "they show as not installed, not missing");
+        Check.True(absent.Select(c => c.Key).SequenceEqual(linkKeys), "yt-dlp and its runtime are both offered as optional");
+        Check.True(absent.All(c => c.State == ComponentState.OptionalMissing), "they show as optional, not as required and missing");
+        Check.True(absent.All(c => c.NeedsDownload), "and as something that can be downloaded");
 
-        var present = manager.DescribeLinkTools(new Toolset { YtDlpPath = "yt-dlp.exe", JsRuntimePath = "deno.exe" });
+        var present = manager.DescribeLinkTools(withLinkTools);
         Check.True(present.All(c => !c.NeedsDownload), "nothing is offered for download once they are present");
 
         Directory.Delete(root, recursive: true);

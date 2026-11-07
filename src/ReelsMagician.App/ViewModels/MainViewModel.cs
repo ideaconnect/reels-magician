@@ -23,6 +23,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     private readonly ToolPaths _paths = new();
     private readonly AppSettings _settings;
     private readonly ToolchainManager _toolchain;
+    private readonly LinkToolsConsent _linkConsent;
 
     private ReelProject _project = new();
     private Toolset _tools = new();
@@ -34,6 +35,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         _paths.EnsureCreated();
         _settings = AppSettings.Load(_paths);
         _toolchain = new ToolchainManager(_paths, this);
+        _linkConsent = new LinkToolsConsent(shell, _toolchain);
 
         StyleEditor = new StyleEditorViewModel(_project.Style);
         StyleEditor.Changed += (_, _) => OnStyleChanged();
@@ -48,8 +50,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         _selectedPreset = Presets.FirstOrDefault(p => p.Name == StyleEditor.Name);
 
         InstallCommand = new AsyncRelayCommand(InstallAsync, () => !IsBusy);
-        InstallLinkToolsCommand = new AsyncRelayCommand(InstallLinkToolsAsync,
-            () => !IsBusy && !(_tools.HasYtDlp && _tools.HasJsRuntime));
+        InstallLinkToolsCommand = new AsyncRelayCommand(InstallLinkToolsAsync, () => !IsBusy && !_tools.HasLinkTools);
         RefreshToolsCommand = new RelayCommand(RefreshTools);
         BrowseSourceCommand = new AsyncRelayCommand(BrowseSourceAsync);
         BrowseOutputCommand = new AsyncRelayCommand(BrowseOutputAsync);
@@ -416,13 +417,8 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     {
         _tools = _toolchain.Detect(_settings);
 
-        Components.Clear();
-        foreach (var status in _toolchain.Describe(_settings, _tools))
-            Components.Add(new ComponentRowViewModel(status));
-
-        LinkComponents.Clear();
-        foreach (var status in _toolchain.DescribeLinkTools(_tools))
-            LinkComponents.Add(new ComponentRowViewModel(status));
+        ShowRows(Components, _toolchain.Describe(_settings, _tools));
+        ShowRows(LinkComponents, _toolchain.DescribeLinkTools(_tools));
 
         GpuText = _tools.Gpu?.Describe() ?? "GPU unknown";
         BackendText = $"Whisper: {_tools.WhisperBackend}    ·    Qwen: {_tools.LlamaBackend}";
@@ -434,55 +430,38 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         RefreshCommands();
     }
 
-    private async Task InstallAsync()
+    private static void ShowRows(ObservableCollection<ComponentRowViewModel> rows, IEnumerable<ComponentStatus> statuses)
     {
-        await RunStageAsync("Installing tools", async ct =>
-        {
-            _tools = await _toolchain.EnsureAsync(_settings, ct).ConfigureAwait(true);
-            RefreshTools();
-        }).ConfigureAwait(true);
+        rows.Clear();
+        foreach (var status in statuses) rows.Add(new ComponentRowViewModel(status));
     }
+
+    private Task InstallAsync() =>
+        RunStageAsync("Installing tools", ct => InstallThenRefreshAsync(c => _toolchain.EnsureAsync(_settings, c), ct));
 
     private async Task InstallLinkToolsAsync()
     {
-        if (!await ConfirmLinkToolsDownloadAsync().ConfigureAwait(true)) return;
+        if (!await _linkConsent.AskAsync(_tools).ConfigureAwait(true)) return;
 
-        await RunStageAsync("Downloading link tools", async ct =>
-        {
-            _tools = await _toolchain.InstallLinkToolsAsync(_settings, ct).ConfigureAwait(true);
-            RefreshTools();
-        }).ConfigureAwait(true);
+        await RunStageAsync("Downloading link tools",
+            ct => InstallThenRefreshAsync(c => _toolchain.InstallLinkToolsAsync(_settings, c), ct)).ConfigureAwait(true);
     }
 
-    /// <summary>
-    /// Asks before fetching yt-dlp. It is a third-party tool that does not come with the app, so
-    /// nothing downloads it until the user has said yes here. No is the default, so a stray Enter
-    /// does not count as agreeing.
-    /// </summary>
-    private Task<bool> ConfirmLinkToolsDownloadAsync()
+    /// <summary>Runs an install, then shows what is on disk afterwards; <see cref="RefreshTools"/> reads it back.</summary>
+    private async Task InstallThenRefreshAsync(Func<CancellationToken, Task<Toolset>> install, CancellationToken ct)
     {
-        var downloads = string.Join(Environment.NewLine,
-            _toolchain.DescribeLinkTools(_tools)
-                .Where(c => c.NeedsDownload)
-                .Select(c => $"  • {c.Name}, about {AssetDownloader.Humanize(c.ApproxBytes)}"));
-
-        var question =
-            "Loading a video from a link needs yt-dlp, a separate third-party tool. " +
-            "It is not part of ReelsMagician and does not come with it.\n\n" +
-            $"If you continue, ReelsMagician downloads from the publishers' own GitHub releases:\n\n{downloads}\n\n" +
-            "You are responsible for having the right to download the videos you use it on, " +
-            "and for following the terms of the site they come from.\n\n" +
-            "Local video files work without it. Download now?";
-
-        return _shell.AskAsync("Video links need yt-dlp", question, "Download", "No");
+        await install(ct).ConfigureAwait(true);
+        RefreshTools();
     }
 
     // ── Pipeline stages ──────────────────────────────────────────────────────────────────
 
     private async Task LoadSourceAsync()
     {
-        var input = SourceInput.Trim();
+        // Normalised once, here, exactly as the resolver will read it: a quoted link is a link.
+        var input = SourceResolver.NormaliseInput(SourceInput);
         var isLink = SourceResolver.LooksLikeUrl(input);
+        var needsLinkTools = LinkToolsConsent.NeedsDownload(isLink, _tools);
 
         if (isLink && !_tools.HasFfmpeg)
         {
@@ -492,7 +471,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             return;
         }
 
-        if (isLink && !_tools.HasYtDlp && !await ConfirmLinkToolsDownloadAsync().ConfigureAwait(true))
+        if (needsLinkTools && !await _linkConsent.AskAsync(_tools).ConfigureAwait(true))
         {
             Status = "yt-dlp was not downloaded, so the link was not loaded. Local video files work without it.";
             return;
@@ -508,11 +487,8 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
         await RunStageAsync("Loading source", async ct =>
         {
-            if (isLink && !_tools.HasYtDlp)
-            {
-                _tools = await _toolchain.InstallLinkToolsAsync(_settings, ct).ConfigureAwait(true);
-                RefreshTools();
-            }
+            if (needsLinkTools)
+                await InstallThenRefreshAsync(c => _toolchain.InstallLinkToolsAsync(_settings, c), ct).ConfigureAwait(true);
 
             var pipeline = new ReelPipeline(_tools, _settings, _paths, this);
             await pipeline.ResolveSourceAsync(project, MaxHeight, ct, UseProvidedSubtitles)
@@ -792,9 +768,13 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             return;
         }
 
+        // A render takes a while and Load stays available meanwhile. If another source loads
+        // before this one finishes, its frame belongs to a project that is gone, and must not
+        // overwrite the reset StartProject made.
+        var project = _project;
         try
         {
-            var captions = ReelPipeline.BuildCaptions(_project);
+            var captions = ReelPipeline.BuildCaptions(project);
             if (captions.Count == 0)
             {
                 PreviewStatus = "No captions to preview yet — plan a reel first.";
@@ -802,22 +782,24 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             }
 
             var reelTime = PreviewRenderer.ChoosePreviewTime(captions);
-            var fade = ReelRenderer.ResolveCrossfade(_project.RenderClips, _project.RenderOptions);
-            var (clipIndex, sourceTime) = PreviewRenderer.ToSource(_project.RenderClips, fade, reelTime);
-            var crop = clipIndex < _project.RenderClips.Count ? _project.RenderClips[clipIndex].Crop : null;
+            var fade = ReelRenderer.ResolveCrossfade(project.RenderClips, project.RenderOptions);
+            var (clipIndex, sourceTime) = PreviewRenderer.ToSource(project.RenderClips, fade, reelTime);
+            var crop = clipIndex < project.RenderClips.Count ? project.RenderClips[clipIndex].Crop : null;
 
             var renderer = new PreviewRenderer(new FFmpegTool(_tools.Ffmpeg, this), this);
-            var workDir = Path.Combine(_project.WorkDir.Length > 0 ? _project.WorkDir : _paths.Cache, "preview");
+            var workDir = Path.Combine(project.WorkDir.Length > 0 ? project.WorkDir : _paths.Cache, "preview");
 
             var png = await renderer.RenderAsync(
-                _project.Source?.VideoPath, _project.Source?.Info, crop, sourceTime,
+                project.Source?.VideoPath, project.Source?.Info, crop, sourceTime,
                 captions, StyleEditor.Style, reelTime, workDir, CancellationToken.None).ConfigureAwait(true);
 
+            if (!ReferenceEquals(project, _project)) return;
             PreviewImage = LoadBitmap(png);
             PreviewStatus = $"Preview at {TimeSpan.FromSeconds(reelTime):mm\\:ss\\.ff} of the reel · {StyleEditor.Summary}";
         }
         catch (Exception ex)
         {
+            if (!ReferenceEquals(project, _project)) return;
             PreviewStatus = $"Preview failed: {ex.Message}";
             this.Warn("preview", ex.Message);
         }

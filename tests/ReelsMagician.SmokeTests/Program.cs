@@ -25,7 +25,7 @@ switch (mode)
         break;
 
     case "link":
-        await EndToEnd.LinkAsync(args.Length > 1 ? args[1] : "https://youtu.be/ggOnoGOKxos");
+        await EndToEnd.ResolveLinkAsync(args.Length > 1 ? args[1] : "https://youtu.be/ggOnoGOKxos");
         break;
 
     case "e2e":
@@ -35,6 +35,8 @@ switch (mode)
     case "logic":
         UnitChecks.Run();
         PlatformChecks.Run();
+        CaptionParsingChecks.Run();
+        SourceAndCleanupChecks.Run();
         ToolBuildChecks.Run();
         LinkToolChecks.Run();
         break;
@@ -42,6 +44,8 @@ switch (mode)
     default:
         UnitChecks.Run();
         PlatformChecks.Run();
+        CaptionParsingChecks.Run();
+        SourceAndCleanupChecks.Run();
         ToolBuildChecks.Run();
         LinkToolChecks.Run();
         await RenderChecks.RunAsync();

@@ -125,10 +125,11 @@ public sealed class ComponentRowViewModel(ComponentStatus status) : ViewModelBas
     {
         ComponentState.Installed => "Installed",
         ComponentState.System => "Found on system",
-        ComponentState.NotInstalled => "Not installed",
-        _ => "Will download",
+        ComponentState.OptionalMissing => "Not installed",
+        ComponentState.RequiredMissing => "Will download",
+        _ => throw new ArgumentOutOfRangeException(nameof(status), status.State, null),
     };
-    public bool IsReady => status.State is ComponentState.Installed or ComponentState.System;
+    public bool IsReady => !status.NeedsDownload;
     public string SizeText => status.NeedsDownload ? AssetDownloader.Humanize(status.ApproxBytes) : "—";
 
     /// <summary>Set when the component works but not as well as this machine allows, such as a Fallback build.</summary>

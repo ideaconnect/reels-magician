@@ -25,6 +25,11 @@ Changes to ReelsMagician, newest first. Version numbers will be assigned once th
 
 ### Fixed
 
+- **Repeated speech:** words spoken again were sometimes dropped or cut short, as if they were a caption repeating the previous line. Only a real rolling repeat is trimmed now: one that starts as the previous cue ends and repeats it on a line of its own.
+- **One-word captions:** in captions that come with a video, a line adding a single new word could appear up to a second late. It now appears when that word is spoken.
+- **Quoted links:** a link pasted in quotes skipped the ffmpeg check and the question before yt-dlp is downloaded. Quotes are now removed once, before anything looks at the input, and single quotes from a Linux terminal are removed too.
+- **Stale previews:** a caption preview still rendering when another video loaded could put the old video's frame back on screen.
+- **Free up space:** the "Downloaded tools" row named yt-dlp and Deno even when they had never been downloaded. It now names what is actually there.
 - **whisper.cpp on NVIDIA:** whisper.cpp renamed its CUDA builds, and the app stopped recognising them, so NVIDIA cards quietly got a CPU build. Both the old and the new names are recognised again, and the newest CUDA build the card's driver can run is chosen.
 - **Failed loads:** a failed or cancelled load no longer throws away the current transcript and plan. The new source replaces the project only once it has loaded. A successful load also clears the subtitles, reels and preview left over from the previous video.
 - **Automatic captions:** word-timed automatic captions that come with a video no longer lose lines or show others twice.

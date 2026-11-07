@@ -79,7 +79,7 @@ public static class EndToEnd
     /// catches a bad yt-dlp flag, a format selector that stops finding 4K, or a silent loss of
     /// progress reporting — none of which the offline tests can see.
     /// </summary>
-    public static async Task LinkAsync(string url)
+    public static async Task ResolveLinkAsync(string url)
     {
         Check.Section($"Compatible video link resolution — {url}");
 

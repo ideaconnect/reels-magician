@@ -35,6 +35,7 @@ public static partial class SubtitleParser
     {
         var transcript = new Transcript { Origin = TranscriptOrigin.ProvidedSubtitles };
         var lines = content.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+        var cues = new List<ParsedCue>();
 
         var i = 0;
         while (i < lines.Length)
@@ -46,23 +47,22 @@ public static partial class SubtitleParser
             var end = ParseTime(match.Groups["to"].Value);
             i++;
 
-            var body = new StringBuilder();
+            var bodyLines = new List<string>();
             while (i < lines.Length && lines[i].Length > 0 && !CueLine().IsMatch(lines[i]))
             {
                 // YouTube opens each word-timed cue with a line holding a single space. Ending the
                 // cue there would drop the only copy of the line that carries word timings.
                 if (string.IsNullOrWhiteSpace(lines[i]))
                 {
-                    if (body.Length > 0) break;
+                    if (bodyLines.Count > 0) break;
                     i++;
                     continue;
                 }
-                if (body.Length > 0) body.Append('\n');
-                body.Append(lines[i]);
+                bodyLines.Add(lines[i]);
                 i++;
             }
 
-            var raw = body.ToString();
+            var raw = string.Join('\n', bodyLines);
             if (string.IsNullOrWhiteSpace(raw)) continue;
 
             var segment = new TranscriptSegment { Start = start, End = end };
@@ -73,12 +73,40 @@ public static partial class SubtitleParser
             segment.Words = words;
             if (segment.Words.Count == 0) segment.RetimeWords();
             transcript.Segments.Add(segment);
+
+            cues.Add(new ParsedCue(segment, start, end, HasWordTimings: words.Count > 0,
+                [.. bodyLines.Select(ReadLine).Where(l => l.Text.Length > 0)]));
         }
 
-        DeduplicateRollingCaptions(transcript);
+        DeduplicateRollingCaptions(cues);
+        transcript.Segments.RemoveAll(s => string.IsNullOrWhiteSpace(s.Text));
         transcript.Normalize();
         return transcript;
     }
+
+    /// <summary>
+    /// One line of a cue's body as read. <paramref name="Untimed"/> is the text before the
+    /// line's first inline word timing, which has no timing of its own (all of it, when the line
+    /// has none), and <paramref name="Timed"/> is the rest.
+    /// </summary>
+    private sealed record CueLineText(string Text, string Untimed, string Timed)
+    {
+        public bool HasWordTimings => Timed.Length > 0;
+    }
+
+    /// <summary>A cue as it stood in the file, before rolling repeats were trimmed.</summary>
+    private sealed record ParsedCue(
+        TranscriptSegment Segment, double FileStart, double FileEnd, bool HasWordTimings, List<CueLineText> Lines);
+
+    private static CueLineText ReadLine(string line)
+    {
+        var first = InlineTime().Match(line);
+        return first.Success
+            ? new CueLineText(PlainText(line), PlainText(line[..first.Index]), PlainText(line[first.Index..]))
+            : new CueLineText(PlainText(line), PlainText(line), "");
+    }
+
+    private static string PlainText(string line) => Clean(Markup().Replace(InlineTime().Replace(line, " "), " "));
 
     /// <summary>Pulls per-word timings out of a VTT cue body when the file provides them.</summary>
     private static List<TranscriptWord> ExtractInlineWords(string raw, double cueStart, double cueEnd)
@@ -116,40 +144,60 @@ public static partial class SubtitleParser
         return words;
     }
 
+    // A rolling cue starts where the cue before it ended; files write the two times identically.
+    private const double RollingGapSeconds = 0.1;
+
     /// <summary>
-    /// YouTube auto-captions repeat the previous line in each new cue to create a rolling
+    /// Auto-generated captions repeat the previous line in each new cue to create a rolling
     /// effect, and put a 10 ms snapshot of the finished line between cues. Those duplicates
     /// would be read twice by the analyser and burned in twice, so they are trimmed.
+    ///
+    /// Only a real rolling repeat is trimmed. The cue must start where the one before it ended,
+    /// and the repeated text must carry no word timings of its own: either a whole first line
+    /// without any, or the untimed text that opens a first line before its first timing. Text
+    /// that has timings was newly spoken. Speech that genuinely repeats, later or as the start
+    /// of a longer line, is kept as it is.
     /// </summary>
-    private static void DeduplicateRollingCaptions(Transcript transcript)
+    private static void DeduplicateRollingCaptions(List<ParsedCue> cues)
     {
         // Each cue is compared with the last one that was kept. The snapshot in between is
         // emptied, so comparing with the cue just before would let the repeat through.
         var prev = "";
-        foreach (var cur in transcript.Segments)
+        double? previousEnd = null;
+        foreach (var cue in cues)
         {
-            if (prev.Length > 0 && StartsWithWords(cur.Text, prev))
+            var cur = cue.Segment;
+            var follows = previousEnd is { } end && Math.Abs(cue.FileStart - end) <= RollingGapSeconds;
+            previousEnd = cue.FileEnd;
+
+            if (prev.Length > 0 && follows && cue.Lines.Count > 0 &&
+                cue.Lines[0].Untimed.Equals(prev, StringComparison.OrdinalIgnoreCase))
             {
-                var remainder = cur.Text[prev.Length..].Trim();
+                var remainder = string.Join(' ',
+                    new[] { cue.Lines[0].Timed }.Concat(cue.Lines.Skip(1).Select(l => l.Text))).Trim();
                 if (remainder.Length == 0) { cur.Text = ""; continue; }
                 cur.Text = remainder;
-                if (cur.Words.Count > 0)
+
+                if (cue.HasWordTimings)
                 {
+                    // The new words carry their own times from the file; the repeated ones go.
                     var keep = TranscriptSegment.Tokenize(remainder).Count;
                     if (keep < cur.Words.Count) cur.Words.RemoveRange(0, cur.Words.Count - keep);
                     if (cur.Words.Count > 0) cur.Start = cur.Words[0].Start;
+                }
+                else
+                {
+                    // Without timings in the file, the words were only spread evenly across the
+                    // cue, repeated ones included. Taking the first kept word's spread time would
+                    // start the caption late, so the cue keeps its start and the remaining words
+                    // are spread across it instead.
+                    cur.RetimeWords();
                 }
             }
 
             if (!string.IsNullOrWhiteSpace(cur.Text)) prev = cur.Text.Trim();
         }
-        transcript.Segments.RemoveAll(s => string.IsNullOrWhiteSpace(s.Text));
     }
-
-    /// <summary>True when <paramref name="text"/> opens with <paramref name="prefix"/> as whole words.</summary>
-    private static bool StartsWithWords(string text, string prefix) =>
-        text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
-        && (text.Length == prefix.Length || char.IsWhiteSpace(text[prefix.Length]));
 
     private static string Clean(string s) =>
         Regex.Replace(WebUtilityDecode(s), @"\s{2,}", " ").Trim();
