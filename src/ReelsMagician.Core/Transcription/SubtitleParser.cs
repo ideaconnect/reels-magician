@@ -47,8 +47,16 @@ public static partial class SubtitleParser
             i++;
 
             var body = new StringBuilder();
-            while (i < lines.Length && !string.IsNullOrWhiteSpace(lines[i]) && !CueLine().IsMatch(lines[i]))
+            while (i < lines.Length && lines[i].Length > 0 && !CueLine().IsMatch(lines[i]))
             {
+                // YouTube opens each word-timed cue with a line holding a single space. Ending the
+                // cue there would drop the only copy of the line that carries word timings.
+                if (string.IsNullOrWhiteSpace(lines[i]))
+                {
+                    if (body.Length > 0) break;
+                    i++;
+                    continue;
+                }
                 if (body.Length > 0) body.Append('\n');
                 body.Append(lines[i]);
                 i++;
@@ -110,17 +118,17 @@ public static partial class SubtitleParser
 
     /// <summary>
     /// YouTube auto-captions repeat the previous line in each new cue to create a rolling
-    /// effect. Those duplicates would be read twice by the analyser, so they are trimmed.
+    /// effect, and put a 10 ms snapshot of the finished line between cues. Those duplicates
+    /// would be read twice by the analyser and burned in twice, so they are trimmed.
     /// </summary>
     private static void DeduplicateRollingCaptions(Transcript transcript)
     {
-        for (var i = 1; i < transcript.Segments.Count; i++)
+        // Each cue is compared with the last one that was kept. The snapshot in between is
+        // emptied, so comparing with the cue just before would let the repeat through.
+        var prev = "";
+        foreach (var cur in transcript.Segments)
         {
-            var prev = transcript.Segments[i - 1].Text.Trim();
-            var cur = transcript.Segments[i];
-            if (prev.Length == 0) continue;
-
-            if (cur.Text.StartsWith(prev, StringComparison.OrdinalIgnoreCase))
+            if (prev.Length > 0 && StartsWithWords(cur.Text, prev))
             {
                 var remainder = cur.Text[prev.Length..].Trim();
                 if (remainder.Length == 0) { cur.Text = ""; continue; }
@@ -132,13 +140,16 @@ public static partial class SubtitleParser
                     if (cur.Words.Count > 0) cur.Start = cur.Words[0].Start;
                 }
             }
-            else if (cur.Text.Trim().Equals(prev, StringComparison.OrdinalIgnoreCase))
-            {
-                cur.Text = "";
-            }
+
+            if (!string.IsNullOrWhiteSpace(cur.Text)) prev = cur.Text.Trim();
         }
         transcript.Segments.RemoveAll(s => string.IsNullOrWhiteSpace(s.Text));
     }
+
+    /// <summary>True when <paramref name="text"/> opens with <paramref name="prefix"/> as whole words.</summary>
+    private static bool StartsWithWords(string text, string prefix) =>
+        text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+        && (text.Length == prefix.Length || char.IsWhiteSpace(text[prefix.Length]));
 
     private static string Clean(string s) =>
         Regex.Replace(WebUtilityDecode(s), @"\s{2,}", " ").Trim();

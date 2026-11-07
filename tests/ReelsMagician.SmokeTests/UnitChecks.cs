@@ -119,6 +119,46 @@ public static class UnitChecks
             "inline word timestamp is used");
         Check.True(fromVtt.Segments.Count < 2 || !fromVtt.Segments[1].Text.StartsWith("we are going to build"),
             "rolling caption duplicate was trimmed");
+
+        // The shape YouTube actually serves: each word-timed cue opens with a line holding a single
+        // space, then repeats the previous line, and a 10 ms snapshot of the finished line sits
+        // between cues. Kept as a joined array because a raw string would drop the lone spaces.
+        var youTube = string.Join("\n",
+        [
+            "WEBVTT", "Kind: captions", "Language: en", "",
+            "00:00:01.000 --> 00:00:03.000 align:start position:0%",
+            " ",
+            "we<00:00:01.400><c> are</c><00:00:01.800><c> going</c><00:00:02.300><c> to</c>",
+            "",
+            "00:00:03.000 --> 00:00:03.010 align:start position:0%",
+            "we are going to",
+            " ",
+            "",
+            "00:00:03.010 --> 00:00:05.000 align:start position:0%",
+            "we are going to",
+            "build<00:00:03.500><c> something</c><00:00:04.200><c> great</c>",
+            "",
+            "00:00:05.000 --> 00:00:05.010 align:start position:0%",
+            "build something great",
+            " ",
+            "",
+            "00:00:05.010 --> 00:00:07.000 align:start position:0%",
+            "build something great",
+            "and<00:00:05.600><c> ship</c><00:00:06.200><c> it</c>",
+            "",
+            "00:00:07.000 --> 00:00:07.010 align:start position:0%",
+            "and ship it",
+            " ",
+        ]);
+
+        var fromYouTube = SubtitleParser.Parse(youTube);
+        Check.Equal("we are going to|build something great|and ship it",
+            string.Join("|", fromYouTube.Segments.Select(s => s.Text)), "each spoken line appears exactly once");
+        Check.Equal(10, fromYouTube.WordCount, "no word is counted twice");
+        Check.Near(1.4, fromYouTube.Segments[0].Words[1].Start, 0.01,
+            "the first line keeps its word timings, though its cue opens with a blank-looking line");
+        Check.Near(3.5, fromYouTube.Segments[1].Words[1].Start, 0.01,
+            "a rolling cue keeps the timings of its new words");
     }
 
     private static void WhisperJsonParsing()
