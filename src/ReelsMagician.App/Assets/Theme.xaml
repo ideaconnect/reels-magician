@@ -213,6 +213,7 @@
                               Margin="10,0,26,0" VerticalAlignment="Center"
                               Content="{TemplateBinding SelectionBoxItem}"
                               ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
                               ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" />
 
             <TextBox x:Name="PART_EditableTextBox" Visibility="Collapsed"
