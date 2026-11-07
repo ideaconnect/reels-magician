@@ -1,17 +1,19 @@
-using System.Windows;
-using System.Windows.Threading;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 
 namespace ReelsMagician.App;
 
 public partial class App : Application
 {
-    protected override void OnStartup(StartupEventArgs e)
-    {
-        base.OnStartup(e);
+    public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
+    public override void OnFrameworkInitializationCompleted()
+    {
         // A background failure should surface as a message, not a silent process exit — but it
         // must go through ErrorReporter, which refuses to open a second dialog while one is up.
-        DispatcherUnhandledException += (_, args) =>
+        Dispatcher.UIThread.UnhandledException += (_, args) =>
         {
             ErrorReporter.Report(args.Exception, "Something went wrong");
             args.Handled = true;
@@ -30,5 +32,10 @@ public partial class App : Application
             args.SetObserved();
             ErrorReporter.Write(args.Exception, "Unobserved background task failure");
         };
+
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            desktop.MainWindow = new MainWindow();
+
+        base.OnFrameworkInitializationCompleted();
     }
 }

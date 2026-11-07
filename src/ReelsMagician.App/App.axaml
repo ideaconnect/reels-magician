@@ -1,0 +1,10 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="ReelsMagician.App.App"
+             Name="ReelsMagician"
+             RequestedThemeVariant="Dark">
+  <Application.Styles>
+    <FluentTheme />
+    <StyleInclude Source="avares://ReelsMagician/Assets/Theme.axaml" />
+  </Application.Styles>
+</Application>

@@ -130,6 +130,9 @@ public sealed class ComponentRowViewModel(ComponentStatus status) : ViewModelBas
     };
     public bool IsReady => status.State is ComponentState.Installed or ComponentState.System;
     public string SizeText => status.NeedsDownload ? AssetDownloader.Humanize(status.ApproxBytes) : "—";
+
+    /// <summary>Set when the component works but not as well as this machine allows, such as a Fallback build.</summary>
+    public string? Warning => status.Warning;
 }
 
 /// <summary>One reel proposal from the analyser.</summary>

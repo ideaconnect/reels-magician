@@ -1,7 +1,7 @@
 name: CI
 
-# Builds the app on Windows and runs the logic checks on Windows and Ubuntu, so a change made
-# on one system cannot quietly break the other. The checks need no tools, GPU or network.
+# Builds the app and runs the logic checks on Windows and Ubuntu, so a change made on one
+# system cannot quietly break the other. The checks need no tools, GPU or network.
 
 on:
   push:
@@ -37,8 +37,7 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
-      # The WPF front end builds only on Windows until the Avalonia one replaces it.
-      - name: Build the checks
-        run: dotnet build tests/ReelsMagician.SmokeTests -c Release
+      - name: Build the app and the checks
+        run: dotnet build ReelsMagician.slnx -c Release
       - name: Logic checks
         run: dotnet run --project tests/ReelsMagician.SmokeTests -c Release --no-build -- logic

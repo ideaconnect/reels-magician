@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
-using System.Windows.Media;
+using Avalonia.Media;
+using Avalonia.Media.Immutable;
 using ReelsMagician.Core.Rendering;
 
 namespace ReelsMagician.App.ViewModels;
@@ -120,10 +121,10 @@ public sealed class StyleEditorViewModel : ViewModelBase
         set => SetColor(value, v => _style.BackgroundColor = v, nameof(BackgroundColor), nameof(BackgroundBrush));
     }
 
-    public Brush PrimaryBrush => ToBrush(_style.PrimaryColor);
-    public Brush HighlightBrush => ToBrush(_style.HighlightColor);
-    public Brush OutlineBrush => ToBrush(_style.OutlineColor);
-    public Brush BackgroundBrush => ToBrush(_style.BackgroundColor);
+    public IBrush PrimaryBrush => ToBrush(_style.PrimaryColor);
+    public IBrush HighlightBrush => ToBrush(_style.HighlightColor);
+    public IBrush OutlineBrush => ToBrush(_style.OutlineColor);
+    public IBrush BackgroundBrush => ToBrush(_style.BackgroundColor);
 
     public double OutlineWidth
     {
@@ -314,20 +315,22 @@ public sealed class StyleEditorViewModel : ViewModelBase
         return "#" + text.ToUpperInvariant();
     }
 
-    private static Brush ToBrush(string hex)
+    private static IBrush ToBrush(string hex)
     {
         var (r, g, b) = SubtitleStyle.ParseHex(hex);
-        var brush = new SolidColorBrush(Color.FromRgb((byte)r, (byte)g, (byte)b));
-        brush.Freeze();
-        return brush;
+        return new ImmutableSolidColorBrush(Color.FromRgb((byte)r, (byte)g, (byte)b));
     }
 
+    /// <summary>
+    /// The fonts installed on this computer, which are the ones libass can draw the captions
+    /// with. A preset naming a font that is missing here still works: a similar one is used.
+    /// </summary>
     private static List<string> LoadFonts()
     {
         try
         {
-            return [.. Fonts.SystemFontFamilies
-                .Select(f => f.Source)
+            return [.. FontManager.Current.SystemFonts
+                .Select(f => f.Name)
                 .Where(n => !string.IsNullOrWhiteSpace(n))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)];

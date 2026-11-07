@@ -1,9 +1,6 @@
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.IO;
-using System.Windows;
-using System.Windows.Media.Imaging;
-using System.Windows.Threading;
+using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using ReelsMagician.Core.Analysis;
 using ReelsMagician.Core.Diagnostics;
 using ReelsMagician.Core.Framing;
@@ -22,7 +19,7 @@ namespace ReelsMagician.App.ViewModels;
 /// </summary>
 public sealed class MainViewModel : ViewModelBase, IProgressSink
 {
-    private readonly Dispatcher _dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
+    private readonly IAppShell _shell;
     private readonly ToolPaths _paths = new();
     private readonly AppSettings _settings;
     private readonly ToolchainManager _toolchain;
@@ -31,8 +28,9 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     private Toolset _tools = new();
     private CancellationTokenSource? _cts;
 
-    public MainViewModel()
+    public MainViewModel(IAppShell shell)
     {
+        _shell = shell;
         _paths.EnsureCreated();
         _settings = AppSettings.Load(_paths);
         _toolchain = new ToolchainManager(_paths, this);
@@ -53,8 +51,8 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         InstallLinkToolsCommand = new AsyncRelayCommand(InstallLinkToolsAsync,
             () => !IsBusy && !(_tools.HasYtDlp && _tools.HasJsRuntime));
         RefreshToolsCommand = new RelayCommand(RefreshTools);
-        BrowseSourceCommand = new RelayCommand(BrowseSource);
-        BrowseOutputCommand = new RelayCommand(BrowseOutput);
+        BrowseSourceCommand = new AsyncRelayCommand(BrowseSourceAsync);
+        BrowseOutputCommand = new AsyncRelayCommand(BrowseOutputAsync);
 
         LoadSourceCommand = new AsyncRelayCommand(LoadSourceAsync, () => !IsBusy && SourceInput.Length > 0);
         TranscribeCommand = new AsyncRelayCommand(TranscribeAsync, () => !IsBusy && _project.HasSource);
@@ -68,13 +66,16 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         DeleteCueCommand = new RelayCommand(DeleteCue, () => SelectedSubtitle is not null);
         ShiftEarlierCommand = new RelayCommand(() => ShiftSelected(-0.1), () => SelectedSubtitle is not null);
         ShiftLaterCommand = new RelayCommand(() => ShiftSelected(+0.1), () => SelectedSubtitle is not null);
-        ImportSubtitlesCommand = new RelayCommand(ImportSubtitles, () => !IsBusy);
-        ExportSubtitlesCommand = new RelayCommand(ExportSubtitles, () => Subtitles.Count > 0);
+        ImportSubtitlesCommand = new AsyncRelayCommand(ImportSubtitlesAsync, () => !IsBusy);
+        ExportSubtitlesCommand = new AsyncRelayCommand(ExportSubtitlesAsync, () => Subtitles.Count > 0);
 
         ApplyPresetCommand = new RelayCommand(ApplyPreset, () => SelectedPreset is not null);
         RefreshPreviewCommand = new AsyncRelayCommand(RefreshPreviewAsync, () => !IsBusy);
         OpenOutputCommand = new RelayCommand(OpenOutput, () => _project.OutputPath is not null);
-        OpenToolsFolderCommand = new RelayCommand(() => OpenInExplorer(_paths.Root));
+        CopyOutputPathCommand = new AsyncRelayCommand(
+            () => _shell.CopyTextAsync(_project.OutputPath ?? ""), () => _project.OutputPath is not null);
+        OpenToolsFolderCommand = new RelayCommand(() => ShowFolder(_paths.Root));
+        CopyDataFolderCommand = new AsyncRelayCommand(() => _shell.CopyTextAsync(_paths.Root));
         RefreshCleanupCommand = new RelayCommand(RefreshCleanup);
         CleanupCommand = new AsyncRelayCommand(CleanupAsync, () => !IsBusy && SelectedCleanupBytes > 0);
 
@@ -102,6 +103,18 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     public IReadOnlyList<WhisperModelSpec> WhisperModels => ModelCatalog.WhisperModels;
     public IReadOnlyList<LlmModelSpec> LlmModels => ModelCatalog.LlmModels;
+
+    /// <summary>Which builds each model runs on, which differs between the two systems.</summary>
+    public string ModelsHint { get; } = OperatingSystem.IsWindows()
+        ? "Qwen runs on llama.cpp's CUDA build on an NVIDIA card and its Vulkan build on AMD and Intel, so it uses " +
+          "the GPU either way. whisper.cpp publishes no Vulkan build for Windows, so it uses CUDA on an NVIDIA card " +
+          "and the fastest CPU build otherwise; point ReelsMagician at your own build in settings.json if you have one."
+        : "Qwen runs on llama.cpp's Vulkan build on any graphics card with a Vulkan driver, and on the processor " +
+          "otherwise. whisper.cpp publishes only a processor build for Linux; point ReelsMagician at your own build " +
+          "in settings.json if you have one.";
+
+    /// <summary>Whether this system can open a folder in its file manager. Copying the path always works.</summary>
+    public bool CanOpenFolders => _shell.CanOpenFolders;
 
     private WhisperModelSpec _selectedWhisperModel = ModelCatalog.DefaultWhisper;
     public WhisperModelSpec SelectedWhisperModel
@@ -190,8 +203,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
                 : "") +
             "\n\nThis cannot be undone.";
 
-        if (MessageBox.Show(question, "Free up space", MessageBoxButton.OKCancel, MessageBoxImage.Warning)
-            != MessageBoxResult.OK)
+        if (!await _shell.AskAsync("Free up space", question, "Delete", "Cancel").ConfigureAwait(true))
             return;
 
         await RunStageAsync("Freeing up space", async ct =>
@@ -309,8 +321,8 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         set { if (Set(ref _selectedPreset, value)) RefreshCommands(); }
     }
 
-    private BitmapSource? _previewImage;
-    public BitmapSource? PreviewImage { get => _previewImage; private set => Set(ref _previewImage, value); }
+    private Bitmap? _previewImage;
+    public Bitmap? PreviewImage { get => _previewImage; private set => Set(ref _previewImage, value); }
 
     private const string NoPreviewText = "Render a preview once a reel has been planned.";
 
@@ -376,8 +388,8 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     public AsyncRelayCommand InstallCommand { get; }
     public AsyncRelayCommand InstallLinkToolsCommand { get; }
     public RelayCommand RefreshToolsCommand { get; }
-    public RelayCommand BrowseSourceCommand { get; }
-    public RelayCommand BrowseOutputCommand { get; }
+    public AsyncRelayCommand BrowseSourceCommand { get; }
+    public AsyncRelayCommand BrowseOutputCommand { get; }
     public AsyncRelayCommand LoadSourceCommand { get; }
     public AsyncRelayCommand TranscribeCommand { get; }
     public AsyncRelayCommand AnalyzeCommand { get; }
@@ -389,12 +401,14 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     public RelayCommand DeleteCueCommand { get; }
     public RelayCommand ShiftEarlierCommand { get; }
     public RelayCommand ShiftLaterCommand { get; }
-    public RelayCommand ImportSubtitlesCommand { get; }
-    public RelayCommand ExportSubtitlesCommand { get; }
+    public AsyncRelayCommand ImportSubtitlesCommand { get; }
+    public AsyncRelayCommand ExportSubtitlesCommand { get; }
     public RelayCommand ApplyPresetCommand { get; }
     public AsyncRelayCommand RefreshPreviewCommand { get; }
     public RelayCommand OpenOutputCommand { get; }
+    public AsyncRelayCommand CopyOutputPathCommand { get; }
     public RelayCommand OpenToolsFolderCommand { get; }
+    public AsyncRelayCommand CopyDataFolderCommand { get; }
 
     // ── Toolchain actions ────────────────────────────────────────────────────────────────
 
@@ -431,7 +445,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     private async Task InstallLinkToolsAsync()
     {
-        if (!ConfirmLinkToolsDownload()) return;
+        if (!await ConfirmLinkToolsDownloadAsync().ConfigureAwait(true)) return;
 
         await RunStageAsync("Downloading link tools", async ct =>
         {
@@ -445,7 +459,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     /// nothing downloads it until the user has said yes here. No is the default, so a stray Enter
     /// does not count as agreeing.
     /// </summary>
-    private bool ConfirmLinkToolsDownload()
+    private Task<bool> ConfirmLinkToolsDownloadAsync()
     {
         var downloads = string.Join(Environment.NewLine,
             _toolchain.DescribeLinkTools(_tools)
@@ -460,8 +474,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             "and for following the terms of the site they come from.\n\n" +
             "Local video files work without it. Download now?";
 
-        return MessageBox.Show(question, "Video links need yt-dlp",
-            MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes;
+        return _shell.AskAsync("Video links need yt-dlp", question, "Download", "No");
     }
 
     // ── Pipeline stages ──────────────────────────────────────────────────────────────────
@@ -479,7 +492,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             return;
         }
 
-        if (isLink && !_tools.HasYtDlp && !ConfirmLinkToolsDownload())
+        if (isLink && !_tools.HasYtDlp && !await ConfirmLinkToolsDownloadAsync().ConfigureAwait(true))
         {
             Status = "yt-dlp was not downloaded, so the link was not loaded. Local video files work without it.";
             return;
@@ -723,22 +736,19 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         SelectedSubtitle.RefreshAll();
     }
 
-    private void ImportSubtitles()
+    private async Task ImportSubtitlesAsync()
     {
-        var dialog = new Microsoft.Win32.OpenFileDialog
-        {
-            Title = "Import subtitles",
-            Filter = "Subtitles (*.srt;*.vtt)|*.srt;*.vtt|All files (*.*)|*.*",
-        };
-        if (dialog.ShowDialog() != true) return;
+        var file = await _shell.PickFileAsync("Import subtitles",
+            [new FileFilter("Subtitles", "*.srt", "*.vtt"), new FileFilter("All files", "*")]).ConfigureAwait(true);
+        if (file is null) return;
 
         try
         {
-            var transcript = SubtitleParser.Load(dialog.FileName);
+            var transcript = SubtitleParser.Load(file);
             transcript.EnsureWordTimings();
             _project.Transcript = transcript;
             PopulateSubtitles();
-            this.Info("transcribe", $"Imported {transcript.Segments.Count} cues from {Path.GetFileName(dialog.FileName)}.");
+            this.Info("transcribe", $"Imported {transcript.Segments.Count} cues from {Path.GetFileName(file)}.");
         }
         catch (Exception ex)
         {
@@ -746,22 +756,17 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         }
     }
 
-    private void ExportSubtitles()
+    private async Task ExportSubtitlesAsync()
     {
         CommitSubtitleEdits();
-        var dialog = new Microsoft.Win32.SaveFileDialog
-        {
-            Title = "Export subtitles",
-            Filter = "SubRip (*.srt)|*.srt",
-            FileName = Sanitise(Topic) + ".srt",
-            InitialDirectory = Directory.Exists(OutputFolder) ? OutputFolder : null,
-        };
-        if (dialog.ShowDialog() != true) return;
+        var file = await _shell.PickSaveFileAsync("Export subtitles", Sanitise(Topic) + ".srt",
+            Directory.Exists(OutputFolder) ? OutputFolder : null, new FileFilter("SubRip", "*.srt")).ConfigureAwait(true);
+        if (file is null) return;
 
         try
         {
-            File.WriteAllText(dialog.FileName, _project.Transcript?.ToSrt() ?? "");
-            this.Info("transcribe", $"Exported to {dialog.FileName}.");
+            File.WriteAllText(file, _project.Transcript?.ToSrt() ?? "");
+            this.Info("transcribe", $"Exported to {file}.");
         }
         catch (Exception ex)
         {
@@ -819,59 +824,40 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     }
 
     /// <summary>Loads the PNG fully into memory so the file is not locked against re-rendering.</summary>
-    private static BitmapSource LoadBitmap(string path)
-    {
-        var bitmap = new BitmapImage();
-        bitmap.BeginInit();
-        bitmap.CacheOption = BitmapCacheOption.OnLoad;
-        bitmap.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
-        bitmap.UriSource = new Uri(path);
-        bitmap.EndInit();
-        bitmap.Freeze();
-        return bitmap;
-    }
+    private static Bitmap LoadBitmap(string path) => new(new MemoryStream(File.ReadAllBytes(path)));
 
     // ── Shell plumbing ───────────────────────────────────────────────────────────────────
 
-    private void BrowseSource()
+    private async Task BrowseSourceAsync()
     {
-        var dialog = new Microsoft.Win32.OpenFileDialog
-        {
-            Title = "Choose a video",
-            Filter = "Video (*.mp4;*.mov;*.mkv;*.webm;*.avi)|*.mp4;*.mov;*.mkv;*.webm;*.avi|All files (*.*)|*.*",
-        };
-        if (dialog.ShowDialog() == true) SourceInput = dialog.FileName;
+        var file = await _shell.PickFileAsync("Choose a video",
+        [
+            new FileFilter("Video", "*.mp4", "*.mov", "*.mkv", "*.webm", "*.avi"),
+            new FileFilter("All files", "*"),
+        ]).ConfigureAwait(true);
+        if (file is not null) SourceInput = file;
     }
 
-    private void BrowseOutput()
+    private async Task BrowseOutputAsync()
     {
-        var dialog = new Microsoft.Win32.OpenFolderDialog
-        {
-            Title = "Choose where reels are saved",
-            InitialDirectory = Directory.Exists(OutputFolder) ? OutputFolder : null,
-        };
-        if (dialog.ShowDialog() == true) OutputFolder = dialog.FolderName;
+        var folder = await _shell.PickFolderAsync("Choose where reels are saved",
+            Directory.Exists(OutputFolder) ? OutputFolder : null).ConfigureAwait(true);
+        if (folder is not null) OutputFolder = folder;
     }
 
     private void OpenOutput()
     {
         if (_project.OutputPath is null || !File.Exists(_project.OutputPath)) return;
-        try
-        {
-            Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{_project.OutputPath}\"")
-            {
-                UseShellExecute = true,
-            });
-        }
+        try { _shell.ShowInFolder(_project.OutputPath); }
         catch (Exception ex) { this.Warn("render", $"Could not open the folder: {ex.Message}"); }
     }
 
-    private void OpenInExplorer(string path)
+    private void ShowFolder(string path)
     {
         try
         {
             Directory.CreateDirectory(path);
-            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+            _shell.ShowInFolder(path);
         }
         catch (Exception ex) { this.Warn("install", $"Could not open {path}: {ex.Message}"); }
     }
@@ -932,14 +918,14 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         {
             LoadSourceCommand, TranscribeCommand, AnalyzeCommand, FramingCommand,
             RenderCommand, InstallCommand, InstallLinkToolsCommand, RefreshPreviewCommand, CleanupCommand,
+            ImportSubtitlesCommand, ExportSubtitlesCommand, CopyOutputPathCommand,
         })
             command.RaiseCanExecuteChanged();
 
         foreach (var command in new[]
         {
             CancelCommand, SplitCueCommand, MergeCueCommand, DeleteCueCommand,
-            ShiftEarlierCommand, ShiftLaterCommand, ImportSubtitlesCommand,
-            ExportSubtitlesCommand, ApplyPresetCommand, OpenOutputCommand,
+            ShiftEarlierCommand, ShiftLaterCommand, ApplyPresetCommand, OpenOutputCommand,
         })
             command.RaiseCanExecuteChanged();
     }
@@ -975,9 +961,9 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         });
     }
 
-    private void Post(Action action)
+    private static void Post(Action action)
     {
-        if (_dispatcher.CheckAccess()) action();
-        else _dispatcher.BeginInvoke(action, DispatcherPriority.Background);
+        if (Dispatcher.UIThread.CheckAccess()) action();
+        else Dispatcher.UIThread.Post(action, DispatcherPriority.Background);
     }
 }

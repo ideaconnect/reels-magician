@@ -10,6 +10,9 @@ Changes to ReelsMagician, newest first. Version numbers will be assigned once th
 - **Linux graphics:** on Linux the app finds the graphics card, and Vulkan support, from the system itself.
 - **Linux archives:** tool archives in the formats Linux builds use (`.tar.gz`, `.tar.xz`) unpack with their permissions and links intact.
 - **OpenCV:** face and people detection now use OpenCvSharp 4.13.
+- **New interface toolkit:** the interface is rebuilt on Avalonia, so the same app runs on Windows and on Linux, where it runs natively on Wayland. The tabs, wording and colours stay as they were.
+- **The app's own dialogs:** the app now draws its own file pickers and confirmation dialogs instead of using the system's, so they look and behave the same on both systems. Questions still default to the answer that changes nothing.
+- **Copy path:** the output and data folders now have a **Copy path** button. **Open folder** appears wherever the system can show a folder.
 - **Linux downloads:** on Linux the app downloads Linux builds of every tool. llama.cpp runs on the graphics card through Vulkan; whisper.cpp runs on the processor, since that is the only Linux build its publisher offers.
 
 ### Changed
