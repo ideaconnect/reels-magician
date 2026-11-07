@@ -1,0 +1,87 @@
+name: Release
+
+# Packages both releases: a Windows zip with .NET included, and a Linux AppImage
+# (docs/adr/0002). Every push to main or a port branch packages them as build artifacts, so a
+# packaging break shows up straight away. A version tag (v0.2.0, say) also gathers them into a
+# draft GitHub release. Nothing is published until someone reviews that draft and publishes it,
+# after checking the Linux build on a real Wayland desktop.
+
+on:
+  push:
+    branches: [main, "port/**"]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows zip
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Logic checks
+        run: dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- logic
+      - name: Publish and zip
+        shell: pwsh
+        run: |
+          $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { '0.0.0-dev' }
+          dotnet publish src/ReelsMagician.App -c Release -r win-x64 --self-contained -p:Version=$version -o out/ReelsMagician
+          Compress-Archive -Path out/ReelsMagician -DestinationPath ReelsMagician-win-x64.zip
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows
+          path: ReelsMagician-win-x64.zip
+          if-no-files-found: error
+
+  linux:
+    name: Linux AppImage
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Logic checks
+        run: dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- logic
+      - name: Publish
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then version=${GITHUB_REF_NAME#v}; else version=0.0.0-dev; fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          dotnet publish src/ReelsMagician.App -c Release -r linux-x64 --self-contained -p:Version=$version -o out/publish
+      - name: Build the AppImage
+        run: sh packaging/linux/build-appimage.sh out/publish ReelsMagician-x86_64.AppImage "$VERSION"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: linux
+          path: ReelsMagician-x86_64.AppImage
+          if-no-files-found: error
+
+  draft:
+    name: Draft release
+    if: github.ref_type == 'tag'
+    needs: [windows, linux]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Create the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft \
+            --title "ReelsMagician ${GITHUB_REF_NAME#v}" \
+            --notes "Draft built from $GITHUB_REF_NAME. Before publishing, check the AppImage on a Wayland desktop and replace these notes with this version's section of CHANGELOG.md." \
+            artifacts/ReelsMagician-win-x64.zip artifacts/ReelsMagician-x86_64.AppImage

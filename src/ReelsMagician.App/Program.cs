@@ -1,8 +1,11 @@
+using System.Runtime.Versioning;
 using Avalonia;
 using Avalonia.Dialogs;
 
 namespace ReelsMagician.App;
 
+[SupportedOSPlatform("windows")]
+[SupportedOSPlatform("linux")]
 public static class Program
 {
     [STAThread]

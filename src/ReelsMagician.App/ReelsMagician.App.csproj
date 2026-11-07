@@ -3,6 +3,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\reelsmagician.ico</ApplicationIcon>
     <AssemblyName>ReelsMagician</AssemblyName>
     <RootNamespace>ReelsMagician.App</RootNamespace>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
@@ -16,6 +17,9 @@
     <PackageReference Include="Avalonia.Win32" Version="12.1.5" />
     <PackageReference Include="Avalonia.Wayland" Version="12.1.5" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.5" />
+  </ItemGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\reelsmagician-256.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ReelsMagician.Core\ReelsMagician.Core.csproj" />
