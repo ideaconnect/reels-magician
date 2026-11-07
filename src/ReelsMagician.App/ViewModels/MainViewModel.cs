@@ -50,6 +50,8 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         _selectedPreset = Presets.FirstOrDefault(p => p.Name == StyleEditor.Name);
 
         InstallCommand = new AsyncRelayCommand(InstallAsync, () => !IsBusy);
+        InstallLinkToolsCommand = new AsyncRelayCommand(InstallLinkToolsAsync,
+            () => !IsBusy && !(_tools.HasYtDlp && _tools.HasJsRuntime));
         RefreshToolsCommand = new RelayCommand(RefreshTools);
         BrowseSourceCommand = new RelayCommand(BrowseSource);
         BrowseOutputCommand = new RelayCommand(BrowseOutput);
@@ -83,6 +85,8 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     // ── Toolchain ────────────────────────────────────────────────────────────────────────
 
     public ObservableCollection<ComponentRowViewModel> Components { get; } = [];
+
+    public ObservableCollection<ComponentRowViewModel> LinkComponents { get; } = [];
 
     private string _gpuText = "";
     public string GpuText { get => _gpuText; private set => Set(ref _gpuText, value); }
@@ -261,7 +265,9 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         set { if (Set(ref _selectedSubtitle, value)) RefreshCommands(); }
     }
 
-    private string _transcriptSummary = "No transcript yet.";
+    private const string NoTranscriptText = "No transcript yet.";
+
+    private string _transcriptSummary = NoTranscriptText;
     public string TranscriptSummary { get => _transcriptSummary; private set => Set(ref _transcriptSummary, value); }
 
     // ── Reel plan ────────────────────────────────────────────────────────────────────────
@@ -285,7 +291,9 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     public ObservableCollection<ClipFramingViewModel> ClipFramings { get; } = [];
 
-    private string _planSummary = "No reel planned yet.";
+    private const string NoPlanText = "No reel planned yet.";
+
+    private string _planSummary = NoPlanText;
     public string PlanSummary { get => _planSummary; private set => Set(ref _planSummary, value); }
 
     // ── Captions ─────────────────────────────────────────────────────────────────────────
@@ -304,7 +312,9 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     private BitmapSource? _previewImage;
     public BitmapSource? PreviewImage { get => _previewImage; private set => Set(ref _previewImage, value); }
 
-    private string _previewStatus = "Render a preview once a reel has been planned.";
+    private const string NoPreviewText = "Render a preview once a reel has been planned.";
+
+    private string _previewStatus = NoPreviewText;
     public string PreviewStatus { get => _previewStatus; private set => Set(ref _previewStatus, value); }
 
     private double _crossfadeMs = 100;
@@ -364,6 +374,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     // ── Commands ─────────────────────────────────────────────────────────────────────────
 
     public AsyncRelayCommand InstallCommand { get; }
+    public AsyncRelayCommand InstallLinkToolsCommand { get; }
     public RelayCommand RefreshToolsCommand { get; }
     public RelayCommand BrowseSourceCommand { get; }
     public RelayCommand BrowseOutputCommand { get; }
@@ -395,6 +406,10 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         foreach (var status in _toolchain.Describe(_settings, _tools))
             Components.Add(new ComponentRowViewModel(status));
 
+        LinkComponents.Clear();
+        foreach (var status in _toolchain.DescribeLinkTools(_tools))
+            LinkComponents.Add(new ComponentRowViewModel(status));
+
         GpuText = _tools.Gpu?.Describe() ?? "GPU unknown";
         BackendText = $"Whisper: {_tools.WhisperBackend}    ·    Qwen: {_tools.LlamaBackend}";
         ToolsReady = _tools.IsComplete;
@@ -409,41 +424,90 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     {
         await RunStageAsync("Installing tools", async ct =>
         {
-            _tools = await _toolchain.EnsureAsync(_settings, includeYtDlp: true, ct).ConfigureAwait(true);
+            _tools = await _toolchain.EnsureAsync(_settings, ct).ConfigureAwait(true);
             RefreshTools();
         }).ConfigureAwait(true);
+    }
+
+    private async Task InstallLinkToolsAsync()
+    {
+        if (!ConfirmLinkToolsDownload()) return;
+
+        await RunStageAsync("Downloading link tools", async ct =>
+        {
+            _tools = await _toolchain.InstallLinkToolsAsync(_settings, ct).ConfigureAwait(true);
+            RefreshTools();
+        }).ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// Asks before fetching yt-dlp. It is a third-party tool that does not come with the app, so
+    /// nothing downloads it until the user has said yes here. No is the default, so a stray Enter
+    /// does not count as agreeing.
+    /// </summary>
+    private bool ConfirmLinkToolsDownload()
+    {
+        var downloads = string.Join(Environment.NewLine,
+            _toolchain.DescribeLinkTools(_tools)
+                .Where(c => c.NeedsDownload)
+                .Select(c => $"  • {c.Name}, about {AssetDownloader.Humanize(c.ApproxBytes)}"));
+
+        var question =
+            "Loading a video from a link needs yt-dlp, a separate third-party tool. " +
+            "It is not part of ReelsMagician and does not come with it.\n\n" +
+            $"If you continue, ReelsMagician downloads from the publishers' own GitHub releases:\n\n{downloads}\n\n" +
+            "You are responsible for having the right to download the videos you use it on, " +
+            "and for following the terms of the site they come from.\n\n" +
+            "Local video files work without it. Download now?";
+
+        return MessageBox.Show(question, "Video links need yt-dlp",
+            MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes;
     }
 
     // ── Pipeline stages ──────────────────────────────────────────────────────────────────
 
     private async Task LoadSourceAsync()
     {
-        // A fresh source means a fresh project: everything downstream is now stale.
-        _project = new ReelProject
+        var input = SourceInput.Trim();
+        var isLink = SourceResolver.LooksLikeUrl(input);
+
+        if (isLink && !_tools.HasFfmpeg)
         {
-            SourceInput = SourceInput.Trim(),
+            // yt-dlp cannot join the video and audio without it, and would only fail after the download.
+            Status = "Links need ffmpeg. Install the required tools on the Setup tab first.";
+            ActiveTab = SetupTab;
+            return;
+        }
+
+        if (isLink && !_tools.HasYtDlp && !ConfirmLinkToolsDownload())
+        {
+            Status = "yt-dlp was not downloaded, so the link was not loaded. Local video files work without it.";
+            return;
+        }
+
+        // The current project stays until the new source has loaded, so a bad link or a cancelled
+        // download costs nothing, and what is on screen is always what the buttons act on.
+        var project = new ReelProject
+        {
+            SourceInput = input,
             Style = StyleEditor.Style,
         };
-        Subtitles.Clear();
-        Candidates.Clear();
-        ClipFramings.Clear();
-        PreviewImage = null;
 
         await RunStageAsync("Loading source", async ct =>
         {
-            var needsYtDlp = SourceResolver.LooksLikeUrl(_project.SourceInput);
-            if (needsYtDlp && !_tools.HasYtDlp)
+            if (isLink && !_tools.HasYtDlp)
             {
-                this.Info("install", "The source is a link, so yt-dlp is being installed first.");
-                _tools = await _toolchain.EnsureAsync(_settings, includeYtDlp: true, ct).ConfigureAwait(true);
+                _tools = await _toolchain.InstallLinkToolsAsync(_settings, ct).ConfigureAwait(true);
                 RefreshTools();
             }
 
             var pipeline = new ReelPipeline(_tools, _settings, _paths, this);
-            await pipeline.ResolveSourceAsync(_project, MaxHeight, ct, UseProvidedSubtitles)
+            await pipeline.ResolveSourceAsync(project, MaxHeight, ct, UseProvidedSubtitles)
                 .ConfigureAwait(true);
 
-            var source = _project.Source!;
+            StartProject(project);
+
+            var source = project.Source!;
             Topic = source.Title;
             SourceSummary = $"{source.Title}\n{source.Info.Describe()}";
             SourceWarning = source.Info.Is4K
@@ -452,11 +516,30 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
                     ? $"Source is {source.Info.QualityLabel}. The 1080×1920 crop will be upscaled — a 4K source looks sharper."
                     : $"Source is only {source.Info.QualityLabel}, below the 1080p minimum. Expect a soft reel.";
 
-            _settings.RememberSource(_project.SourceInput);
+            _settings.RememberSource(input);
             _settings.Save(_paths);
             // Stay on Source: Transcribe is the next button, and it lives on this tab.
             ActiveTab = SourceTab;
         }).ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// Makes a newly loaded source the current project and clears everything shown for the old
+    /// one. The selections are reset by hand: a list on a tab that is not open is not live, so
+    /// emptying its items would not clear the selection it is bound to.
+    /// </summary>
+    private void StartProject(ReelProject project)
+    {
+        _project = project;
+        Subtitles.Clear();
+        SelectedSubtitle = null;
+        Candidates.Clear();
+        SelectedCandidate = null;
+        ClipFramings.Clear();
+        PreviewImage = null;
+        TranscriptSummary = NoTranscriptText;
+        PlanSummary = NoPlanText;
+        PreviewStatus = NoPreviewText;
     }
 
     private async Task TranscribeAsync()
@@ -848,7 +931,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         foreach (var command in new[]
         {
             LoadSourceCommand, TranscribeCommand, AnalyzeCommand, FramingCommand,
-            RenderCommand, InstallCommand, RefreshPreviewCommand, CleanupCommand,
+            RenderCommand, InstallCommand, InstallLinkToolsCommand, RefreshPreviewCommand, CleanupCommand,
         })
             command.RaiseCanExecuteChanged();
 

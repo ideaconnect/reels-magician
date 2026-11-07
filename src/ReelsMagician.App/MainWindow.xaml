@@ -20,6 +20,28 @@
     <local:NullToCollapsedConverter x:Key="NullToCollapsed" />
     <local:ReadyToBrushConverter x:Key="ReadyBrush" />
     <local:ConfidenceToBrushConverter x:Key="ConfidenceBrush" />
+
+    <DataTemplate x:Key="ComponentRow">
+      <Grid Margin="0,4">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="14" />
+          <ColumnDefinition Width="320" />
+          <ColumnDefinition Width="*" MinWidth="180" />
+          <ColumnDefinition Width="140" />
+          <ColumnDefinition Width="90" />
+        </Grid.ColumnDefinitions>
+        <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                 Fill="{Binding IsReady, Converter={StaticResource ReadyBrush}}" />
+        <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"
+                   Margin="0,0,12,0" TextTrimming="CharacterEllipsis" />
+        <TextBlock Grid.Column="2" Text="{Binding Detail}" Style="{StaticResource Hint}"
+                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+        <TextBlock Grid.Column="3" Text="{Binding StateText}" Style="{StaticResource Hint}"
+                   VerticalAlignment="Center" />
+        <TextBlock Grid.Column="4" Text="{Binding SizeText}" Style="{StaticResource Hint}"
+                   VerticalAlignment="Center" HorizontalAlignment="Right" />
+      </Grid>
+    </DataTemplate>
   </Window.Resources>
 
   <Grid Margin="16">
@@ -60,31 +82,7 @@
                 <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,10"
                            Text="Everything installs into your local app data folder — no admin rights, no system changes. Anything already on your PATH is reused instead of downloaded." />
 
-                <ItemsControl ItemsSource="{Binding Components}">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                      <Grid Margin="0,4">
-                        <Grid.ColumnDefinitions>
-                          <ColumnDefinition Width="14" />
-                          <ColumnDefinition Width="320" />
-                          <ColumnDefinition Width="*" MinWidth="180" />
-                          <ColumnDefinition Width="140" />
-                          <ColumnDefinition Width="90" />
-                        </Grid.ColumnDefinitions>
-                        <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                                 Fill="{Binding IsReady, Converter={StaticResource ReadyBrush}}" />
-                        <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"
-                                   Margin="0,0,12,0" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Grid.Column="2" Text="{Binding Detail}" Style="{StaticResource Hint}"
-                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Grid.Column="3" Text="{Binding StateText}" Style="{StaticResource Hint}"
-                                   VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="4" Text="{Binding SizeText}" Style="{StaticResource Hint}"
-                                   VerticalAlignment="Center" HorizontalAlignment="Right" />
-                      </Grid>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <ItemsControl ItemsSource="{Binding Components}" ItemTemplate="{StaticResource ComponentRow}" />
 
                 <TextBlock Text="{Binding MissingText}" Style="{StaticResource Hint}" Margin="0,12,0,0" />
                 <TextBlock Text="{Binding BackendText}" Style="{StaticResource Hint}" Margin="0,4,0,0" />
@@ -93,6 +91,20 @@
                   <Button Content="Install everything missing" Style="{StaticResource Primary}"
                           Command="{Binding InstallCommand}" />
                   <Button Content="Re-check" Command="{Binding RefreshToolsCommand}" Margin="8,0,0,0" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+              <StackPanel>
+                <TextBlock Text="Video links (optional)" Style="{StaticResource H2}" />
+                <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,10"
+                           Text="Only needed to load a video from a link; local video files work without it. yt-dlp is a separate third-party tool that is not part of ReelsMagician, so it is not installed with the required tools, and you are asked before it is downloaded." />
+
+                <ItemsControl ItemsSource="{Binding LinkComponents}" ItemTemplate="{StaticResource ComponentRow}" />
+
+                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                  <Button Content="Download…" Command="{Binding InstallLinkToolsCommand}" />
                 </StackPanel>
               </StackPanel>
             </Border>
@@ -177,7 +189,7 @@
               <StackPanel>
                 <TextBlock Text="Video" Style="{StaticResource H2}" />
                 <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,8"
-                           Text="Paste a YouTube link or choose an MP4. Links are downloaded at the highest quality available up to your cap, preferring 4K." />
+                           Text="Choose an MP4 or paste a compatible video link. Links need yt-dlp, which you are asked about the first time, and are downloaded at the highest quality available up to your cap, preferring 4K." />
                 <Grid>
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

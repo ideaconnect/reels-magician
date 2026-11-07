@@ -23,6 +23,8 @@ ggml-*.bin
 *.onnx
 *.safetensors
 cudart-*.zip
+yt-dlp*.exe
+deno*.exe
 
 # Media: test inputs and rendered reels
 *.mp4

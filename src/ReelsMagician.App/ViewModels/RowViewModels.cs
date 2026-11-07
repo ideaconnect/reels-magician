@@ -125,9 +125,10 @@ public sealed class ComponentRowViewModel(ComponentStatus status) : ViewModelBas
     {
         ComponentState.Installed => "Installed",
         ComponentState.System => "Found on system",
+        ComponentState.NotInstalled => "Not installed",
         _ => "Will download",
     };
-    public bool IsReady => status.State != ComponentState.Missing;
+    public bool IsReady => status.State is ComponentState.Installed or ComponentState.System;
     public string SizeText => status.NeedsDownload ? AssetDownloader.Humanize(status.ApproxBytes) : "—";
 }
 

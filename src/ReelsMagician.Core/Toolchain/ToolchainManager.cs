@@ -13,6 +13,11 @@ namespace ReelsMagician.Core.Toolchain;
 /// OpenBLAS and cuBLAS Windows builds, so it falls back in that order — but the preference
 /// list is matched by pattern, so a Vulkan asset is adopted automatically if one appears,
 /// and <see cref="AppSettings.CustomWhisperDir"/> lets a hand-built Vulkan binary be used today.
+///
+/// yt-dlp and its JavaScript runtime are deliberately kept apart from all of this. They are
+/// third-party tools that ReelsMagician neither includes nor installs by default, so
+/// <see cref="EnsureAsync"/> never touches them and <see cref="InstallLinkToolsAsync"/> runs only
+/// after the user has agreed to the download.
 /// </summary>
 public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
 {
@@ -82,7 +87,7 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         return ts;
     }
 
-    /// <summary>Human-readable component list for the setup screen.</summary>
+    /// <summary>The required components, for the setup screen.</summary>
     public IReadOnlyList<ComponentStatus> Describe(AppSettings settings, Toolset ts)
     {
         var whisperModel = ModelCatalog.ResolveWhisper(settings.WhisperModelId);
@@ -95,14 +100,6 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
             new("ffmpeg", "ffmpeg + ffprobe",
                 ts.HasFfmpeg ? (systemFfmpeg ? ComponentState.System : ComponentState.Installed) : ComponentState.Missing,
                 ts.FfmpegPath ?? "will download the BtbN GPL build", 95_000_000),
-
-            new("ytdlp", "yt-dlp (YouTube downloads)",
-                ts.HasYtDlp ? ComponentState.Installed : ComponentState.Missing,
-                ts.YtDlpPath ?? "required only when the source is a link", 18_000_000),
-
-            new("jsruntime", "JavaScript runtime (Deno, for YouTube)",
-                ts.HasJsRuntime ? ComponentState.Installed : ComponentState.Missing,
-                ts.JsRuntimePath ?? "without it yt-dlp drops formats and may miss 4K", 41_000_000),
 
             new("whisper", "whisper.cpp",
                 ts.WhisperCliPath is not null ? ComponentState.Installed : ComponentState.Missing,
@@ -130,8 +127,23 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         ];
     }
 
-    /// <summary>Downloads and installs whatever <see cref="Detect"/> could not find.</summary>
-    public async Task<Toolset> EnsureAsync(AppSettings settings, bool includeYtDlp, CancellationToken ct)
+    /// <summary>The optional components that loading a video from a link needs.</summary>
+    public IReadOnlyList<ComponentStatus> DescribeLinkTools(Toolset ts) =>
+    [
+        new("ytdlp", "yt-dlp",
+            ts.HasYtDlp ? ComponentState.Installed : ComponentState.NotInstalled,
+            ts.YtDlpPath ?? "downloads a video from a link", 23_600_000),
+
+        new("jsruntime", "JavaScript runtime (Deno)",
+            ts.HasJsRuntime ? ComponentState.Installed : ComponentState.NotInstalled,
+            ts.JsRuntimePath ?? "without it yt-dlp drops formats and may miss 4K", 42_900_000),
+    ];
+
+    /// <summary>
+    /// Downloads and installs whichever required components <see cref="Detect"/> could not find.
+    /// Never fetches yt-dlp or its runtime; see <see cref="InstallLinkToolsAsync"/>.
+    /// </summary>
+    public async Task<Toolset> EnsureAsync(AppSettings settings, CancellationToken ct)
     {
         paths.EnsureCreated();
         var ts = Detect(settings);
@@ -142,8 +154,6 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         var dl = new AssetDownloader(http, sink);
 
         if (!ts.HasFfmpeg) await InstallFfmpegAsync(dl, ct).ConfigureAwait(false);
-        if (includeYtDlp && !ts.HasYtDlp) await InstallYtDlpAsync(dl, ct).ConfigureAwait(false);
-        if (includeYtDlp && !ts.HasJsRuntime) await InstallJsRuntimeAsync(dl, ct).ConfigureAwait(false);
         if (ts.WhisperCliPath is null) await InstallWhisperAsync(dl, gpu, ct).ConfigureAwait(false);
         if (ts.LlamaServerPath is null) await InstallLlamaAsync(dl, gpu, ct).ConfigureAwait(false);
 
@@ -172,6 +182,24 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         if (!final.IsComplete)
             sink.Warn("install", "Still missing: " + string.Join(", ", final.MissingComponents()));
         return final;
+    }
+
+    /// <summary>
+    /// Downloads yt-dlp and its JavaScript runtime from their publishers. Call this only once the
+    /// user has agreed to it.
+    /// </summary>
+    public async Task<Toolset> InstallLinkToolsAsync(AppSettings settings, CancellationToken ct)
+    {
+        paths.EnsureCreated();
+        var ts = Detect(settings);
+
+        using var http = AssetDownloader.CreateHttpClient();
+        var dl = new AssetDownloader(http, sink);
+
+        if (!ts.HasYtDlp) await InstallYtDlpAsync(dl, ct).ConfigureAwait(false);
+        if (!ts.HasJsRuntime) await InstallJsRuntimeAsync(dl, ct).ConfigureAwait(false);
+
+        return Detect(settings);
     }
 
     private async Task InstallFfmpegAsync(AssetDownloader dl, CancellationToken ct)
@@ -205,8 +233,8 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         catch (Exception ex)
         {
             sink.Warn("install",
-                $"Could not install the JavaScript runtime ({ex.Message}). YouTube downloads will " +
-                "still work, but yt-dlp may not see every format.");
+                $"Could not install the JavaScript runtime ({ex.Message}). Compatible video links will " +
+                "still download, but yt-dlp may not see every format.");
         }
     }
 

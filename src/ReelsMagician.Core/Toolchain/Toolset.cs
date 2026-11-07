@@ -36,11 +36,10 @@ public sealed class Toolset
     public string WhisperCli => WhisperCliPath ?? throw new InvalidOperationException("whisper.cpp is not installed.");
     public string LlamaServer => LlamaServerPath ?? throw new InvalidOperationException("llama.cpp is not installed.");
 
+    /// <summary>The required components still absent. The optional link tools are not listed.</summary>
     public IEnumerable<string> MissingComponents()
     {
         if (!HasFfmpeg) yield return "ffmpeg / ffprobe";
-        if (!HasYtDlp) yield return "yt-dlp (needed only for links)";
-        if (!HasJsRuntime) yield return "JavaScript runtime (recommended for YouTube)";
         if (WhisperCliPath is null) yield return "whisper.cpp";
         if (WhisperModelPath is null) yield return "Whisper model";
         if (LlamaServerPath is null) yield return "llama.cpp";
@@ -49,10 +48,19 @@ public sealed class Toolset
     }
 }
 
-public enum ComponentState { Missing, Installed, System }
+public enum ComponentState
+{
+    /// <summary>Required and absent: "Install everything missing" fetches it.</summary>
+    Missing,
+    Installed,
+    System,
+
+    /// <summary>Optional and absent: fetched only if the user agrees to the download.</summary>
+    NotInstalled,
+}
 
 public sealed record ComponentStatus(
     string Key, string Name, ComponentState State, string Detail, long ApproxBytes)
 {
-    public bool NeedsDownload => State == ComponentState.Missing;
+    public bool NeedsDownload => State is ComponentState.Missing or ComponentState.NotInstalled;
 }

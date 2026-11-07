@@ -40,7 +40,10 @@ public static class EndToEnd
         Console.WriteLine($"    GPU: {gpu.Describe()}");
         Check.True(gpu.Adapters.Count > 0, "at least one display adapter was detected");
 
-        var tools = await manager.EnsureAsync(settings, includeYtDlp: true, CancellationToken.None);
+        var tools = await manager.EnsureAsync(settings, CancellationToken.None);
+
+        // Opt-in in the app, where the user is asked first. The 'link' mode needs them here.
+        tools = await manager.InstallLinkToolsAsync(settings, CancellationToken.None);
         Console.WriteLine();
 
         Check.True(tools.HasFfmpeg, $"ffmpeg resolved ({tools.FfmpegPath})");
@@ -66,13 +69,13 @@ public static class EndToEnd
     }
 
     /// <summary>
-    /// Resolves a real YouTube link through the app's own code path. This is the check that
+    /// Resolves a real compatible video link through the app's own code path. This is the check that
     /// catches a bad yt-dlp flag, a format selector that stops finding 4K, or a silent loss of
     /// progress reporting — none of which the offline tests can see.
     /// </summary>
-    public static async Task YouTubeAsync(string url)
+    public static async Task LinkAsync(string url)
     {
-        Check.Section($"YouTube source resolution — {url}");
+        Check.Section($"Compatible video link resolution — {url}");
 
         var paths = new ToolPaths();
         var sink = CreateSink();

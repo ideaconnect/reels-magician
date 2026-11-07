@@ -2,7 +2,7 @@
 
 A Windows desktop app that turns a long video into a vertical **1080×1920** reel.
 
-Point it at an MP4 or a YouTube link. It transcribes the speech, lets you correct the subtitles,
+Point it at an MP4 or a compatible video link. It transcribes the speech, lets you correct the subtitles,
 asks a local Qwen model to pick the most compelling stretch, keeps the subject centred in the
 vertical crop, joins the clips with a transition too short to smear the audio, and burns in
 captions — plain, or with each word highlighted as it is spoken, the way CapCut and Filmora do it.
@@ -19,7 +19,7 @@ Everything runs locally. Nothing is uploaded.
 
 | Stage | What happens |
 |---|---|
-| **Source** | Opens a local file, or downloads a link with yt-dlp preferring 4K and refusing to settle below 1080p while a better format exists. Progress is reported throughout — a 4K master is often over a gigabyte. |
+| **Source** | Opens a local file, or downloads a link with yt-dlp, an optional third-party tool you are asked about the first time you load a link. Downloads prefer 4K and refuse to settle below 1080p while a better format exists. Progress is reported throughout — a 4K master is often over a gigabyte. |
 | **Transcribe** | Uses the subtitles that came with the video if there are any, otherwise runs Whisper with word-level timings. |
 | **Review** | Shows every cue with its in and out times in an editable table. Fix the text, split, merge, retime, delete. |
 | **Analyse** | Groups cues into paragraphs, scores each paragraph against the video's topic with Qwen, then assembles several complete reels of the length you asked for. |
@@ -41,8 +41,8 @@ analysing if it is misleading.
 **Long videos still work.** Scoring runs over overlapping windows of paragraphs, so an
 hour-long transcript never has to fit in one context window.
 
-**Captions match the language actually spoken.** YouTube serves machine-translated caption tracks
-next to the real ones — a Polish video offers `en-pl`, "English from Polish". ReelsMagician reads the
+**Captions match the language actually spoken.** A compatible video link can offer machine-translated
+caption tracks next to the real ones — a Polish video offers `en-pl`, "English from Polish". ReelsMagician reads the
 video's own language and takes the original track (`pl-orig`, then `pl`), never a translation.
 Burning translated captions over the original speech, timed to the translation, would be worse
 than having no subtitles at all. Subtitles are also fetched in a separate pass, so a hiccup on one
@@ -128,8 +128,6 @@ reused rather than downloaded again.
 | Component | Source | Size |
 |---|---|---|
 | ffmpeg + ffprobe | BtbN FFmpeg-Builds | ~95 MB |
-| yt-dlp | yt-dlp releases | ~17 MB |
-| Deno (JS runtime for yt-dlp) | deno releases | ~41 MB |
 | whisper.cpp | ggml-org/whisper.cpp | ~29 MB |
 | llama.cpp | ggml-org/llama.cpp | ~124 MB, ~600 MB as the CUDA build |
 | Whisper large-v3-turbo (q5) | ggerganov/whisper.cpp | ~547 MB |
@@ -138,13 +136,27 @@ reused rather than downloaded again.
 
 Smaller Whisper and Qwen models are selectable on the Setup tab if you are short on disk or VRAM.
 
-### About the YouTube path
+### About video links
+
+Loading a video from a link is optional. It needs two components that are not part of ReelsMagician
+and are not installed with the tools above:
+
+| Component | Source | Size |
+|---|---|---|
+| yt-dlp | yt-dlp releases | ~23 MB |
+| Deno (JS runtime for yt-dlp) | deno releases | ~41 MB |
+
+The first time you load a link, the app asks before downloading them; you can also start the
+download from **Video links** on the Setup tab. If you decline, local video files keep working as
+normal. A yt-dlp already on your PATH is used without asking. You are responsible for having the
+right to download the videos you load, and for following the terms of the site they come from.
 
 Two things are easy to get wrong here, and ReelsMagician handles both:
 
-- **A JavaScript runtime is required in practice.** yt-dlp now treats YouTube extraction without
-  one as deprecated and silently drops formats — sometimes every 4K variant. ReelsMagician installs
-  Deno and points yt-dlp at it. If it is missing, the app says so instead of quietly giving you 1080p.
+- **A JavaScript runtime is required in practice.** For some compatible video links, yt-dlp now treats
+  extraction without one as deprecated and silently drops formats — sometimes every 4K variant. ReelsMagician downloads
+  Deno alongside yt-dlp and points yt-dlp at it. If it is missing, the app says so instead of quietly
+  giving you 1080p.
 - **yt-dlp finds ffmpeg only on PATH**, and ReelsMagician keeps its ffmpeg in a private folder that is
   never added to PATH. Without `--ffmpeg-location`, a `bv*+ba` download cannot be merged: yt-dlp
   warns, *still exits 0*, and leaves separate video-only and audio-only files — which would sail
@@ -195,7 +207,7 @@ interrupted, so a dropped connection is not a restart.
 ## Using it
 
 **2 · Source** — paste a link or browse to a file, set the reel length, press **Load source**.
-The topic box is prefilled from the title or filename; correct it if it is wrong, because the
+The first time you load a link, the app asks before downloading yt-dlp. The topic box is prefilled from the title or filename; correct it if it is wrong, because the
 analysis is anchored to it. Then **Transcribe**.
 
 **3 · Subtitles** — the review step. Every cue with its times, editable in place. Amber text marks
@@ -238,7 +250,7 @@ burned in. Transition length lives here too.
 
 ```
 %LOCALAPPDATA%\ReelsMagician\
-  tools\      ffmpeg, yt-dlp, whisper.cpp, llama.cpp, the JS runtime
+  tools\      ffmpeg, whisper.cpp, llama.cpp; yt-dlp and the JS runtime if you downloaded them
   models\     Whisper, Qwen and face detector weights
   cache\      per-project working files (audio, clips, subtitles)
   downloads\  partially fetched archives
@@ -300,8 +312,8 @@ dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- install
 pwsh tools/make-speech-video.ps1
 dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- e2e
 
-# Resolve a real YouTube link: download, 4K check, language, subtitles, progress
-dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- youtube [url]
+# Resolve a real compatible video link: download, 4K check, language, subtitles, progress
+dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- link [url]
 ```
 
 The default run needs only ffmpeg. It exercises the parts most likely to break silently: the crop
@@ -339,7 +351,8 @@ silently otherwise. The dropdown lists only installed fonts.
 ReelsMagician is released under the [BSD 3-Clause License](LICENSE).
 
 The repository contains no third-party binaries and no model weights. The app downloads ffmpeg
-(GPL build), yt-dlp, Deno, whisper.cpp, llama.cpp, and model weights from Whisper, Qwen and OpenCV
-from their original publishers on first run, and each stays under its own licence.
+(GPL build), whisper.cpp, llama.cpp, and model weights from Whisper, Qwen and OpenCV from their
+original publishers on first run. It downloads yt-dlp and Deno only if you agree to it. Each stays
+under its own licence.
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) lists every component, its licence and its
 source; read it before redistributing a build.

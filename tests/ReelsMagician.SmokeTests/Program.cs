@@ -4,7 +4,7 @@ using ReelsMagician.SmokeTests;
 //   (none)     pure-logic checks plus a real ffmpeg render of a synthetic source
 //   install    downloads and installs the whole toolchain, then reports what was selected
 //   e2e        full pipeline over a generated speech video: Whisper, Qwen, framing, render
-//   youtube    resolve a real YouTube link end to end (download, probe, subtitles)
+//   link       resolve a real compatible video link end to end (download, probe, subtitles)
 //   recaption  rebuild captions from cached real transcripts and assert no overlap
 var mode = args.Length > 0 ? args[0].ToLowerInvariant() : "";
 
@@ -18,8 +18,8 @@ switch (mode)
         EndToEnd.Recaption();
         break;
 
-    case "youtube":
-        await EndToEnd.YouTubeAsync(args.Length > 1 ? args[1] : "https://youtu.be/ggOnoGOKxos");
+    case "link":
+        await EndToEnd.LinkAsync(args.Length > 1 ? args[1] : "https://youtu.be/ggOnoGOKxos");
         break;
 
     case "e2e":
@@ -28,6 +28,7 @@ switch (mode)
 
     default:
         UnitChecks.Run();
+        LinkToolChecks.Run();
         await RenderChecks.RunAsync();
         break;
 }
