@@ -595,6 +595,9 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             var pipeline = new ReelPipeline(_tools, _settings, _paths, this);
             var result = await pipeline.RenderAsync(_project, output, ct).ConfigureAwait(true);
 
+            // The render's last progress reports are still queued from its own thread; let them
+            // land first, or one of them replaces the path the user needs with "Reel complete".
+            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
             Status = $"Reel written to {result.OutputPath}";
 
             RefreshCommands();
