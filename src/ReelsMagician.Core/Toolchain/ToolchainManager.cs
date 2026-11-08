@@ -66,7 +66,7 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         ts.YtDlpPath = Find(paths.YtDlpDir, ytDlp) ?? ToolPaths.FindOnPath(ytDlp);
         ts.JsRuntimePath = Find(paths.JsRuntimeDir, deno) ?? ToolPaths.FindOnPath(deno);
 
-        var os = OperatingSystem.IsWindows() ? TargetOs.Windows : TargetOs.Linux;
+        var os = ToolBuilds.Current;
 
         var whisperDir = Directory.Exists(settings.CustomWhisperDir ?? "") ? settings.CustomWhisperDir! : paths.WhisperDir;
         ts.WhisperCliPath = Find(whisperDir, ToolPaths.ExeName("whisper-cli"), ToolPaths.ExeName("main"));
@@ -103,7 +103,7 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         var llm = ModelCatalog.ResolveLlm(settings.LlmModelId);
         var systemFfmpeg = ts.FfmpegPath is not null &&
             !ts.FfmpegPath.StartsWith(paths.Root, ToolPaths.PathComparison);
-        var cuda = ToolBuilds.ExpectsLlamaCuda(ts.Gpu, OperatingSystem.IsWindows() ? TargetOs.Windows : TargetOs.Linux);
+        var cuda = ToolBuilds.ExpectsLlamaCuda(ts.Gpu, ToolBuilds.Current);
 
         return
         [
