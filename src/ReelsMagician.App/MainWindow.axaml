@@ -13,17 +13,29 @@
 
   <Window.Resources>
     <!-- The status icon carries the state on its own, by shape as well as colour (Theme.axaml),
-         and names it for screen readers; the state text beside it stays. -->
+         and names it for screen readers; the state text beside it stays.
+         The name column is as wide as the longest name in both Setup lists (the page's
+         IsSharedSizeScope), so a model's name is no longer cut in either language, and the two
+         lists line up. It keeps 320 px as its least and stops at 480 px, so the Detail column
+         still gets the rest at the window's smallest size. A name past that, or a detail longer
+         than its column, is trimmed, and its tooltip shows it whole (issue #69). -->
     <DataTemplate x:Key="ComponentRow" x:DataType="vm:ComponentRowViewModel">
       <StackPanel Margin="0,4">
-        <Grid ColumnDefinitions="24,320,*,140,90">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="24" />
+            <ColumnDefinition Width="Auto" MinWidth="320" MaxWidth="480" SharedSizeGroup="ComponentName" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="140" />
+            <ColumnDefinition Width="90" />
+          </Grid.ColumnDefinitions>
           <local:FaIcon Classes="status" Classes.ready="{Binding IsReady}" Classes.optional="{Binding IsOptional}"
                         AutomationProperties.Name="{Binding StateText}"
                         HorizontalAlignment="Left" VerticalAlignment="Center" />
           <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"
-                     Margin="0,0,12,0" TextTrimming="CharacterEllipsis" />
+                     Margin="0,0,12,0" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
           <TextBlock Grid.Column="2" Text="{Binding Detail}" Classes="hint" TextWrapping="NoWrap"
-                     VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                     VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Detail}" />
           <TextBlock Grid.Column="3" Text="{Binding StateText}" Classes="hint" VerticalAlignment="Center" />
           <TextBlock Grid.Column="4" Text="{Binding SizeText}" Classes="hint"
                      VerticalAlignment="Center" HorizontalAlignment="Right" />
@@ -171,7 +183,8 @@
              On the pages, 8 px of bottom padding and the last card's 12 px margin leave the last
              card a strip's height clear of the bottom edge at the end of the page. -->
         <ScrollViewer Padding="0,12,8,8" local:ScrollShadow.IsEnabled="True">
-          <StackPanel>
+          <!-- One size scope for Required tools and Video links: their name columns share a width. -->
+          <StackPanel Grid.IsSharedSizeScope="True">
             <Border Classes="card">
               <StackPanel>
                 <TextBlock Text="{l:Tr Setup_RequiredTools_Title}" Classes="h2" />
