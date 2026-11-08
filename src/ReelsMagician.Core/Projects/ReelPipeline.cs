@@ -161,6 +161,7 @@ public sealed class ReelPipeline(Toolset tools, AppSettings settings, ToolPaths 
             project.Style, project.RenderOptions, project.WorkDir, outputPath, ct).ConfigureAwait(false);
 
         project.OutputPath = result.OutputPath;
+        project.RenderedClips = [.. project.RenderClips];
         return result;
     }
 

@@ -34,6 +34,31 @@
     </DataTemplate>
   </Window.Resources>
 
+  <Window.DataTemplates>
+    <!-- A step's chip in the strip: its number in a badge, a check once its output exists, and
+         its name. The styles in Assets/Theme.axaml colour it by state. -->
+    <DataTemplate DataType="vm:StepViewModel">
+      <StackPanel Classes="step" Classes.done="{Binding IsDone}" Classes.current="{Binding IsCurrent}"
+                  Classes.upcoming="{Binding IsUpcoming}" Orientation="Horizontal" Spacing="8">
+        <Border Classes="badge" Width="22" Height="22" CornerRadius="11" BorderThickness="1.5"
+                VerticalAlignment="Center">
+          <Panel>
+            <TextBlock Classes="badge-number" Text="{Binding Number}" FontSize="12" FontWeight="SemiBold"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !IsDone}" />
+            <Path Classes="badge-check" Width="12" Height="10" Data="M1,5 L4.5,8.5 L11,1.5"
+                  StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round"
+                  HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsDone}" />
+          </Panel>
+        </Border>
+        <Grid VerticalAlignment="Center">
+          <!-- Holds the width of the bold label, so selecting a step never shifts the strip. -->
+          <TextBlock Text="{Binding Title}" FontWeight="Bold" Opacity="0" />
+          <TextBlock Classes="step-title" Text="{Binding Title}" HorizontalAlignment="Center" />
+        </Grid>
+      </StackPanel>
+    </DataTemplate>
+  </Window.DataTemplates>
+
   <Grid Margin="16" RowDefinitions="Auto,*,Auto,Auto">
 
     <!-- Header -->
@@ -48,8 +73,10 @@
       </StackPanel>
     </Grid>
 
-    <!-- Main tabs -->
-    <TabControl Grid.Row="1" SelectedIndex="{Binding ActiveTab}">
+    <!-- Main tabs: a stepper. The strip is a bar of its own with the page it opens framed under
+         it, and each step is a chip showing its number, or a check once its output exists. -->
+    <TabControl Grid.Row="1" SelectedIndex="{Binding ActiveTab}"
+                Theme="{StaticResource StepStrip}" ItemContainerTheme="{StaticResource StepTab}">
       <!-- The steps run from the left; Cleanup docks to the right, apart from them. -->
       <TabControl.ItemsPanel>
         <ItemsPanelTemplate>
@@ -58,7 +85,7 @@
       </TabControl.ItemsPanel>
 
       <!-- ══ Setup ══ -->
-      <TabItem Header="1 · Setup">
+      <TabItem Header="{Binding SetupStep}" AutomationProperties.Name="{Binding SetupStep.AccessibleName}">
         <ScrollViewer Padding="0,12,8,0">
           <StackPanel>
             <Border Classes="card">
@@ -130,7 +157,7 @@
       </TabItem>
 
       <!-- ══ Source ══ -->
-      <TabItem Header="2 · Source">
+      <TabItem Header="{Binding SourceStep}" AutomationProperties.Name="{Binding SourceStep.AccessibleName}">
         <ScrollViewer Padding="0,12,8,0">
           <StackPanel>
             <Border Classes="card">
@@ -189,7 +216,7 @@
       </TabItem>
 
       <!-- ══ Subtitles ══ -->
-      <TabItem Header="3 · Subtitles">
+      <TabItem Header="{Binding SubtitlesStep}" AutomationProperties.Name="{Binding SubtitlesStep.AccessibleName}">
         <Grid Margin="0,12,0,0" RowDefinitions="Auto,Auto,Auto,*,Auto">
 
           <TextBlock Grid.Row="0" Text="{Binding TranscriptSummary}" Classes="hint" Margin="0,0,0,10" />
@@ -248,7 +275,7 @@
       </TabItem>
 
       <!-- ══ Reel ══ -->
-      <TabItem Header="4 · Reel">
+      <TabItem Header="{Binding ReelStep}" AutomationProperties.Name="{Binding ReelStep.AccessibleName}">
         <Grid Margin="0,12,0,0" ColumnDefinitions="1.35*,16,*" RowDefinitions="Auto,*,Auto">
 
           <TextBlock Grid.Row="0" Grid.ColumnSpan="3" Text="{Binding PlanSummary}" Classes="hint" Margin="0,0,0,10" />
@@ -314,7 +341,7 @@
       </TabItem>
 
       <!-- ══ Captions ══ -->
-      <TabItem Header="5 · Captions">
+      <TabItem Header="{Binding CaptionsStep}" AutomationProperties.Name="{Binding CaptionsStep.AccessibleName}">
         <Grid Margin="0,12,0,0" ColumnDefinitions="*,16,380">
 
           <ScrollViewer Padding="0,0,8,0">
@@ -543,7 +570,7 @@
       </TabItem>
 
       <!-- ══ Render ══ -->
-      <TabItem Header="6 · Render">
+      <TabItem Header="{Binding RenderStep}" AutomationProperties.Name="{Binding RenderStep.AccessibleName}">
         <ScrollViewer Padding="0,12,8,0">
           <StackPanel>
             <Border Classes="card">
@@ -579,8 +606,8 @@
         </ScrollViewer>
       </TabItem>
 
-      <!-- ══ Cleanup: not a step, so it sits on the right of the tab strip ══ -->
-      <TabItem Header="Cleanup" DockPanel.Dock="Right">
+      <!-- ══ Cleanup: not a step, so it sits on the right of the strip, outlined and unnumbered ══ -->
+      <TabItem Header="Cleanup" Classes="aside" DockPanel.Dock="Right" AutomationProperties.Name="Cleanup">
         <ScrollViewer Padding="0,12,8,0">
           <StackPanel>
             <Border Classes="card">
