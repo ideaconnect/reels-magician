@@ -140,6 +140,38 @@ public sealed class ComponentRowViewModel(ComponentStatus status) : ViewModelBas
     public string? Warning => status.Warning;
 }
 
+/// <summary>
+/// A model in one of the Setup tab's drop-downs, marked with an amber triangle when it probably
+/// won't fit this computer's memory (issue #54). The warning itself shows under the drop-down
+/// for the chosen model.
+/// </summary>
+public sealed class ModelOptionViewModel(string id, string displayName) : ViewModelBase
+{
+    public string Id { get; } = id;
+    public string DisplayName { get; } = displayName;
+
+    private string? _warning;
+
+    /// <summary>Why this model may not fit, or null when it fits or nothing reports the memory.</summary>
+    public string? Warning
+    {
+        get => _warning;
+        set
+        {
+            if (!Set(ref _warning, value)) return;
+            Raise(nameof(MayNotFit));
+            Raise(nameof(AccessibleName));
+        }
+    }
+
+    public bool MayNotFit => Warning is not null;
+
+    /// <summary>The triangle is decoration, so a screen reader hears what it means.</summary>
+    public string AccessibleName => MayNotFit ? $"{DisplayName}, may not fit this computer's memory" : DisplayName;
+
+    public override string ToString() => DisplayName;
+}
+
 /// <summary>One reel proposal from the analyser.</summary>
 public sealed class CandidateViewModel(ReelCandidate candidate) : ViewModelBase
 {

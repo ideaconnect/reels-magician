@@ -16,6 +16,9 @@ public interface IAppShell
     /// <summary>Asks a question. No (<paramref name="cancelText"/>) is the default answer.</summary>
     Task<bool> AskAsync(string title, string message, string confirmText, string cancelText);
 
+    /// <summary>Shows a message with a single OK button.</summary>
+    Task TellAsync(string title, string message);
+
     Task<string?> PickFileAsync(string title, IReadOnlyList<FileFilter> filters);
 
     Task<string?> PickSaveFileAsync(string title, string suggestedName, string? startFolder, FileFilter filter);

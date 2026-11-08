@@ -66,4 +66,5 @@ static void RunLogicChecks()
     ScrollShadowChecks.Run();
     LicenceChecks.Run();
     InfoBoxChecks.Run();
+    MemoryFitChecks.Run();
 }

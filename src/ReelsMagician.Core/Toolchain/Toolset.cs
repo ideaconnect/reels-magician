@@ -32,6 +32,12 @@ public sealed class Toolset
 
     public GpuCapabilities? Gpu { get; set; }
 
+    /// <summary>
+    /// What the installed llama-server reports about its devices and options; null until it has
+    /// been asked (<see cref="LlamaProbe"/>), or when it could not be.
+    /// </summary>
+    public LlamaFeatures? LlamaFeatures { get; set; }
+
     public bool HasFfmpeg => FfmpegPath is not null && FfprobePath is not null;
     public bool HasYtDlp => YtDlpPath is not null;
     public bool HasJsRuntime => JsRuntimePath is not null;

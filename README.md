@@ -144,6 +144,8 @@ downloaded again.
 | Face detector (YuNet) | opencv / opencv_zoo | ~0.2 MB |
 
 Smaller Whisper and Qwen models are selectable on the Setup tab if you are short on disk or VRAM.
+The tab says what the chosen model needs, and warns, with an amber sign in the list, when a model
+probably won't fit this computer's memory. You can still run it.
 
 ### About video links
 
@@ -443,7 +445,8 @@ or llama.cpp was installed before the app picked CUDA. Update the driver, delete
 `%LOCALAPPDATA%\ReelsMagician\tools\llama`, and press **Install everything missing**.
 
 **Analysis is slow or runs out of memory** — pick Qwen3 4B on the Setup tab, or lower the context
-size in `settings.json`.
+size in `settings.json`. A model too big for the graphics card runs with some of its layers on the
+processor, which is slower; the Setup tab warns about it beforehand.
 
 **The reel picked a dull stretch** — check the topic on the Source tab first; a wrong topic
 misdirects the scoring. Otherwise choose a different proposal on the Reel tab, or re-analyse.

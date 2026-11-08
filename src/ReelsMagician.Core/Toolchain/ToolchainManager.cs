@@ -27,6 +27,24 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
 
     public ToolPaths Paths => paths;
 
+    private readonly LlamaProbe _llamaProbe = new(paths.LlamaProbeFile);
+
+    /// <summary>
+    /// Asks the toolset's llama-server for its devices and options, unless it has been asked
+    /// already, and keeps the answer on the toolset. A fraction of a second, but it starts the GPU
+    /// drivers, so it runs off the UI thread.
+    /// </summary>
+    public async Task<LlamaFeatures?> ProbeLlamaAsync(Toolset ts, CancellationToken ct)
+    {
+        if (ts.LlamaFeatures is { } known) return known;
+        if (ts.LlamaServerPath is not { } exe) return null;
+
+        var features = await Task.Run(() => _llamaProbe.ProbeAsync(exe, LlamaProbe.GpuKey(ts.Gpu), ct), ct).ConfigureAwait(false);
+        if (features is not null) ts.LlamaFeatures = features;
+        else sink.Debug("install", $"Could not ask {exe} for its devices; memory warnings use the system's figures.");
+        return features;
+    }
+
     /// <summary>Locates already-present tools without touching the network.</summary>
     public Toolset Detect(AppSettings settings)
     {
@@ -85,6 +103,8 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
             ts.LlamaBuild = ToolBuilds.KindOf(llamaAsset);
             ts.LlamaWarning = ToolBuilds.FallbackWarning("llama.cpp", llamaAsset, ToolBuilds.ExpectedLlama(ts.Gpu, os));
         }
+        // Only what was asked before: running llama-server here would hold up the UI thread.
+        if (ts.LlamaServerPath is not null) ts.LlamaFeatures = _llamaProbe.Cached(ts.LlamaServerPath, LlamaProbe.GpuKey(ts.Gpu));
 
         var whisperModel = ModelCatalog.ResolveWhisper(settings.WhisperModelId);
         var whisperModelPath = Path.Combine(paths.Models, whisperModel.FileName);

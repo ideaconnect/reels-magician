@@ -61,6 +61,12 @@ public sealed class ToolPaths
     public string SettingsFile => Path.Combine(Root, "settings.json");
     public string ManifestFile => Path.Combine(Tools, "installed.json");
 
+    /// <summary>What llama-server said about its devices and options, kept per build (<see cref="LlamaProbe"/>).</summary>
+    public string LlamaProbeFile => Path.Combine(Cache, "llama-devices.json");
+
+    /// <summary>Present while a model runs, so a crash that takes the app down can be explained afterwards.</summary>
+    public string ModelRunMarkerFile => Path.Combine(Root, "model-running.json");
+
     /// <summary>
     /// The app's folder under <paramref name="parent"/>, moving it over from its old name first.
     ///

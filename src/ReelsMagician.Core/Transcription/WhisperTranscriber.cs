@@ -83,7 +83,14 @@ public sealed partial class WhisperTranscriber(Toolset tools, AppSettings settin
             ct: ct).ConfigureAwait(false);
 
         if (!result.Success && !File.Exists(jsonPath))
+        {
+            if (ModelDidNotFitException.FromLog(result.CombinedTail()) is { } didNotFit)
+            {
+                foreach (var line in didNotFit.Evidence) sink.Warn("transcribe", $"whisper.cpp: {line}");
+                throw didNotFit;
+            }
             throw new ToolFailedException("whisper.cpp", result.ExitCode, result.CombinedTail());
+        }
 
         if (!File.Exists(jsonPath))
             throw new InvalidOperationException("Whisper finished but wrote no JSON transcript.");
