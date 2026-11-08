@@ -23,8 +23,6 @@ cp -a "$publish"/. "$appdir/usr/bin/"
 # The image adds the AppImage runtime, so the licences of what that links go in with the app's.
 mkdir -p "$appdir/usr/bin/licenses"
 cp -a "$here/licenses"/. "$appdir/usr/bin/licenses/"
-# A publish copied over from Windows arrives without execute bits.
-chmod +x "$appdir/usr/bin/ReelsMagician"
 
 for size in 16 24 32 48 64 128 256 512; do
   icons="$appdir/usr/share/icons/hicolor/${size}x${size}/apps"
@@ -35,7 +33,15 @@ cp "$here/icons/reelsmagician-256.png" "$appdir/reelsmagician.png"
 cp "$here/ReelsMagician.desktop" "$appdir/ReelsMagician.desktop"
 cp "$here/ReelsMagician.desktop" "$appdir/usr/share/applications/ReelsMagician.desktop"
 cp "$here/AppRun" "$appdir/AppRun"
-chmod +x "$appdir/AppRun"
+
+# NuGet unpacks package files with mode 0744 and a publish keeps it, while a publish copied over
+# from Windows has no execute bits at all. Give every file the mode appimagetool expects: 0755
+# for the programs and libraries, 0644 for the rest.
+find "$appdir" -type d -exec chmod 0755 {} +
+find "$appdir" -type f -exec chmod 0644 {} +
+find "$appdir" -type f -name '*.so' -exec chmod 0755 {} +
+chmod 0755 "$appdir/AppRun" "$appdir/usr/bin/ReelsMagician"
+if [ -e "$appdir/usr/bin/createdump" ]; then chmod 0755 "$appdir/usr/bin/createdump"; fi
 
 # appimagetool and the runtime it embeds, both from the AppImage project's own releases.
 tools="$work/tools"

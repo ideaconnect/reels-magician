@@ -6,7 +6,8 @@
 #
 # 1. It starts. With no Wayland session, the AppImage runtime, AppRun and the .NET host all run,
 #    and the app exits with code 1 after saying it needs one. Extract-and-run needs no FUSE.
-# 2. It holds what the app loads and the licences it must carry, with the execute bits intact.
+# 2. It holds what the app loads and the licences it must carry, and every file has the mode
+#    appimagetool expects, with the execute bits intact.
 set -eu
 
 image=$(cd "$(dirname "$1")" && pwd)/$(basename "$1")
@@ -43,5 +44,12 @@ done
 for file in AppRun usr/bin/ReelsMagician; do
   if [ -e "$root/$file" ] && [ ! -x "$root/$file" ]; then echo "Not executable in the AppImage: $file" >&2; failed=1; fi
 done
+# Any other mode makes appimagetool warn, and a future appimagetool may refuse it.
+odd=$(cd "$root" && find . -type f ! -perm 0644 ! -perm 0755)
+if [ -n "$odd" ]; then
+  echo "Files in the AppImage with a mode other than 0644 or 0755:" >&2
+  printf '%s\n' "$odd" | head -20 >&2
+  failed=1
+fi
 [ "$failed" -eq 0 ] || exit 1
-echo "Holds the native libraries and the licences."
+echo "Holds the native libraries and the licences, with the expected modes."
