@@ -5,6 +5,7 @@ using ReelsMagician.Core.Media;
 using ReelsMagician.Core.Rendering;
 using ReelsMagician.Core.Toolchain;
 using ReelsMagician.Core.Transcription;
+using ReelsMagician.Core.Localization;
 
 namespace ReelsMagician.Core.Projects;
 
@@ -35,7 +36,7 @@ public sealed class ReelPipeline(Toolset tools, AppSettings settings, ToolPaths 
     /// </summary>
     public async Task TranscribeAsync(ReelProject project, bool preferProvidedSubtitles, CancellationToken ct)
     {
-        var source = project.Source ?? throw new InvalidOperationException("Resolve the source first.");
+        var source = project.Source ?? throw new InvalidOperationException(Lang.Ui[nameof(Strings.Pipeline_NoSource)]);
 
         if (preferProvidedSubtitles && source.ProvidedSubtitlePath is { } subtitlePath && File.Exists(subtitlePath))
         {
@@ -46,8 +47,7 @@ public sealed class ReelPipeline(Toolset tools, AppSettings settings, ToolPaths 
             if (provided.Segments.Count > 0)
             {
                 project.Transcript = provided;
-                sink.Report("transcribe",
-                    $"Loaded {provided.Segments.Count} cues from the supplied subtitles", 1);
+                sink.Report("transcribe", Lang.Ui.Plural("Pipeline_SuppliedLoaded", provided.Segments.Count), 1);
                 return;
             }
             sink.Warn("transcribe", "The supplied subtitles were empty — running Whisper instead.");
@@ -88,15 +88,15 @@ public sealed class ReelPipeline(Toolset tools, AppSettings settings, ToolPaths 
     /// <summary>What the model needs, in the log, and a warning there too when it may not fit.</summary>
     private void ReportFit(string stage, FitAssessment fit)
     {
-        var has = fit.Budget.Bytes is { } total ? $"; {fit.Budget.Device ?? "the computer"} has {MemoryFit.Format(total)}" : "";
-        sink.Info(stage, $"{fit.Model}: {fit.NeedText.TrimEnd('.')}{has}.");
-        if (fit.Risk is { } risk) sink.Warn(stage, risk);
+        var has = fit.Budget.Bytes is { } total ? $"; {fit.Budget.Device ?? "the computer"} has {MemoryFit.Format(total, Lang.Log)}" : "";
+        sink.Info(stage, $"{fit.Model}: {fit.Need(Lang.Log).TrimEnd('.')}{has}.");
+        if (fit.RiskIn(Lang.Log, fit.Model) is { } risk) sink.Warn(stage, risk);
     }
 
     /// <summary>Stage 3 — group the reviewed transcript into paragraphs and let Qwen pick the reel.</summary>
     public async Task AnalyzeAsync(ReelProject project, CancellationToken ct)
     {
-        var transcript = project.Transcript ?? throw new InvalidOperationException("Transcribe first.");
+        var transcript = project.Transcript ?? throw new InvalidOperationException(Lang.Ui[nameof(Strings.Pipeline_NoTranscript)]);
         transcript.Normalize();
         transcript.EnsureWordTimings();
 
@@ -106,7 +106,7 @@ public sealed class ReelPipeline(Toolset tools, AppSettings settings, ToolPaths 
             $"(topic: {project.Topic}).");
 
         if (project.Paragraphs.Count == 0)
-            throw new InvalidOperationException("The transcript produced no paragraphs to analyse.");
+            throw new InvalidOperationException(Lang.Ui[nameof(Strings.Pipeline_NoParagraphs)]);
 
         // Asked once per build: the devices for the memory estimate, and whether it can fit the
         // model to them, which decides how many layers it is told to put on the GPU.
@@ -134,7 +134,7 @@ public sealed class ReelPipeline(Toolset tools, AppSettings settings, ToolPaths 
 
         project.SelectedCandidate = project.Plan.Candidates.FirstOrDefault();
         foreach (var candidate in project.Plan.Candidates)
-            sink.Info("analyze", $"“{candidate.Title}” — {candidate.Summary}");
+            sink.Info("analyze", $"“{candidate.Title}” — {candidate.SummaryIn(Lang.Log)}");
     }
 
     /// <summary>
@@ -143,8 +143,8 @@ public sealed class ReelPipeline(Toolset tools, AppSettings settings, ToolPaths 
     /// </summary>
     public async Task PlanFramingAsync(ReelProject project, CancellationToken ct)
     {
-        var source = project.Source ?? throw new InvalidOperationException("Resolve the source first.");
-        var candidate = project.SelectedCandidate ?? throw new InvalidOperationException("Pick a reel first.");
+        var source = project.Source ?? throw new InvalidOperationException(Lang.Ui[nameof(Strings.Pipeline_NoSource)]);
+        var candidate = project.SelectedCandidate ?? throw new InvalidOperationException(Lang.Ui[nameof(Strings.Pipeline_NoReel)]);
 
         var options = project.FramingOptions;
         var ffmpeg = Ffmpeg;
@@ -157,7 +157,8 @@ public sealed class ReelPipeline(Toolset tools, AppSettings settings, ToolPaths 
             ct.ThrowIfCancellationRequested();
             var clip = candidate.Clips[i];
             var label = $"clip {i + 1} of {candidate.Clips.Count}";
-            sink.Report("framing", $"Analysing framing for {label}…", (double)i / candidate.Clips.Count);
+            sink.Report("framing", Lang.Ui.Format(nameof(Strings.Framing_Analysing), i + 1, candidate.Clips.Count),
+                (double)i / candidate.Clips.Count);
 
             var frameDir = Path.Combine(project.WorkDir, $"frames_{i:00}");
             var frames = await ffmpeg.SampleFramesAsync(
@@ -173,27 +174,27 @@ public sealed class ReelPipeline(Toolset tools, AppSettings settings, ToolPaths 
 
                 if (f % 10 == 0)
                     sink.Report("framing",
-                        $"Tracking the subject in {label} — frame {f + 1}/{frames.Count}",
+                        Lang.Ui.Format(nameof(Strings.Framing_Tracking), i + 1, candidate.Clips.Count, f + 1, frames.Count),
                         (i + (double)f / Math.Max(1, frames.Count)) / candidate.Clips.Count);
             }
 
             var path = CropPlanner.Plan(hits, source.Info, clip.Duration,
                 project.RenderOptions.Width, project.RenderOptions.Height, options);
 
-            sink.Info("framing", $"{label}: {path.Describe()}");
+            sink.Info("framing", $"{label}: {path.Describe(Lang.Log)}");
             project.RenderClips.Add(new RenderClip(clip, path));
 
             TryCleanFrames(frameDir);
         }
 
-        sink.Report("framing", "Framing planned", 1);
+        sink.Report("framing", Lang.Ui[nameof(Strings.Framing_Planned)], 1);
     }
 
     /// <summary>Stage 5 — encode the reel with the chosen caption style.</summary>
     public async Task<RenderResult> RenderAsync(ReelProject project, string outputPath, CancellationToken ct)
     {
-        var source = project.Source ?? throw new InvalidOperationException("Resolve the source first.");
-        if (project.RenderClips.Count == 0) throw new InvalidOperationException("Plan the framing first.");
+        var source = project.Source ?? throw new InvalidOperationException(Lang.Ui[nameof(Strings.Pipeline_NoSource)]);
+        if (project.RenderClips.Count == 0) throw new InvalidOperationException(Lang.Ui[nameof(Strings.Pipeline_NoFraming)]);
 
         var captions = BuildCaptions(project);
         sink.Info("render", $"{captions.Count} caption lines, style “{project.Style.Name}”.");

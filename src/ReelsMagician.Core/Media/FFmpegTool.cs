@@ -1,5 +1,6 @@
 using System.Globalization;
 using ReelsMagician.Core.Diagnostics;
+using ReelsMagician.Core.Localization;
 
 namespace ReelsMagician.Core.Media;
 
@@ -57,7 +58,7 @@ public sealed class FFmpegTool(string ffmpegPath, IProgressSink sink)
     public async Task<string> ExtractSpeechWavAsync(
         string videoPath, string outputPath, double durationSeconds, CancellationToken ct)
     {
-        sink.Report("transcribe", "Extracting audio…", 0);
+        sink.Report("transcribe", Lang.Ui[nameof(Strings.Media_ExtractingAudio_Running)], 0);
         await RunAsync(
         [
             "-i", videoPath,
@@ -67,10 +68,10 @@ public sealed class FFmpegTool(string ffmpegPath, IProgressSink sink)
             "-ar", "16000",
             "-c:a", "pcm_s16le",
             outputPath,
-        ], durationSeconds, "transcribe", "Extracting audio", ct).ConfigureAwait(false);
+        ], durationSeconds, "transcribe", Lang.Ui[nameof(Strings.Media_ExtractingAudio)], ct).ConfigureAwait(false);
 
         if (!File.Exists(outputPath) || new FileInfo(outputPath).Length < 1024)
-            throw new InvalidOperationException("Audio extraction produced no usable output — does the video have an audio track?");
+            throw new InvalidOperationException(Lang.Ui[nameof(Strings.Media_NoAudio)]);
         return outputPath;
     }
 
@@ -97,7 +98,7 @@ public sealed class FFmpegTool(string ffmpegPath, IProgressSink sink)
             "-q:v", "4",
             "-an", "-sn",
             pattern,
-        ], duration, "framing", "Sampling frames", ct).ConfigureAwait(false);
+        ], duration, "framing", Lang.Ui[nameof(Strings.Media_SamplingFrames)], ct).ConfigureAwait(false);
 
         var files = Directory.GetFiles(outputDir, "f_*.jpg").OrderBy(f => f, StringComparer.Ordinal).ToList();
         // Frame N is emitted for the midpoint of its 1/fps slot.
@@ -116,7 +117,7 @@ public sealed class FFmpegTool(string ffmpegPath, IProgressSink sink)
             "-vf", $"scale=w={width}:h=round({width}/dar/2)*2",
             "-q:v", "3",
             outputPath,
-        ], 0, "preview", "Extracting frame", ct).ConfigureAwait(false);
+        ], 0, "preview", Lang.Ui[nameof(Strings.Media_ExtractingFrame)], ct).ConfigureAwait(false);
     }
 
     /// <summary>Formats a number for an ffmpeg argument — always invariant, never a comma decimal.</summary>

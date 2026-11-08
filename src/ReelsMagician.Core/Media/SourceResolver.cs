@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using ReelsMagician.Core.Diagnostics;
 using ReelsMagician.Core.Projects;
 using ReelsMagician.Core.Toolchain;
+using ReelsMagician.Core.Localization;
 
 namespace ReelsMagician.Core.Media;
 
@@ -67,7 +68,7 @@ public sealed partial class SourceResolver(Toolset tools, IProgressSink sink)
         // Kept as a full path: the later steps run ffmpeg in the project's work folder.
         if (path.Length > 0) path = Path.GetFullPath(path);
         if (!File.Exists(path))
-            throw new FileNotFoundException($"Could not find '{path}'.", path);
+            throw new FileNotFoundException(Lang.Ui.Format(nameof(Strings.Source_NotFound), path), path);
 
         var probe = new FFprobe(tools.Ffprobe, sink);
         var info = await probe.ProbeAsync(path, ct).ConfigureAwait(false);
@@ -87,7 +88,7 @@ public sealed partial class SourceResolver(Toolset tools, IProgressSink sink)
         string url, string workDir, int maxHeight, bool fetchSubtitles, CancellationToken ct)
     {
         if (!tools.HasYtDlp)
-            throw new InvalidOperationException("yt-dlp is required for links. Install it on the Setup tab.");
+            throw new InvalidOperationException(Lang.Ui[nameof(Strings.Source_NeedsYtDlp)]);
 
         Directory.CreateDirectory(workDir);
         var (title, language) = await FetchMetadataAsync(url, ct).ConfigureAwait(false);
@@ -135,7 +136,7 @@ public sealed partial class SourceResolver(Toolset tools, IProgressSink sink)
             .ToList();
 
         var video = downloaded.FirstOrDefault()
-            ?? throw new InvalidOperationException("yt-dlp finished but produced no video file.");
+            ?? throw new InvalidOperationException(Lang.Ui[nameof(Strings.Source_NoVideoFile)]);
 
         // A successful merge leaves exactly one media file. More than one means the merge was
         // skipped, and the largest is video-only — silently producing a reel with no sound.
@@ -143,9 +144,7 @@ public sealed partial class SourceResolver(Toolset tools, IProgressSink sink)
         if (downloaded.Count > 1)
         {
             var names = string.Join(", ", downloaded.Select(Path.GetFileName));
-            throw new InvalidOperationException(
-                "yt-dlp downloaded the video and audio separately and could not merge them " +
-                $"({names}). This means it could not run ffmpeg. Install ffmpeg on the Setup tab.");
+            throw new InvalidOperationException(Lang.Ui.Format(nameof(Strings.Source_NotMerged), names));
         }
 
         // Subtitles are fetched separately and best-effort. Downloading them in the same pass
@@ -180,7 +179,9 @@ public sealed partial class SourceResolver(Toolset tools, IProgressSink sink)
             // The remainder already reads "of ~1.34GiB at 5.00MiB/s ETA 04:12".
             var detail = match.Groups["rest"].Value.Trim();
             sink.Report("source",
-                detail.Length > 0 ? $"Downloading — {percent:0.#}% {detail}" : $"Downloading — {percent:0.#}%",
+                detail.Length > 0
+                    ? Lang.Ui.Format(nameof(Strings.Source_Downloading_Detail), percent, detail)
+                    : Lang.Ui.Format(nameof(Strings.Source_Downloading), percent),
                 Math.Clamp(percent / 100.0, 0, 1));
             return;
         }
@@ -188,7 +189,7 @@ public sealed partial class SourceResolver(Toolset tools, IProgressSink sink)
         // Merging and fixups run after the download and can take a while on a large file.
         if (PostProcessPattern().IsMatch(line))
         {
-            sink.Report("source", "Merging video and audio…", null);
+            sink.Report("source", Lang.Ui[nameof(Strings.Source_Merging)], null);
             sink.Info("source", line.Trim());
             return;
         }
@@ -294,7 +295,7 @@ public sealed partial class SourceResolver(Toolset tools, IProgressSink sink)
 
         try
         {
-            sink.Report("source", "Fetching subtitles…", null);
+            sink.Report("source", Lang.Ui[nameof(Strings.Source_FetchingSubtitles)], null);
             await ProcessRunner.RunCheckedAsync(tools.YtDlp, args, "yt-dlp (subtitles)", sink,
                 onStdErrLine: line => sink.Debug("yt-dlp", line), ct: ct).ConfigureAwait(false);
         }

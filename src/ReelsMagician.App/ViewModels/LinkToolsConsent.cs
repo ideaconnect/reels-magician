@@ -1,3 +1,4 @@
+using ReelsMagician.App.Localization;
 using ReelsMagician.Core.Toolchain;
 
 namespace ReelsMagician.App.ViewModels;
@@ -22,17 +23,12 @@ public sealed class LinkToolsConsent(IAppShell shell, ToolchainManager toolchain
         var downloads = string.Join(Environment.NewLine,
             toolchain.DescribeLinkTools(tools)
                 .Where(c => c.NeedsDownload)
-                .Select(c => $"  • {c.Name}, about {AssetDownloader.Humanize(c.ApproxBytes)}"));
+                .Select(c => Localizer.Instance.Format(nameof(Strings.LinkTools_Item), c.Name, AssetDownloader.Humanize(c.ApproxBytes))));
 
-        var question =
-            "Loading a video from a link needs yt-dlp, a separate third-party tool. " +
-            "It is not part of ReelsMagician and does not come with it.\n\n" +
-            $"If you continue, ReelsMagician downloads from the publishers' own GitHub releases:\n\n{downloads}\n\n" +
-            // Word for word the sentence in the README's "About video links" section.
-            "You are responsible for having the right to download each video you load from a link, " +
-            "and for following the terms of the site it comes from.\n\n" +
-            "Local video files work without it. Download now?";
+        // Its responsibility sentence is word for word the one in the README's "About video links"
+        // section, in English, and the Polish says the same.
+        var question = Localizer.Instance.Format(nameof(Strings.LinkTools_Ask), downloads);
 
-        return shell.AskAsync("Video links need yt-dlp", question, "Download", "No");
+        return shell.AskAsync(Strings.LinkTools_Title, question, Strings.Common_Download, Strings.Common_No);
     }
 }

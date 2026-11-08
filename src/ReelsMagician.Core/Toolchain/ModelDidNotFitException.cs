@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using ReelsMagician.Core.Localization;
 
 namespace ReelsMagician.Core.Toolchain;
 
@@ -31,8 +32,11 @@ public sealed partial class ModelDidNotFitException(string message, IReadOnlyLis
         return new ModelDidNotFitException(graphics ? GraphicsMessage : SystemMessage, evidence);
     }
 
-    public const string GraphicsMessage = "The model didn't fit in the graphics memory. Choose a smaller model.";
-    public const string SystemMessage = "The model didn't fit in this computer's memory. Choose a smaller model.";
+    /// <summary>What the user reads, in the interface's language, when the graphics memory ran out.</summary>
+    public static string GraphicsMessage => Lang.Ui[nameof(Strings.Fit_DidNotFit_Graphics)];
+
+    /// <summary>The same when the computer's own memory ran out.</summary>
+    public static string SystemMessage => Lang.Ui[nameof(Strings.Fit_DidNotFit_System)];
 
     /// <summary>
     /// The lines in which llama.cpp, ggml's Vulkan and CUDA backends, Mesa's Radeon driver or the

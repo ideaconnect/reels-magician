@@ -7,6 +7,7 @@ using System.Text.Json;
 using ReelsMagician.Core.Diagnostics;
 using ReelsMagician.Core.Projects;
 using ReelsMagician.Core.Toolchain;
+using ReelsMagician.Core.Localization;
 
 namespace ReelsMagician.Core.Analysis;
 
@@ -37,7 +38,7 @@ public sealed class LlamaServerSession : IAsyncDisposable
         Toolset tools, AppSettings settings, int contextSize, IProgressSink sink, CancellationToken ct)
     {
         if (!tools.HasLlm)
-            throw new InvalidOperationException("llama.cpp or the Qwen model is not installed.");
+            throw new InvalidOperationException(Lang.Ui[nameof(Strings.Llama_NotInstalled)]);
 
         var port = FindFreePort();
         var supportsFit = tools.LlamaFeatures?.SupportsFit == true;
@@ -71,7 +72,7 @@ public sealed class LlamaServerSession : IAsyncDisposable
         };
         foreach (var a in args) psi.ArgumentList.Add(a);
 
-        sink.Info("analyze", $"Starting llama-server on port {port} ({tools.LlamaBackend})");
+        sink.Info("analyze", $"Starting llama-server on port {port} ({tools.LlamaBackendInfo.Describe(Lang.Log)})");
         if (settings.LlamaGpuLayers < 0)
             sink.Info("analyze", supportsFit
                 ? "llama.cpp fits the model to the graphics memory, keeping on the processor any layers that don't fit."
@@ -85,7 +86,7 @@ public sealed class LlamaServerSession : IAsyncDisposable
         process.ErrorDataReceived += (_, e) => session.OnServerLine(e.Data);
 
         if (!process.Start())
-            throw new InvalidOperationException("Could not start llama-server.");
+            throw new InvalidOperationException(Lang.Ui[nameof(Strings.Llama_NotStarted)]);
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
 
@@ -132,7 +133,7 @@ public sealed class LlamaServerSession : IAsyncDisposable
                 var tail = LogTail();
                 if (ModelDidNotFitException.FromLog(tail) is { } didNotFit) throw Reported(didNotFit);
                 throw new InvalidOperationException(
-                    $"llama-server exited during startup (code {_process.ExitCode}).\n{tail}");
+                    Lang.Ui.Format(nameof(Strings.Llama_ExitedAtStart), _process.ExitCode) + "\n" + tail);
             }
 
             try
@@ -151,12 +152,12 @@ public sealed class LlamaServerSession : IAsyncDisposable
 
             if (!reported)
             {
-                _sink.Report("analyze", "Loading the Qwen model…", null);
+                _sink.Report("analyze", Lang.Ui[nameof(Strings.Llama_Loading)], null);
                 reported = true;
             }
             await Task.Delay(500, ct).ConfigureAwait(false);
         }
-        throw new TimeoutException("llama-server did not become ready within six minutes.");
+        throw new TimeoutException(Lang.Ui[nameof(Strings.Llama_Timeout)]);
     }
 
     /// <summary>Posts a chat completion and returns the assistant message text.</summary>
@@ -181,11 +182,11 @@ public sealed class LlamaServerSession : IAsyncDisposable
         var body = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
 
         if (!resp.IsSuccessStatusCode)
-            throw new InvalidOperationException($"llama-server returned {(int)resp.StatusCode}: {Truncate(body, 600)}");
+            throw new InvalidOperationException(Lang.Ui.Format(nameof(Strings.Llama_Http), (int)resp.StatusCode, Truncate(body, 600)));
 
         using var doc = JsonDocument.Parse(body);
         if (!doc.RootElement.TryGetProperty("choices", out var choices) || choices.GetArrayLength() == 0)
-            throw new InvalidOperationException($"llama-server returned no choices: {Truncate(body, 600)}");
+            throw new InvalidOperationException(Lang.Ui.Format(nameof(Strings.Llama_NoChoices), Truncate(body, 600)));
 
         return choices[0].GetProperty("message").GetProperty("content").GetString() ?? "";
     }

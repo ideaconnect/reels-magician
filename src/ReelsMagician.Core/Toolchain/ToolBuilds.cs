@@ -1,3 +1,5 @@
+using ReelsMagician.Core.Localization;
+
 namespace ReelsMagician.Core.Toolchain;
 
 /// <summary>An operating system the app ships for.</summary>
@@ -222,15 +224,16 @@ public static class ToolBuilds
     };
 
     /// <summary>
-    /// The warning for a Fallback build: an installed build below the best one this machine
-    /// supports. Null when the installed build is as good as expected, or better.
+    /// A Fallback build: an installed build below the best one this machine supports. Null when the
+    /// installed build is as good as expected, or better.
     /// </summary>
-    public static string? FallbackWarning(string tool, string installedAsset, BuildKind expected)
+    public static FallbackBuild? Fallback(string tool, string installedAsset, BuildKind expected)
     {
         var got = KindOf(installedAsset);
-        if (got >= expected) return null;
-        return $"{tool} is running as the {Label(got)} build, because the {Label(expected)} build this machine " +
-               "supports was not available when it was installed. Remove it under Free up space and install it " +
-               "again to retry.";
+        return got >= expected ? null : new FallbackBuild(tool, got, expected);
     }
+
+    /// <summary>The warning for a Fallback build, in the interface's language; null when there is none.</summary>
+    public static string? FallbackWarning(string tool, string installedAsset, BuildKind expected) =>
+        Fallback(tool, installedAsset, expected)?.Warning(Lang.Ui);
 }

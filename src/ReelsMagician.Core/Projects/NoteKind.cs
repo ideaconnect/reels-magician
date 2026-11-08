@@ -1,3 +1,5 @@
+using ReelsMagician.Core.Localization;
+
 namespace ReelsMagician.Core.Projects;
 
 /// <summary>
@@ -15,12 +17,12 @@ public enum NoteKind
 public static class Notes
 {
     /// <summary>The word a screen reader hears before a note's text, since its icon is decoration.</summary>
-    public static string Label(NoteKind kind) => kind switch
+    public static string Label(NoteKind kind) => Lang.Ui[kind switch
     {
-        NoteKind.Warning => "Warning",
-        NoteKind.Error => "Error",
-        _ => "Information",
-    };
+        NoteKind.Warning => nameof(Strings.Note_Warning),
+        NoteKind.Error => nameof(Strings.Note_Error),
+        _ => nameof(Strings.Note_Info),
+    }];
 
     /// <summary>
     /// A note's accessible name: its kind, then its text, as in "Warning: Source is 720p…". A
@@ -28,5 +30,5 @@ public static class Notes
     /// alone, and the controls inside it are read after that.
     /// </summary>
     public static string AccessibleName(NoteKind kind, string? text) =>
-        string.IsNullOrWhiteSpace(text) ? Label(kind) : $"{Label(kind)}: {text.Trim()}";
+        string.IsNullOrWhiteSpace(text) ? Label(kind) : Lang.Ui.Format(nameof(Strings.Note_Named), Label(kind), text.Trim());
 }

@@ -44,6 +44,10 @@ public sealed class AppSettings
     [JsonConverter(typeof(AppearanceJsonConverter))]
     public Appearance Appearance { get; set; } = Appearance.System;
 
+    /// <summary>The interface's language: the system's by default, or English or Polish.</summary>
+    [JsonConverter(typeof(UiLanguageJsonConverter))]
+    public UiLanguage Language { get; set; } = UiLanguage.System;
+
     [JsonIgnore] public string? LoadedFrom { get; private set; }
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)

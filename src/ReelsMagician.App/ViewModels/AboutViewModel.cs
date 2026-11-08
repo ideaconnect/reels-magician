@@ -1,3 +1,4 @@
+using ReelsMagician.App.Localization;
 using ReelsMagician.Core.About;
 using ReelsMagician.Core.Toolchain;
 
@@ -32,17 +33,13 @@ public sealed class AboutViewModel : ViewModelBase
         OpenRepositoryCommand = new AsyncRelayCommand(() => openLink(AppInfo.RepositoryLink));
         OpenIssuesCommand = new AsyncRelayCommand(() => openLink(AppInfo.IssuesLink));
         OpenReleasesCommand = new AsyncRelayCommand(() => openLink(AppInfo.ReleasesLink));
-        ViewNoticesCommand = new AsyncRelayCommand(() => ShowAsync("Third-party notices", [Licences.Notices]));
+        ViewNoticesCommand = new AsyncRelayCommand(() => ShowAsync(Strings.About_NoticesTitle, [Licences.Notices]));
 
         AppLicence = new LicenceRowViewModel(Licences.App, Licences.TextsFor(Licences.App, _os), openLink, ShowAsync);
         Groups =
         [
-            .. Licences.For(_os).Select(g =>
-            {
-                var (title, description) = Licences.Describe(g.Key);
-                return new LicenceGroupViewModel(title, description,
-                    [.. g.Select(c => new LicenceRowViewModel(c, Licences.TextsFor(c, _os), openLink, ShowAsync))]);
-            }),
+            .. Licences.For(_os).Select(g => new LicenceGroupViewModel(g.Key,
+                [.. g.Select(c => new LicenceRowViewModel(c, Licences.TextsFor(c, _os), openLink, ShowAsync))])),
         ];
     }
 
@@ -51,7 +48,9 @@ public sealed class AboutViewModel : ViewModelBase
     /// <summary>0.2.0, or "development build" for one not made from a release tag.</summary>
     public string Version { get; }
 
-    public string VersionText => Version == AppInfo.DevelopmentBuild ? "Development build" : $"Version {Version}";
+    public string VersionText => Version == AppInfo.DevelopmentBuild
+        ? Strings.About_DevelopmentBuild
+        : Localizer.Instance.Format(nameof(Strings.About_Version), Version);
 
     /// <summary>The system, its architecture and the .NET version, as a bug report would want them.</summary>
     public string SystemText { get; }
@@ -79,6 +78,18 @@ public sealed class AboutViewModel : ViewModelBase
     public AsyncRelayCommand ViewNoticesCommand { get; }
 
     /// <summary>Marks each downloaded component installed or not, so the terms that apply here show.</summary>
+    /// <summary>After a switch of language: the version, and every group's and row's texts.</summary>
+    public void RefreshTexts()
+    {
+        Raise(nameof(VersionText));
+        AppLicence.RefreshTexts();
+        foreach (var group in Groups)
+        {
+            group.RefreshTexts();
+            foreach (var row in group.Rows) row.RefreshTexts();
+        }
+    }
+
     public void ShowTools(Toolset tools)
     {
         foreach (var row in Groups.SelectMany(g => g.Rows))
@@ -90,11 +101,17 @@ public sealed class AboutViewModel : ViewModelBase
         _shell.ShowLicenceAsync(title, Licences.Read(_appFolder, texts));
 }
 
-public sealed class LicenceGroupViewModel(string title, string description, IReadOnlyList<LicenceRowViewModel> rows)
+public sealed class LicenceGroupViewModel(LicenceGroup group, IReadOnlyList<LicenceRowViewModel> rows) : ViewModelBase
 {
-    public string Title { get; } = title;
-    public string Description { get; } = description;
+    public string Title => Licences.Describe(group).Title;
+    public string Description => Licences.Describe(group).Description;
     public IReadOnlyList<LicenceRowViewModel> Rows { get; } = rows;
+
+    public void RefreshTexts()
+    {
+        Raise(nameof(Title));
+        Raise(nameof(Description));
+    }
 }
 
 /// <summary>One component: what it is for, its licence and source, and for a download whether it is here.</summary>
@@ -108,21 +125,32 @@ public sealed class LicenceRowViewModel : ViewModelBase
         Component = component;
         _texts = texts;
         OpenSourceCommand = new AsyncRelayCommand(() => openLink(component.Source));
-        ViewLicenceCommand = new AsyncRelayCommand(() => show($"Licence: {component.Name}", _texts), () => HasTexts);
+        ViewLicenceCommand = new AsyncRelayCommand(
+            () => show(Localizer.Instance.Format(nameof(Strings.About_LicenceDialogTitle), Name), _texts), () => HasTexts);
     }
 
     public LicensedComponent Component { get; }
 
-    public string Name => Component.Name;
-    public string Purpose => Component.Purpose;
-    public string Licence => Component.Licence;
+    public string Name => Licences.UiName(Component);
+    public string Purpose => Licences.UiPurpose(Component);
+    public string Licence => Licences.UiLicence(Component);
     public string Source => Component.Source;
 
     /// <summary>A build carries texts for it; a downloaded tool brings its own and has none here.</summary>
     public bool HasTexts => _texts.Count > 0;
 
-    public string SourceAccessibleName => $"Source of {Name}";
-    public string LicenceAccessibleName => $"Licence of {Name}";
+    public string SourceAccessibleName => Localizer.Instance.Format(nameof(Strings.About_SourceOf), Name);
+    public string LicenceAccessibleName => Localizer.Instance.Format(nameof(Strings.About_LicenceOf), Name);
+
+    /// <summary>
+    /// After a switch of language: what the row says. The install state is rebuilt by
+    /// <see cref="AboutViewModel.ShowTools"/>, which a switch runs too.
+    /// </summary>
+    public void RefreshTexts()
+    {
+        foreach (var name in new[] { nameof(Name), nameof(Purpose), nameof(Licence), nameof(SourceAccessibleName), nameof(LicenceAccessibleName) })
+            Raise(name);
+    }
 
     private InstallState? _install;
 

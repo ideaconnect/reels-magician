@@ -11,6 +11,9 @@ namespace ReelsMagician.App;
 /// </summary>
 public sealed class StepStripPanel : Panel
 {
+    // The tabs' widths as the last arrange placed them.
+    private double[] _arranged = [];
+
     protected override Size MeasureOverride(Size availableSize)
     {
         var width = 0.0;
@@ -21,11 +24,20 @@ public sealed class StepStripPanel : Panel
             width += child.DesiredSize.Width;
             height = Math.Max(height, child.DesiredSize.Height);
         }
+
+        // A switch of language changes every header at once. The strip is then measured again,
+        // but its own slot stays the same, and Avalonia doesn't arrange it again: each tab would
+        // keep its old width and cut its new name. So the strip asks for an arrange itself.
+        if (!Children.Select(c => c.DesiredSize.Width).SequenceEqual(_arranged))
+            InvalidateArrange();
+
         return new Size(width, height);
     }
 
     protected override Size ArrangeOverride(Size finalSize)
     {
+        _arranged = [.. Children.Select(c => c.DesiredSize.Width)];
+
         var x = 0.0;
         foreach (var child in Children.Where(c => !OnRight(c)))
         {

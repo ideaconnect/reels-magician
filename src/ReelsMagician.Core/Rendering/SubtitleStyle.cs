@@ -1,4 +1,5 @@
 using System.Globalization;
+using ReelsMagician.Core.Localization;
 
 namespace ReelsMagician.Core.Rendering;
 
@@ -227,13 +228,20 @@ public sealed class SubtitleStyle
             Convert.ToInt32(text.Substring(4, 2), 16));
     }
 
-    public string Describe()
+    /// <summary>The style in one line, for the caption preview, in the interface's language.</summary>
+    public string Describe() => Describe(Lang.Ui);
+
+    /// <summary>The same in a language of its own.</summary>
+    public string Describe(Lang lang)
     {
-        var mode = Mode == CaptionMode.PlainText ? "plain" : "word highlight";
-        var animation = Animation == CaptionAnimation.None ? "no animation" : Animation.ToString().ToLowerInvariant();
+        var mode = lang[Mode == CaptionMode.PlainText ? nameof(Strings.Style_Plain) : nameof(Strings.Style_Highlight)];
+        var animation = lang[$"Style_Animation_{Animation}"];
         var emphasis = Mode == CaptionMode.PlainText
             ? ""
-            : Emphasis == HighlightEmphasis.Grow ? $" · grow {HighlightScale:0.00}×" : " · colour only";
-        return $"{mode}{emphasis} · {animation} · {FontName} {FontSize}px · {MaxWordsPerCaption} words/line";
+            : Emphasis == HighlightEmphasis.Grow
+                ? lang.Format(nameof(Strings.Style_Grow), HighlightScale)
+                : lang[nameof(Strings.Style_ColourOnly)];
+        return lang.Format(nameof(Strings.Style_Summary), mode, emphasis, animation, FontName, FontSize,
+            lang.Plural("Count_WordsPerLine", MaxWordsPerCaption));
     }
 }

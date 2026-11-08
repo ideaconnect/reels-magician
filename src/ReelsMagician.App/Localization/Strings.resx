@@ -1,0 +1,865 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Window_Title" xml:space="preserve">
+    <value>ReelsMagician — reels from long videos</value>
+  </data>
+  <data name="Header_Tagline" xml:space="preserve">
+    <value>Turn a long video into a vertical 1080×1920 reel: transcribe, review the subtitles, let Qwen pick the best stretch, keep the subject centred, and burn in captions.</value>
+  </data>
+  <data name="Theme_System_Tip" xml:space="preserve">
+    <value>Follow the system's light or dark setting</value>
+  </data>
+  <data name="Theme_System_Name" xml:space="preserve">
+    <value>Theme: follow the system</value>
+  </data>
+  <data name="Theme_Light_Tip" xml:space="preserve">
+    <value>Light theme</value>
+  </data>
+  <data name="Theme_Light_Name" xml:space="preserve">
+    <value>Theme: light</value>
+  </data>
+  <data name="Theme_Dark_Tip" xml:space="preserve">
+    <value>Dark theme</value>
+  </data>
+  <data name="Theme_Dark_Name" xml:space="preserve">
+    <value>Theme: dark</value>
+  </data>
+  <data name="Language_Name" xml:space="preserve">
+    <value>Language</value>
+    <comment>The language selector's accessible name.</comment>
+  </data>
+  <data name="Language_Tip" xml:space="preserve">
+    <value>The interface's language, switched at once</value>
+  </data>
+  <data name="Enum_UiLanguage_System" xml:space="preserve">
+    <value>System language</value>
+  </data>
+  <data name="Enum_UiLanguage_English" xml:space="preserve">
+    <value>English</value>
+    <comment>Always the language's own name.</comment>
+  </data>
+  <data name="Enum_UiLanguage_Polish" xml:space="preserve">
+    <value>Polski</value>
+    <comment>Always the language's own name.</comment>
+  </data>
+  <data name="Step_Setup" xml:space="preserve">
+    <value>Setup</value>
+  </data>
+  <data name="Step_Source" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="Step_Subtitles" xml:space="preserve">
+    <value>Subtitles</value>
+  </data>
+  <data name="Step_Reel" xml:space="preserve">
+    <value>Reel</value>
+  </data>
+  <data name="Step_Captions" xml:space="preserve">
+    <value>Captions</value>
+  </data>
+  <data name="Step_Render" xml:space="preserve">
+    <value>Render</value>
+  </data>
+  <data name="Step_AccessibleName_Done" xml:space="preserve">
+    <value>Step {0} of {1}, {2}, done</value>
+    <comment>{0} number, {1} count, {2} name</comment>
+  </data>
+  <data name="Step_AccessibleName_Current" xml:space="preserve">
+    <value>Step {0} of {1}, {2}, next</value>
+  </data>
+  <data name="Step_AccessibleName_Upcoming" xml:space="preserve">
+    <value>Step {0} of {1}, {2}, not started</value>
+  </data>
+  <data name="Tab_Cleanup" xml:space="preserve">
+    <value>Cleanup</value>
+  </data>
+  <data name="Tab_About" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="Common_CopyPath" xml:space="preserve">
+    <value>Copy path</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Common_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Common_Ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Common_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Common_No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Common_Download" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="Common_AllFiles" xml:space="preserve">
+    <value>All files</value>
+    <comment>A file picker's filter.</comment>
+  </data>
+  <data name="Format_Seconds" xml:space="preserve">
+    <value>{0:0}s</value>
+  </data>
+  <data name="Format_Seconds1" xml:space="preserve">
+    <value>{0:0.0}s</value>
+    <comment>One decimal; the culture writes the separator.</comment>
+  </data>
+  <data name="Format_Milliseconds" xml:space="preserve">
+    <value>{0:0} ms</value>
+  </data>
+  <data name="Format_OneDecimal" xml:space="preserve">
+    <value>{0:0.#}</value>
+  </data>
+  <data name="Format_TwoDecimals" xml:space="preserve">
+    <value>{0:0.00}</value>
+  </data>
+  <data name="Format_Scale" xml:space="preserve">
+    <value>{0:0.00}×</value>
+  </data>
+  <data name="Format_Percent" xml:space="preserve">
+    <value>{0:0}%</value>
+  </data>
+  <data name="Format_CharsPerSecond" xml:space="preserve">
+    <value>{0:0} cps</value>
+    <comment>Characters per second.</comment>
+  </data>
+  <data name="Setup_RequiredTools_Title" xml:space="preserve">
+    <value>Required tools</value>
+  </data>
+  <data name="Setup_RequiredTools_Note" xml:space="preserve">
+    <value>Everything installs into the app's own data folder: no admin rights, no system changes. Anything already on your PATH is reused instead of downloaded.</value>
+  </data>
+  <data name="Setup_Recheck" xml:space="preserve">
+    <value>Re-check</value>
+  </data>
+  <data name="Setup_InstallMissing" xml:space="preserve">
+    <value>Install everything missing</value>
+  </data>
+  <data name="Setup_LinkTools_Title" xml:space="preserve">
+    <value>Video links (optional)</value>
+  </data>
+  <data name="Setup_LinkTools_Note" xml:space="preserve">
+    <value>Only needed to load a video from a link; local video files work without it. yt-dlp is a separate third-party tool that is not part of ReelsMagician, so it is not installed with the required tools, and you are asked before it is downloaded.</value>
+  </data>
+  <data name="Setup_LinkTools_Download" xml:space="preserve">
+    <value>Download…</value>
+  </data>
+  <data name="Setup_Models_Title" xml:space="preserve">
+    <value>Models</value>
+  </data>
+  <data name="Setup_Models_Whisper" xml:space="preserve">
+    <value>Speech recognition (Whisper)</value>
+  </data>
+  <data name="Setup_Models_Qwen" xml:space="preserve">
+    <value>Segment analysis (Qwen, via llama.cpp)</value>
+  </data>
+  <data name="Setup_ModelsHint_Windows" xml:space="preserve">
+    <value>Qwen runs on llama.cpp's CUDA build on an NVIDIA card and its Vulkan build on AMD and Intel, so it uses the GPU either way. whisper.cpp publishes no Vulkan build for Windows, so it uses CUDA on an NVIDIA card and the fastest CPU build otherwise; point ReelsMagician at your own build in settings.json if you have one.</value>
+  </data>
+  <data name="Setup_ModelsHint_Linux" xml:space="preserve">
+    <value>Qwen runs on llama.cpp's Vulkan build on any graphics card with a Vulkan driver, and on the processor otherwise. whisper.cpp publishes only a processor build for Linux; point ReelsMagician at your own build in settings.json if you have one.</value>
+  </data>
+  <data name="Setup_GpuUnknown" xml:space="preserve">
+    <value>GPU unknown</value>
+  </data>
+  <data name="Setup_Backends" xml:space="preserve">
+    <value>Whisper: {0}    ·    Qwen: {1}</value>
+  </data>
+  <data name="Setup_AllInstalled" xml:space="preserve">
+    <value>Everything is installed.</value>
+  </data>
+  <data name="Setup_Missing" xml:space="preserve">
+    <value>Missing: {0}</value>
+    <comment>{0} the list of missing components.</comment>
+  </data>
+  <data name="Component_Installed" xml:space="preserve">
+    <value>Installed</value>
+    <comment>A component row's state, at 12 px in a 140 px column.</comment>
+  </data>
+  <data name="Component_System" xml:space="preserve">
+    <value>Found on system</value>
+  </data>
+  <data name="Component_NotInstalled" xml:space="preserve">
+    <value>Not installed</value>
+  </data>
+  <data name="Component_WillDownload" xml:space="preserve">
+    <value>Will download</value>
+  </data>
+  <data name="Model_MayNotFit_Name" xml:space="preserve">
+    <value>{0}, may not fit this computer's memory</value>
+    <comment>{0} the model's name.</comment>
+  </data>
+  <data name="Source_Video_Title" xml:space="preserve">
+    <value>Video</value>
+  </data>
+  <data name="Source_Video_Note" xml:space="preserve">
+    <value>Choose an MP4 or paste a compatible video link. Links need yt-dlp, which you are asked about the first time, and are downloaded at the highest quality available up to your cap, preferring 4K.</value>
+  </data>
+  <data name="Source_Browse" xml:space="preserve">
+    <value>Browse…</value>
+  </data>
+  <data name="Source_QualityCap" xml:space="preserve">
+    <value>Download quality cap</value>
+  </data>
+  <data name="Source_ReelLength" xml:space="preserve">
+    <value>Reel length</value>
+  </data>
+  <data name="Source_UseProvidedSubtitles" xml:space="preserve">
+    <value>Use subtitles that come with the video when available (skips Whisper)</value>
+  </data>
+  <data name="Source_Load" xml:space="preserve">
+    <value>Load source</value>
+  </data>
+  <data name="Source_Loaded_Title" xml:space="preserve">
+    <value>Loaded video</value>
+  </data>
+  <data name="Source_Topic" xml:space="preserve">
+    <value>Topic used for the analysis</value>
+  </data>
+  <data name="Source_Topic_Note" xml:space="preserve">
+    <value>Taken from the video title, or from the filename for a local file. Qwen scores every paragraph against this, so correct it if it is misleading.</value>
+  </data>
+  <data name="Source_Transcribe" xml:space="preserve">
+    <value>Transcribe</value>
+  </data>
+  <data name="Source_None" xml:space="preserve">
+    <value>No source loaded.</value>
+  </data>
+  <data name="Source_Upscaled" xml:space="preserve">
+    <value>Source is {0}. The 1080×1920 crop will be upscaled — a 4K source looks sharper.</value>
+    <comment>{0} the quality, such as 1080p.</comment>
+  </data>
+  <data name="Source_BelowMinimum" xml:space="preserve">
+    <value>Source is only {0}, below the 1080p minimum. Expect a soft reel.</value>
+  </data>
+  <data name="Source_LinksNeedFfmpeg" xml:space="preserve">
+    <value>Links need ffmpeg. Install the required tools on the Setup tab first.</value>
+  </data>
+  <data name="Source_LinkToolsDeclined" xml:space="preserve">
+    <value>yt-dlp was not downloaded, so the link was not loaded. Local video files work without it.</value>
+  </data>
+  <data name="Source_PickTitle" xml:space="preserve">
+    <value>Choose a video</value>
+    <comment>The file picker's title.</comment>
+  </data>
+  <data name="Source_PickFilter" xml:space="preserve">
+    <value>Video</value>
+  </data>
+  <data name="Subtitles_Split" xml:space="preserve">
+    <value>Split</value>
+  </data>
+  <data name="Subtitles_Merge" xml:space="preserve">
+    <value>Merge with next</value>
+  </data>
+  <data name="Subtitles_ShiftEarlier" xml:space="preserve">
+    <value>−100 ms</value>
+  </data>
+  <data name="Subtitles_ShiftLater" xml:space="preserve">
+    <value>+100 ms</value>
+  </data>
+  <data name="Subtitles_Import" xml:space="preserve">
+    <value>Import…</value>
+  </data>
+  <data name="Subtitles_ExportSrt" xml:space="preserve">
+    <value>Export SRT…</value>
+  </data>
+  <data name="Cues_Start" xml:space="preserve">
+    <value>Start</value>
+    <comment>Column headings of the cue table: 118, 118, 64, 54, *, 60 px.</comment>
+  </data>
+  <data name="Cues_End" xml:space="preserve">
+    <value>End</value>
+  </data>
+  <data name="Cues_Length" xml:space="preserve">
+    <value>Length</value>
+  </data>
+  <data name="Cues_Words" xml:space="preserve">
+    <value>Words</value>
+  </data>
+  <data name="Cues_Text" xml:space="preserve">
+    <value>Text</value>
+  </data>
+  <data name="Cues_Edited" xml:space="preserve">
+    <value>Edited</value>
+  </data>
+  <data name="Cue_Edited" xml:space="preserve">
+    <value>edited</value>
+    <comment>Beside an edited cue.</comment>
+  </data>
+  <data name="Subtitles_Note" xml:space="preserve">
+    <value>Amber text marks cues Whisper was unsure about. Edits are applied when you analyse.</value>
+  </data>
+  <data name="Subtitles_Analyse" xml:space="preserve">
+    <value>Analyse and pick the reel</value>
+  </data>
+  <data name="Transcript_None" xml:space="preserve">
+    <value>No transcript yet.</value>
+  </data>
+  <data name="Transcript_Cues_one" xml:space="preserve">
+    <value>{0} cue</value>
+  </data>
+  <data name="Transcript_Cues_other" xml:space="preserve">
+    <value>{0} cues</value>
+  </data>
+  <data name="Transcript_Words_one" xml:space="preserve">
+    <value>{0} word</value>
+  </data>
+  <data name="Transcript_Words_other" xml:space="preserve">
+    <value>{0} words</value>
+  </data>
+  <data name="Transcript_FromSupplied" xml:space="preserve">
+    <value>supplied subtitles</value>
+    <comment>After "from"; Polish genitive.</comment>
+  </data>
+  <data name="Transcript_FromWhisper" xml:space="preserve">
+    <value>Whisper ({0})</value>
+    <comment>{0} the language Whisper heard; Polish genitive.</comment>
+  </data>
+  <data name="Transcript_Summary" xml:space="preserve">
+    <value>{0} · {1} · from {2}. Fix anything wrong before analysing — the analysis and the burned-in captions both use this text.</value>
+    <comment>{0} cues, {1} words, {2} where they came from.</comment>
+  </data>
+  <data name="Cue_TooFewWords" xml:space="preserve">
+    <value>This cue has too few words to split.</value>
+  </data>
+  <data name="Cue_NothingToMerge" xml:space="preserve">
+    <value>There is no following cue to merge with.</value>
+  </data>
+  <data name="Subtitles_ImportTitle" xml:space="preserve">
+    <value>Import subtitles</value>
+  </data>
+  <data name="Subtitles_ExportTitle" xml:space="preserve">
+    <value>Export subtitles</value>
+  </data>
+  <data name="Subtitles_Filter" xml:space="preserve">
+    <value>Subtitles</value>
+  </data>
+  <data name="Subtitles_Imported_one" xml:space="preserve">
+    <value>Imported {0} cue from {1}.</value>
+  </data>
+  <data name="Subtitles_Imported_other" xml:space="preserve">
+    <value>Imported {0} cues from {1}.</value>
+  </data>
+  <data name="Subtitles_ImportFailed" xml:space="preserve">
+    <value>Import failed: {0}</value>
+  </data>
+  <data name="Subtitles_Exported" xml:space="preserve">
+    <value>Exported to {0}.</value>
+  </data>
+  <data name="Subtitles_ExportFailed" xml:space="preserve">
+    <value>Export failed: {0}</value>
+  </data>
+  <data name="Reel_Tracking_Title" xml:space="preserve">
+    <value>Subject tracking</value>
+  </data>
+  <data name="Reel_Tracking_Note" xml:space="preserve">
+    <value>Each clip is sampled frame by frame. A face in the foreground wins; failing that a body; failing that the most visually dominant region — so a product or a landscape stays centred too.</value>
+  </data>
+  <data name="Reel_Note" xml:space="preserve">
+    <value>Choosing a different reel clears the framing, so re-run this after switching.</value>
+  </data>
+  <data name="Reel_PlanFraming" xml:space="preserve">
+    <value>Plan framing for this reel</value>
+  </data>
+  <data name="Reel_Clip" xml:space="preserve">
+    <value>Clip {0}</value>
+  </data>
+  <data name="Reel_CropLine" xml:space="preserve">
+    <value>Crop {0}  ·  {1}</value>
+    <comment>{0} the crop size, {1} the clip's length.</comment>
+  </data>
+  <data name="Reel_Subject_Face" xml:space="preserve">
+    <value>Speaker</value>
+  </data>
+  <data name="Reel_Subject_Person" xml:space="preserve">
+    <value>Person</value>
+  </data>
+  <data name="Reel_Subject_Salient" xml:space="preserve">
+    <value>Visual subject</value>
+  </data>
+  <data name="Reel_Subject_Centre" xml:space="preserve">
+    <value>Centred</value>
+  </data>
+  <data name="Plan_None" xml:space="preserve">
+    <value>No reel planned yet.</value>
+  </data>
+  <data name="Plan_Options_one" xml:space="preserve">
+    <value>{0} option</value>
+  </data>
+  <data name="Plan_Options_other" xml:space="preserve">
+    <value>{0} options</value>
+  </data>
+  <data name="Plan_Fallback" xml:space="preserve">
+    <value>{0} — assembled from paragraph scores. {1}</value>
+    <comment>{0} the options, {1} the analyser's notes.</comment>
+  </data>
+  <data name="Plan_Proposed" xml:space="preserve">
+    <value>{0} proposed for a {1:0}s reel.</value>
+  </data>
+  <data name="Captions_Preset_Title" xml:space="preserve">
+    <value>Preset</value>
+  </data>
+  <data name="Captions_ApplyPreset" xml:space="preserve">
+    <value>Apply preset</value>
+  </data>
+  <data name="Captions_Style_Title" xml:space="preserve">
+    <value>Caption style</value>
+  </data>
+  <data name="Captions_Mode" xml:space="preserve">
+    <value>Mode</value>
+  </data>
+  <data name="Captions_Animation" xml:space="preserve">
+    <value>Entrance animation</value>
+  </data>
+  <data name="Captions_Mode_Note" xml:space="preserve">
+    <value>Plain text draws one static line per caption. Word highlight recolours and enlarges each word exactly as it is spoken, the way CapCut and Filmora do it.</value>
+  </data>
+  <data name="Enum_CaptionMode_PlainText" xml:space="preserve">
+    <value>Plain text</value>
+  </data>
+  <data name="Enum_CaptionMode_WordHighlight" xml:space="preserve">
+    <value>Word highlight</value>
+  </data>
+  <data name="Enum_CaptionAnimation_None" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="Enum_CaptionAnimation_FadeIn" xml:space="preserve">
+    <value>Fade in</value>
+  </data>
+  <data name="Enum_CaptionAnimation_Pop" xml:space="preserve">
+    <value>Pop</value>
+  </data>
+  <data name="Enum_CaptionAnimation_SlideUp" xml:space="preserve">
+    <value>Slide up</value>
+  </data>
+  <data name="Enum_CaptionAnimation_Bounce" xml:space="preserve">
+    <value>Bounce</value>
+  </data>
+  <data name="Enum_HighlightEmphasis_Colour" xml:space="preserve">
+    <value>Colour</value>
+  </data>
+  <data name="Enum_HighlightEmphasis_Grow" xml:space="preserve">
+    <value>Grow</value>
+  </data>
+  <data name="Preset_PlainWhite" xml:space="preserve">
+    <value>Plain white</value>
+    <comment>The English equals the preset's Name.</comment>
+  </data>
+  <data name="Preset_PopYellowCapCutStyle" xml:space="preserve">
+    <value>Pop yellow (CapCut style)</value>
+  </data>
+  <data name="Preset_GreenKaraoke" xml:space="preserve">
+    <value>Green karaoke</value>
+  </data>
+  <data name="Preset_BoxedCaption" xml:space="preserve">
+    <value>Boxed caption</value>
+  </data>
+  <data name="Preset_BigBounce" xml:space="preserve">
+    <value>Big bounce</value>
+  </data>
+  <data name="Captions_Font" xml:space="preserve">
+    <value>Font</value>
+  </data>
+  <data name="Captions_Size" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="Captions_Bold" xml:space="preserve">
+    <value>Bold</value>
+  </data>
+  <data name="Captions_Italic" xml:space="preserve">
+    <value>Italic</value>
+  </data>
+  <data name="Captions_Uppercase" xml:space="preserve">
+    <value>UPPERCASE</value>
+  </data>
+  <data name="Captions_TextColour" xml:space="preserve">
+    <value>Text colour</value>
+  </data>
+  <data name="Captions_HighlightColour" xml:space="preserve">
+    <value>Spoken-word colour</value>
+  </data>
+  <data name="Captions_OutlineColour" xml:space="preserve">
+    <value>Outline colour</value>
+  </data>
+  <data name="Captions_OutlineWidth" xml:space="preserve">
+    <value>Outline width</value>
+  </data>
+  <data name="Captions_ShadowDepth" xml:space="preserve">
+    <value>Shadow depth</value>
+  </data>
+  <data name="Captions_Emphasis" xml:space="preserve">
+    <value>Spoken-word emphasis</value>
+  </data>
+  <data name="Captions_Emphasis_Note" xml:space="preserve">
+    <value>Colour recolours the spoken word and nothing moves. Grow also enlarges it — vertically only, so the line never changes width and the caption stays put.</value>
+  </data>
+  <data name="Captions_GrowAmount" xml:space="preserve">
+    <value>Grow amount</value>
+  </data>
+  <data name="Captions_BackgroundBox" xml:space="preserve">
+    <value>Draw a filled box behind the text instead of an outline</value>
+  </data>
+  <data name="Captions_BoxColour" xml:space="preserve">
+    <value>Box colour</value>
+  </data>
+  <data name="Captions_BoxOpacity" xml:space="preserve">
+    <value>Box opacity</value>
+  </data>
+  <data name="Captions_Height" xml:space="preserve">
+    <value>Height on screen (% from top)</value>
+  </data>
+  <data name="Captions_WordsPerCaption" xml:space="preserve">
+    <value>Words per caption</value>
+  </data>
+  <data name="Captions_Time_Title" xml:space="preserve">
+    <value>Time on screen</value>
+  </data>
+  <data name="Captions_MinTime" xml:space="preserve">
+    <value>Shortest a line may stay up</value>
+  </data>
+  <data name="Captions_ReadingRate" xml:space="preserve">
+    <value>Fastest reading rate</value>
+  </data>
+  <data name="Captions_Time_Note" xml:space="preserve">
+    <value>A line that cannot get this much time is joined to its neighbour rather than flashing past — the words keep their own timings, so the highlight stays in sync and only the line break moves. Broadcast specs put the floor at 0.8–1.0s; burned-in captions can read faster because you also hear the words.</value>
+  </data>
+  <data name="Captions_Transitions_Title" xml:space="preserve">
+    <value>Transitions</value>
+  </data>
+  <data name="Crossfade_Inaudible" xml:space="preserve">
+    <value>Inaudible in the audio crossfade.</value>
+  </data>
+  <data name="Crossfade_Softens" xml:space="preserve">
+    <value>Long enough to soften speech at the cut.</value>
+  </data>
+  <data name="Crossfade_Audio" xml:space="preserve">
+    <value>The audio is crossfaded by the same amount, which keeps sound and picture locked together across every cut.</value>
+  </data>
+  <data name="Captions_Preview_Title" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="Captions_RefreshPreview" xml:space="preserve">
+    <value>Refresh preview</value>
+  </data>
+  <data name="Preview_None" xml:space="preserve">
+    <value>Render a preview once a reel has been planned.</value>
+  </data>
+  <data name="Preview_StyleChanged" xml:space="preserve">
+    <value>Style changed — refresh the preview to see it.</value>
+  </data>
+  <data name="Preview_NeedsFfmpeg" xml:space="preserve">
+    <value>ffmpeg is required for previews. Install it on the Setup tab.</value>
+  </data>
+  <data name="Preview_NoCaptions" xml:space="preserve">
+    <value>No captions to preview yet — plan a reel first.</value>
+  </data>
+  <data name="Preview_At" xml:space="preserve">
+    <value>Preview at {0} of the reel · {1}</value>
+    <comment>{0} the time, {1} the style.</comment>
+  </data>
+  <data name="Preview_Failed" xml:space="preserve">
+    <value>Preview failed: {0}</value>
+  </data>
+  <data name="Render_Output_Title" xml:space="preserve">
+    <value>Output</value>
+  </data>
+  <data name="Render_ChooseFolder" xml:space="preserve">
+    <value>Choose folder…</value>
+  </data>
+  <data name="Render_Note" xml:space="preserve">
+    <value>Renders 1080×1920 H.264 at 30 fps with AAC audio, normalised to −14 LUFS — the loudness target the social platforms use.</value>
+  </data>
+  <data name="Render_Render" xml:space="preserve">
+    <value>Render the reel</value>
+  </data>
+  <data name="Render_Activity_Title" xml:space="preserve">
+    <value>Activity</value>
+  </data>
+  <data name="Render_Activity_Tip" xml:space="preserve">
+    <value>The app's log. It stays in English, so it can go into a bug report as it is.</value>
+  </data>
+  <data name="Render_PickFolderTitle" xml:space="preserve">
+    <value>Choose where reels are saved</value>
+  </data>
+  <data name="Render_Written" xml:space="preserve">
+    <value>Reel written to {0}</value>
+  </data>
+  <data name="Cleanup_Title" xml:space="preserve">
+    <value>Free up space</value>
+  </data>
+  <data name="Cleanup_Total" xml:space="preserve">
+    <value>{0} — {1} in total</value>
+    <comment>{0} the data folder, {1} its size.</comment>
+  </data>
+  <data name="Cleanup_Note" xml:space="preserve">
+    <value>Only this folder is touched, and you are asked to confirm before anything is deleted. Working files are safe to clear at any time; removing the models or tools means downloading them again.</value>
+  </data>
+  <data name="Cleanup_Remeasure" xml:space="preserve">
+    <value>Re-measure</value>
+  </data>
+  <data name="Cleanup_DeleteSize" xml:space="preserve">
+    <value>Delete {0}…</value>
+    <comment>{0} the size selected.</comment>
+  </data>
+  <data name="Cleanup_NothingSelected" xml:space="preserve">
+    <value>Nothing selected</value>
+  </data>
+  <data name="Cleanup_Ask" xml:space="preserve">
+    <value>Delete the following from {0}?
+
+{1}
+
+That frees {2}.</value>
+    <comment>{0} the folder, {1} the list, {2} the size.</comment>
+  </data>
+  <data name="Cleanup_Ask_Redownload" xml:space="preserve">
+    <value>The models and tools will have to be downloaded again before the next reel.</value>
+  </data>
+  <data name="Cleanup_Ask_Final" xml:space="preserve">
+    <value>This cannot be undone.</value>
+  </data>
+  <data name="Cleanup_Freed" xml:space="preserve">
+    <value>Freed {0}.</value>
+  </data>
+  <data name="Cleanup_FreedInUse" xml:space="preserve">
+    <value>Freed {0}, but some files are still in use: {1}</value>
+  </data>
+  <data name="Status_Ready" xml:space="preserve">
+    <value>Ready.</value>
+  </data>
+  <data name="Status_Cancelling" xml:space="preserve">
+    <value>Cancelling…</value>
+  </data>
+  <data name="Stage_Running" xml:space="preserve">
+    <value>{0}…</value>
+    <comment>{0} the stage, such as Rendering.</comment>
+  </data>
+  <data name="Stage_Complete" xml:space="preserve">
+    <value>{0} complete.</value>
+  </data>
+  <data name="Stage_Cancelled" xml:space="preserve">
+    <value>{0} cancelled.</value>
+  </data>
+  <data name="Stage_Failed" xml:space="preserve">
+    <value>{0} failed: {1}</value>
+    <comment>{1} what went wrong.</comment>
+  </data>
+  <data name="Stage_Failed_Title" xml:space="preserve">
+    <value>{0} failed</value>
+    <comment>The error dialog's title.</comment>
+  </data>
+  <data name="Stage_Install" xml:space="preserve">
+    <value>Installing tools</value>
+  </data>
+  <data name="Stage_LinkTools" xml:space="preserve">
+    <value>Downloading link tools</value>
+  </data>
+  <data name="Stage_Source" xml:space="preserve">
+    <value>Loading source</value>
+  </data>
+  <data name="Stage_Transcribe" xml:space="preserve">
+    <value>Transcribing</value>
+  </data>
+  <data name="Stage_Analyse" xml:space="preserve">
+    <value>Analysing</value>
+  </data>
+  <data name="Stage_Framing" xml:space="preserve">
+    <value>Planning framing</value>
+  </data>
+  <data name="Stage_Render" xml:space="preserve">
+    <value>Rendering</value>
+  </data>
+  <data name="Stage_Cleanup" xml:space="preserve">
+    <value>Freeing up space</value>
+  </data>
+  <data name="Error_SomethingWentWrong" xml:space="preserve">
+    <value>Something went wrong</value>
+  </data>
+  <data name="Error_Details" xml:space="preserve">
+    <value>{0}
+
+Details were written to:
+{1}</value>
+    <comment>{1} the log file.</comment>
+  </data>
+  <data name="Fit_Title" xml:space="preserve">
+    <value>This model may not fit</value>
+  </data>
+  <data name="Fit_Ask_Transcribe" xml:space="preserve">
+    <value>{0}
+
+Transcribe with it anyway? You won't be asked again for this model.</value>
+    <comment>{0} the warning.</comment>
+  </data>
+  <data name="Fit_Ask_Analyse" xml:space="preserve">
+    <value>{0}
+
+Analyse with it anyway? You won't be asked again for this model.</value>
+  </data>
+  <data name="Fit_Transcribe" xml:space="preserve">
+    <value>Transcribe anyway</value>
+  </data>
+  <data name="Fit_Analyse" xml:space="preserve">
+    <value>Analyse anyway</value>
+  </data>
+  <data name="Fit_NotStarted" xml:space="preserve">
+    <value>{0} was not started. A smaller model can be chosen on the Setup tab.</value>
+    <comment>{0} the model.</comment>
+  </data>
+  <data name="Fit_AskAgain" xml:space="preserve">
+    <value>ReelsMagician will ask again before that model runs.</value>
+  </data>
+  <data name="LinkTools_Title" xml:space="preserve">
+    <value>Video links need yt-dlp</value>
+  </data>
+  <data name="LinkTools_Item" xml:space="preserve">
+    <value>  • {0}, about {1}</value>
+    <comment>{0} the tool, {1} its size.</comment>
+  </data>
+  <data name="LinkTools_Ask" xml:space="preserve">
+    <value>Loading a video from a link needs yt-dlp, a separate third-party tool. It is not part of ReelsMagician and does not come with it.
+
+If you continue, ReelsMagician downloads from the publishers' own GitHub releases:
+
+{0}
+
+You are responsible for having the right to download each video you load from a link, and for following the terms of the site it comes from.
+
+Local video files work without it. Download now?</value>
+    <comment>{0} the list of downloads. The legal sentence matches the README's "About video links".</comment>
+  </data>
+  <data name="About_DevelopmentBuild" xml:space="preserve">
+    <value>Development build</value>
+  </data>
+  <data name="About_Version" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="About_Licence" xml:space="preserve">
+    <value>Free and open-source software under the BSD 3-Clause License.</value>
+  </data>
+  <data name="About_System" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="About_DataFolder" xml:space="preserve">
+    <value>Data folder</value>
+  </data>
+  <data name="About_MadeBy" xml:space="preserve">
+    <value>Made by IDCT</value>
+  </data>
+  <data name="About_CompanyDescription" xml:space="preserve">
+    <value>AI-first software studio from Szczecin, Poland</value>
+  </data>
+  <data name="About_VisitCompany" xml:space="preserve">
+    <value>Visit idct.tech</value>
+  </data>
+  <data name="About_Links_Title" xml:space="preserve">
+    <value>Links</value>
+  </data>
+  <data name="About_Links_Note" xml:space="preserve">
+    <value>Each opens in your browser. If none opens, the status bar shows the address.</value>
+  </data>
+  <data name="About_Releases" xml:space="preserve">
+    <value>Releases</value>
+  </data>
+  <data name="About_ReportProblem" xml:space="preserve">
+    <value>Report a problem</value>
+  </data>
+  <data name="About_Repository" xml:space="preserve">
+    <value>GitHub repository</value>
+  </data>
+  <data name="About_Licences_Title" xml:space="preserve">
+    <value>Licences</value>
+  </data>
+  <data name="About_Licences_Note" xml:space="preserve">
+    <value>ReelsMagician and every component it uses come under their own licences. View licence shows the text this build carries. The ReelsMagician and IDCT names and logos are not covered by the BSD 3-Clause License.</value>
+  </data>
+  <data name="About_Source" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="About_ViewLicence" xml:space="preserve">
+    <value>View licence</value>
+  </data>
+  <data name="About_SourceOf" xml:space="preserve">
+    <value>Source of {0}</value>
+    <comment>A button's accessible name; {0} the component.</comment>
+  </data>
+  <data name="About_LicenceOf" xml:space="preserve">
+    <value>Licence of {0}</value>
+  </data>
+  <data name="About_LicenceDialogTitle" xml:space="preserve">
+    <value>Licence: {0}</value>
+  </data>
+  <data name="About_Icons" xml:space="preserve">
+    <value>Icons</value>
+  </data>
+  <data name="About_ViewNotices" xml:space="preserve">
+    <value>View all third-party notices</value>
+  </data>
+  <data name="About_NoticesTitle" xml:space="preserve">
+    <value>Third-party notices</value>
+  </data>
+  <data name="Licence_NotFound" xml:space="preserve">
+    <value>Not found in this build.</value>
+  </data>
+  <data name="Support_Coffee" xml:space="preserve">
+    <value>Buy me a coffee</value>
+  </data>
+  <data name="Support_Text" xml:space="preserve">
+    <value>ReelsMagician is free and open-source software, made in spare time and kept going by goodwill and coffee. If it saves you time, please support its development.</value>
+  </data>
+  <data name="Support_Sponsor" xml:space="preserve">
+    <value>Sponsor on GitHub</value>
+  </data>
+  <data name="Link_Opening" xml:space="preserve">
+    <value>Opening {0} in your browser.</value>
+  </data>
+  <data name="Link_OpeningSupport" xml:space="preserve">
+    <value>Opening {0} in your browser. Thank you for supporting ReelsMagician!</value>
+  </data>
+  <data name="Link_NoBrowser" xml:space="preserve">
+    <value>No browser could be opened. The page is at {0}</value>
+  </data>
+</root>
