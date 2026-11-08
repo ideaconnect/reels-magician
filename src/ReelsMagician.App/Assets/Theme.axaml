@@ -3,7 +3,8 @@
   fonts are left to the system, so Windows shows Segoe UI and Linux its own UI font.
 -->
 <Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:dialogs="using:Avalonia.Dialogs">
 
   <Styles.Resources>
     <ResourceDictionary>
@@ -142,6 +143,16 @@
   <Style Selector="ListBox.cues TextBox">
     <Setter Property="MinHeight" Value="28" />
     <Setter Property="Padding" Value="6,4" />
+  </Style>
+
+  <!-- The file picker is Avalonia's, with OK before Cancel. Laying that one row out right to left
+       puts OK, the main action, on the right as everywhere in the app, without copying the
+       picker's whole template; the buttons themselves stay left to right. -->
+  <Style Selector="dialogs|ManagedFileChooser /template/ UniformGrid#Finalize">
+    <Setter Property="FlowDirection" Value="RightToLeft" />
+  </Style>
+  <Style Selector="dialogs|ManagedFileChooser /template/ UniformGrid#Finalize > Button">
+    <Setter Property="FlowDirection" Value="LeftToRight" />
   </Style>
 
   <!-- The activity log: plain lines, no selection chrome. -->

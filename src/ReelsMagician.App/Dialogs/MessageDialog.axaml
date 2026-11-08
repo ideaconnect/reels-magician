@@ -5,9 +5,11 @@
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
   <StackPanel Margin="20" Spacing="18">
     <SelectableTextBlock x:Name="MessageText" TextWrapping="Wrap" />
+    <!-- The main action is the rightmost button, as everywhere in the app. Focus and Enter still
+         go to the answer that changes nothing (MessageDialog.axaml.cs). -->
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-      <Button x:Name="ConfirmButton" />
       <Button x:Name="CancelButton" IsCancel="True" />
+      <Button x:Name="ConfirmButton" Classes="accent" />
     </StackPanel>
   </StackPanel>
 </Window>
