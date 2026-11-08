@@ -214,10 +214,19 @@ Vulkan asset it will be adopted with no code change. To use your own build today
 
 ## Getting it
 
-Releases come as a zip for Windows and an AppImage for Linux.
+Releases come as an installer and a zip for Windows, and an AppImage for Linux.
 
-- **Windows:** unzip `ReelsMagician-win-x64.zip` and run `ReelsMagician.exe`. It isn't signed yet,
-  so SmartScreen asks once: choose **More info**, then **Run anyway**.
+- **Windows, with the installer (recommended):** run `ReelsMagician-win-x64-Setup.exe`. It installs
+  the app for your account only, with no admin rights, into `%LOCALAPPDATA%\IDCT.ReelsMagician`
+  (about 0.4 GB), with shortcuts in the Start menu and on the desktop, and lists it under
+  **Installed apps** in Settings, where you uninstall it. Neither the installer nor the app is
+  signed yet, so SmartScreen asks once: choose **More info**, then **Run anyway**.
+- **Windows, from the zip:** unzip `ReelsMagician-win-x64.zip` anywhere and run `ReelsMagician.exe`.
+  Nothing is installed, and SmartScreen asks the same way. The zip and the installer use the same
+  data folder, so moving from one to the other downloads nothing again.
+- **Uninstalling keeps your tools, models and settings.** They live in the data folder,
+  `%LOCALAPPDATA%\ReelsMagician`, about 6 GB, apart from the app. To free that space, use **Free up
+  space** on the **Cleanup** tab before you uninstall, or delete the folder afterwards.
 - **Linux:** `chmod +x ReelsMagician-x86_64.AppImage`, then run it from a Wayland session. GNOME
   and KDE show its icon in the dock once the AppImage is integrated with the desktop, which
   [Gear Lever](https://github.com/mijorus/gearlever) or
@@ -234,9 +243,13 @@ dotnet run --project src/ReelsMagician.App -c Release
 ```
 
 The same commands work on Windows and Linux. On Linux, run it from a Wayland session. The
-release packages are built by `.github/workflows/release.yml`, and the AppImage by
-`packaging/linux/build-appimage.sh`. Before the AppImage is uploaded,
-`packaging/linux/check-appimage.sh` checks that it starts and holds its libraries and licences.
+release packages are built by `.github/workflows/release.yml`: the Windows installer by
+`packaging/windows/build-installer.ps1`, with [Velopack](https://docs.velopack.io/), and the
+AppImage by `packaging/linux/build-appimage.sh`. Before they are uploaded,
+`packaging/windows/check-installer.ps1` installs the installer on a Windows runner, starts the app
+from its Start menu shortcut and uninstalls it again, and `packaging/linux/check-appimage.sh`
+checks that the AppImage starts and holds its libraries and licences. CI runs the installer check
+on every pull request too.
 
 On first launch, open **1 · Setup** and press **Install everything missing**. It resumes if
 interrupted, so a dropped connection is not a restart.
@@ -337,6 +350,9 @@ accent colour of the buttons and the selected step is your system's, where it ha
 
 Reels are written to `Videos/ReelsMagician` in your home folder unless you choose otherwise.
 
+On Windows the installer puts the app itself in `%LOCALAPPDATA%\IDCT.ReelsMagician`, beside the
+data folder rather than in it. Uninstalling deletes that folder and leaves the data folder as it is.
+
 The app used to be called Selfroller. On first run it moves an existing `%LOCALAPPDATA%\Selfroller`
 folder to the new name, so nothing has to be downloaded again. An output folder you already chose
 is kept as it is.
@@ -375,6 +391,7 @@ src/ReelsMagician.Core/        no UI, fully testable
 src/ReelsMagician.App/         Avalonia front end, Windows and Wayland
 tests/ReelsMagician.SmokeTests/
 packaging/linux/               the AppImage: desktop entry, icons, licences, build and check scripts
+packaging/windows/             the Windows installer: build and check scripts
 docs/                          system requirements and architecture decisions
 assets/AppIconBase.png         the app's icon, which every icon file is made from
 assets/idct-mark.svg           the IDCT mark the About tab draws (idct.tech's favicon)

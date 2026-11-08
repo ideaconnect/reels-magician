@@ -67,4 +67,5 @@ static void RunLogicChecks()
     LicenceChecks.Run();
     InfoBoxChecks.Run();
     MemoryFitChecks.Run();
+    InstallerChecks.Run();
 }

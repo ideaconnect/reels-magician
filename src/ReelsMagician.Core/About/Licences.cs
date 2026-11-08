@@ -154,9 +154,12 @@ public static class Licences
         new("SharpCompress", "Unpacks the .tar.xz archives Linux tools come in", "MIT",
             "https://github.com/adamhathcock/sharpcompress", LicenceGroup.EveryBuild,
             [LicenceText.Kept("licenses/SharpCompress/LICENSE.txt")], ["SharpCompress"]),
+        new("Velopack", "Connects the app to its Windows installer",
+            "MIT", "https://github.com/velopack/velopack", LicenceGroup.EveryBuild,
+            [LicenceText.Kept("licenses/Velopack/LICENSE")], ["Velopack"]),
 
         // ── Added by the release package ──
-        new(".NET runtime", "Runs the app; the Windows zip and the AppImage include it", "MIT, with notices of its own",
+        new(".NET runtime", "Runs the app; the Windows installer and zip and the AppImage include it", "MIT, with notices of its own",
             "https://github.com/dotnet/runtime", LicenceGroup.ReleasePackage,
             [
                 LicenceText.Shipped("Microsoft.NETCore.App.Runtime.win-x64", "LICENSE.TXT", TargetOs.Windows),
@@ -178,6 +181,9 @@ public static class Licences
                 LicenceText.InAppImage("licenses/zlib/LICENSE"),
             ],
             [], OnlyOn: TargetOs.Linux),
+        new("Velopack's Setup.exe and Update.exe", "Install the app for your account, and remove it again",
+            "MIT", "https://github.com/velopack/velopack", LicenceGroup.ReleasePackage,
+            [LicenceText.Kept("licenses/Velopack/LICENSE")], [], OnlyOn: TargetOs.Windows),
 
         // ── Downloaded by the app ──
         new("ffmpeg + ffprobe", "Reads, cuts and encodes the video",
@@ -210,7 +216,8 @@ public static class Licences
         LicenceGroup.EveryBuild => ("In every build",
             "Part of the app itself: copied into its source, or restored by NuGet when it is built."),
         LicenceGroup.ReleasePackage => ("Added by the package",
-            "The release packages add what the app needs to start, so nothing else has to be installed."),
+            "The release packages add what the app needs to start, so nothing else has to be installed. " +
+            "The Windows installer also adds what installs and removes the app."),
         LicenceGroup.DownloadedByApp => ("Downloaded by the app",
             "Install everything missing fetches these from their publishers into the data folder. " +
             "A tool already on your system is used instead, under its own terms."),

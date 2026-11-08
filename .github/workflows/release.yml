@@ -1,10 +1,11 @@
 name: Release
 
-# Packages both releases: a Windows zip with .NET included, and a Linux AppImage
-# (docs/adr/0002). Every push to main or a port branch packages them as build artifacts, so a
-# packaging break shows up straight away. A version tag (v0.2.0, say) also gathers them into a
-# draft GitHub release. Nothing is published until someone reviews that draft and publishes it,
-# after checking the Linux build on a real Wayland desktop.
+# Packages the releases: for Windows an installer and a zip, both with .NET included, and for Linux
+# an AppImage (docs/adr/0002). Every push to main or a port branch packages them as build
+# artifacts, so a packaging break shows up straight away. A version tag (v0.2.0, say) also gathers
+# them into a draft GitHub release. Nothing is published until someone reviews that draft and
+# publishes it, after checking the Linux build on a real Wayland desktop and the installer on
+# Windows 11.
 
 on:
   push:
@@ -21,7 +22,7 @@ concurrency:
 
 jobs:
   windows:
-    name: Windows zip
+    name: Windows installer and zip
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
@@ -34,21 +35,34 @@ jobs:
         shell: pwsh
         run: |
           $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { '0.0.0-dev' }
+          "VERSION=$version" >> $env:GITHUB_ENV
           dotnet publish src/ReelsMagician.App -c Release -r win-x64 --self-contained -p:Version=$version -o out/ReelsMagician
           # The zip must carry the licences of what it bundles (THIRD-PARTY-NOTICES.md).
           $notices = 'LICENSE', 'THIRD-PARTY-NOTICES.md', 'licenses/Avalonia/licence.md', 'licenses/OpenCvSharp/LICENSE',
-            'licenses/FFmpeg/COPYING.LGPLv2.1', 'licenses/FontAwesome/LICENSE.txt',
+            'licenses/FFmpeg/COPYING.LGPLv2.1', 'licenses/FontAwesome/LICENSE.txt', 'licenses/Velopack/LICENSE',
             'licenses/SkiaSharp.NativeAssets.Win32/THIRD-PARTY-NOTICES.txt',
             'licenses/Avalonia.Angle.Windows.Natives/LICENSE', 'licenses/Microsoft.NETCore.App.Runtime.win-x64/THIRD-PARTY-NOTICES.TXT'
           $missing = $notices | Where-Object { -not (Test-Path "out/ReelsMagician/$_") }
           if ($missing) { throw "The publish lacks: $($missing -join ', ')" }
-          Compress-Archive -Path out/ReelsMagician -DestinationPath ReelsMagician-win-x64.zip
+          New-Item -ItemType Directory -Force out/release | Out-Null
+          Compress-Archive -Path out/ReelsMagician -DestinationPath out/release/ReelsMagician-win-x64.zip
       - name: Licences in the publish
         run: dotnet run --project tests/ReelsMagician.SmokeTests -c Release --no-build -- licences out/ReelsMagician
+      # The installer packs the same folder the zip holds, with vpk at the Velopack package's version.
+      # Updates will need the .nupkg and releases.win.json next to Setup.exe; Velopack's own
+      # portable zip is left out, since the plain zip stays.
+      - name: Build the installer
+        shell: pwsh
+        run: |
+          packaging/windows/build-installer.ps1 out/ReelsMagician $env:VERSION out/installer
+          Copy-Item out/installer/ReelsMagician-win-x64-Setup.exe, out/installer/*-full.nupkg, out/installer/releases.win.json out/release
+      - name: Install, start and uninstall it
+        shell: pwsh
+        run: packaging/windows/check-installer.ps1 out/installer
       - uses: actions/upload-artifact@v7
         with:
           name: windows
-          path: ReelsMagician-win-x64.zip
+          path: out/release/
           if-no-files-found: error
 
   linux:
@@ -96,5 +110,7 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft \
             --title "ReelsMagician ${GITHUB_REF_NAME#v}" \
-            --notes "Draft built from $GITHUB_REF_NAME. Before publishing, check the AppImage on a Wayland desktop and replace these notes with this version's section of CHANGELOG.md." \
-            artifacts/ReelsMagician-win-x64.zip artifacts/ReelsMagician-x86_64.AppImage
+            --notes "Draft built from $GITHUB_REF_NAME. Before publishing, check the AppImage on a Wayland desktop and the installer on Windows 11, and replace these notes with this version's section of CHANGELOG.md." \
+            artifacts/ReelsMagician-win-x64-Setup.exe artifacts/ReelsMagician-win-x64.zip \
+            artifacts/*-full.nupkg artifacts/releases.win.json \
+            artifacts/ReelsMagician-x86_64.AppImage

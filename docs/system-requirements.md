@@ -35,13 +35,14 @@ Loading a video from a compatible video link is optional. It needs yt-dlp and De
 ## Windows
 
 - **Windows 11, x64.** Windows 10 22H2 still runs the app, but Microsoft and .NET no longer support it.
-- **No installation:** unzip the release and run `ReelsMagician.exe`. Everything the app needs is in the folder, and no admin rights are required.
-- **First start:** the app isn't signed yet, so Windows SmartScreen warns you the first time. Choose **More info**, then **Run anyway**.
+- **Installer or zip:** `ReelsMagician-win-x64-Setup.exe` installs the app for your account into `%LOCALAPPDATA%\IDCT.ReelsMagician`, about 0.4 GB, with shortcuts in the Start menu and on the desktop and an entry under **Installed apps** in Settings to uninstall it. Or unzip `ReelsMagician-win-x64.zip` and run `ReelsMagician.exe`, and nothing is installed. Neither needs admin rights, and both carry everything the app needs.
+- **First start:** the installer and the app aren't signed yet, so Windows SmartScreen warns you the first time. Choose **More info**, then **Run anyway**.
 - **Graphics drivers:**
   - **NVIDIA:** a current driver. The app picks the CUDA build the driver can run. CUDA 13 needs an RTX 20 or GTX 16 series card or newer; older cards get CUDA 12.
   - **AMD and Intel:** a current driver with Vulkan support, which standard drivers include.
   - Speech recognition runs on an NVIDIA card through CUDA, and on the processor otherwise.
-- **Data folder:** `%LOCALAPPDATA%\ReelsMagician`. Reels are written to `Videos\ReelsMagician` unless you choose another folder.
+- **Data folder:** `%LOCALAPPDATA%\ReelsMagician`, used by the installed app and the zip alike. Reels are written to `Videos\ReelsMagician` unless you choose another folder.
+- **Uninstalling** removes the app and its shortcuts, and leaves the data folder with its tools, models and settings, about 6 GB. To free that space, use **Free up space** on the **Cleanup** tab before you uninstall, or delete the folder afterwards.
 
 ## Linux
 

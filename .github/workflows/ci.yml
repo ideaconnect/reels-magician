@@ -3,7 +3,8 @@ name: CI
 # Builds the app and runs the logic checks on Windows and Ubuntu, so a change made on one
 # system cannot quietly break the other. The checks need no tools, GPU or network. Each job then
 # publishes the app as its release package does and holds the About tab's licence table to it,
-# so a new package cannot ship without a row there.
+# so a new package cannot ship without a row there. On Windows the publish is also packed into
+# the installer, which is installed, started and uninstalled again on the runner.
 
 on:
   push:
@@ -34,6 +35,12 @@ jobs:
         run: dotnet publish src/ReelsMagician.App -c Release -r win-x64 --self-contained -o out/publish
       - name: Licences in the publish
         run: dotnet run --project tests/ReelsMagician.SmokeTests -c Release --no-build -- licences out/publish
+      - name: Build the installer
+        shell: pwsh
+        run: packaging/windows/build-installer.ps1 out/publish 0.0.0-dev out/installer
+      - name: Install, start and uninstall it
+        shell: pwsh
+        run: packaging/windows/check-installer.ps1 out/installer
 
   ubuntu:
     name: Ubuntu
