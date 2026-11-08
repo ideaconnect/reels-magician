@@ -156,7 +156,8 @@ and are not installed with the tools above:
 The first time you load a link, the app asks before downloading them; you can also start the
 download from **Video links** on the Setup tab. If you decline, local video files keep working as
 normal. A yt-dlp already on your PATH is used without asking. You are responsible for having the
-right to download the videos you load, and for following the terms of the site they come from.
+right to download each video you load from a link, and for following the terms of the site it comes
+from.
 
 Two things are easy to get wrong here, and ReelsMagician handles both:
 

@@ -28,8 +28,9 @@ public sealed class LinkToolsConsent(IAppShell shell, ToolchainManager toolchain
             "Loading a video from a link needs yt-dlp, a separate third-party tool. " +
             "It is not part of ReelsMagician and does not come with it.\n\n" +
             $"If you continue, ReelsMagician downloads from the publishers' own GitHub releases:\n\n{downloads}\n\n" +
-            "You are responsible for having the right to download the videos you use it on, " +
-            "and for following the terms of the site they come from.\n\n" +
+            // Word for word the sentence in the README's "About video links" section.
+            "You are responsible for having the right to download each video you load from a link, " +
+            "and for following the terms of the site it comes from.\n\n" +
             "Local video files work without it. Download now?";
 
         return shell.AskAsync("Video links need yt-dlp", question, "Download", "No");
