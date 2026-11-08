@@ -400,11 +400,20 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         private set { if (Set(ref _isBusy, value)) RefreshCommands(); }
     }
 
-    // Tab order in MainWindow.xaml.
-    private const int SetupTab = 0, SourceTab = 1, SubtitlesTab = 2, ReelTab = 3, CaptionsTab = 4, RenderTab = 5;
+    // Tab order in MainWindow.axaml. Cleanup comes last, docked to the right, apart from the steps.
+    private const int SetupTab = 0, SourceTab = 1, SubtitlesTab = 2, ReelTab = 3, CaptionsTab = 4, RenderTab = 5,
+        CleanupTab = 6;
 
     private int _activeTab;
-    public int ActiveTab { get => _activeTab; set => Set(ref _activeTab, value); }
+    public int ActiveTab
+    {
+        get => _activeTab;
+        set
+        {
+            // Renders and downloads change the folder sizes, so they are measured afresh on opening.
+            if (Set(ref _activeTab, value) && value == CleanupTab) RefreshCleanup();
+        }
+    }
 
     // ── Commands ─────────────────────────────────────────────────────────────────────────
 

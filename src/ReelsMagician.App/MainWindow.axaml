@@ -50,6 +50,12 @@
 
     <!-- Main tabs -->
     <TabControl Grid.Row="1" SelectedIndex="{Binding ActiveTab}">
+      <!-- The steps run from the left; Cleanup docks to the right, apart from them. -->
+      <TabControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <DockPanel LastChildFill="False" />
+        </ItemsPanelTemplate>
+      </TabControl.ItemsPanel>
 
       <!-- ══ Setup ══ -->
       <TabItem Header="1 · Setup">
@@ -117,39 +123,6 @@
                   </StackPanel>
                 </Grid>
                 <TextBlock Classes="hint" Margin="0,12,0,0" Text="{Binding ModelsHint}" />
-              </StackPanel>
-            </Border>
-
-            <Border Classes="card">
-              <StackPanel>
-                <TextBlock Text="Free up space" Classes="h2" />
-                <SelectableTextBlock Text="{Binding DataFolderText}" Foreground="{StaticResource Muted}"
-                                     FontSize="12" TextWrapping="Wrap" Margin="0,0,0,10" />
-
-                <ItemsControl ItemsSource="{Binding CleanupItems}">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:CleanupRowViewModel">
-                      <Grid Margin="0,5" ColumnDefinitions="Auto,230,*,100">
-                        <CheckBox IsChecked="{Binding IsSelected}" IsEnabled="{Binding CanSelect}"
-                                  VerticalAlignment="Center" Margin="0,0,10,0" />
-                        <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"
-                                   Margin="0,0,12,0" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Grid.Column="2" Text="{Binding Detail}" Classes="hint" VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="3" Text="{Binding SizeText}" Classes="hint"
-                                   VerticalAlignment="Center" HorizontalAlignment="Right" />
-                      </Grid>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-
-                <StackPanel Orientation="Horizontal" Margin="0,14,0,0" Spacing="8">
-                  <Button Content="{Binding CleanupButtonText}" Classes="accent" Command="{Binding CleanupCommand}" />
-                  <Button Content="Re-measure" Command="{Binding RefreshCleanupCommand}" />
-                  <Button Content="Copy path" Command="{Binding CopyDataFolderCommand}" />
-                </StackPanel>
-
-                <TextBlock Classes="hint" Margin="0,10,0,0"
-                           Text="Only this folder is touched, and you are asked to confirm before anything is deleted. Working files are safe to clear at any time; removing the models or tools means downloading them again." />
               </StackPanel>
             </Border>
           </StackPanel>
@@ -601,6 +574,46 @@
                   </ListBox.ItemTemplate>
                 </ListBox>
               </DockPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ══ Cleanup: not a step, so it sits on the right of the tab strip ══ -->
+      <TabItem Header="Cleanup" DockPanel.Dock="Right">
+        <ScrollViewer Padding="0,12,8,0">
+          <StackPanel>
+            <Border Classes="card">
+              <StackPanel>
+                <TextBlock Text="Free up space" Classes="h2" />
+                <SelectableTextBlock Text="{Binding DataFolderText}" Foreground="{StaticResource Muted}"
+                                     FontSize="12" TextWrapping="Wrap" Margin="0,0,0,10" />
+
+                <ItemsControl ItemsSource="{Binding CleanupItems}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:CleanupRowViewModel">
+                      <Grid Margin="0,5" ColumnDefinitions="Auto,230,*,100">
+                        <CheckBox IsChecked="{Binding IsSelected}" IsEnabled="{Binding CanSelect}"
+                                  VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"
+                                   Margin="0,0,12,0" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="2" Text="{Binding Detail}" Classes="hint" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="3" Text="{Binding SizeText}" Classes="hint"
+                                   VerticalAlignment="Center" HorizontalAlignment="Right" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <StackPanel Orientation="Horizontal" Margin="0,14,0,0" Spacing="8">
+                  <Button Content="{Binding CleanupButtonText}" Classes="accent" Command="{Binding CleanupCommand}" />
+                  <Button Content="Re-measure" Command="{Binding RefreshCleanupCommand}" />
+                  <Button Content="Copy path" Command="{Binding CopyDataFolderCommand}" />
+                </StackPanel>
+
+                <TextBlock Classes="hint" Margin="0,10,0,0"
+                           Text="Only this folder is touched, and you are asked to confirm before anything is deleted. Working files are safe to clear at any time; removing the models or tools means downloading them again." />
+              </StackPanel>
             </Border>
           </StackPanel>
         </ScrollViewer>
