@@ -4,10 +4,33 @@
 -->
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:ReelsMagician.App"
         xmlns:dialogs="using:Avalonia.Dialogs">
 
   <Styles.Resources>
     <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://ReelsMagician/Assets/Icons.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+
+      <!-- What a status means, in each theme: success, error, warning and info, for text and icons.
+           They are theme resources, so they take DynamicResource. The light ones are checked
+           against white cards, the dark ones against these dark panels, for 4.5:1 or more. -->
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="SuccessBrush" Color="#3BD68A" />
+          <SolidColorBrush x:Key="ErrorBrush" Color="#F85149" />
+          <SolidColorBrush x:Key="WarningBrush" Color="#F5B94A" />
+          <SolidColorBrush x:Key="InfoBrush" Color="#4493F8" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="SuccessBrush" Color="#1A7F37" />
+          <SolidColorBrush x:Key="ErrorBrush" Color="#CF222E" />
+          <SolidColorBrush x:Key="WarningBrush" Color="#9A6700" />
+          <SolidColorBrush x:Key="InfoBrush" Color="#0969DA" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+
       <!-- Fluent reads its accent from these. -->
       <Color x:Key="SystemAccentColor">#6C7BFF</Color>
       <Color x:Key="SystemAccentColorLight1">#7C89FF</Color>
@@ -25,8 +48,6 @@
       <SolidColorBrush x:Key="TextBrush" Color="#ECECF2" />
       <SolidColorBrush x:Key="Muted" Color="#9A9AAC" />
       <SolidColorBrush x:Key="Accent" Color="#6C7BFF" />
-      <SolidColorBrush x:Key="Good" Color="#3BD68A" />
-      <SolidColorBrush x:Key="Warn" Color="#F5B94A" />
       <SolidColorBrush x:Key="WarnBg" Color="#2A2318" />
 
       <!-- Fluent's defaults are sized for touch; this is a dense desktop tool. -->
@@ -168,6 +189,22 @@
           <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonBackground}" />
         </Style>
       </ControlTheme>
+
+      <!-- A Font Awesome icon (FaIcon.cs): the path unstretched on a canvas the size of the icons'
+           shared viewBox, scaled to the control's size. At 16 px the glyph's em is 12.8 px tall. -->
+      <ControlTheme x:Key="{x:Type local:FaIcon}" TargetType="local:FaIcon">
+        <Setter Property="Width" Value="16" />
+        <Setter Property="Height" Value="16" />
+        <Setter Property="Template">
+          <ControlTemplate>
+            <Viewbox Stretch="Uniform">
+              <Canvas Width="640" Height="640">
+                <Path Data="{TemplateBinding Data}" Fill="{TemplateBinding Foreground}" Stretch="None" />
+              </Canvas>
+            </Viewbox>
+          </ControlTemplate>
+        </Setter>
+      </ControlTheme>
     </ResourceDictionary>
   </Styles.Resources>
 
@@ -199,7 +236,7 @@
     <Setter Property="Margin" Value="0,0,0,4" />
   </Style>
   <Style Selector="TextBlock.warn">
-    <Setter Property="Foreground" Value="{StaticResource Warn}" />
+    <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
     <Setter Property="FontSize" Value="12" />
     <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
@@ -228,6 +265,22 @@
     <Setter Property="Margin" Value="4,4" />
   </Style>
 
+  <!-- A component's status on the Setup tab, told apart by shape as well as colour: a green check
+       when it is there, a red X when it still has to download, and a muted dash for an optional
+       one that is not installed, which is no error. -->
+  <Style Selector="local|FaIcon.status">
+    <Setter Property="Data" Value="{StaticResource fa-circle-xmark}" />
+    <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}" />
+  </Style>
+  <Style Selector="local|FaIcon.status.ready">
+    <Setter Property="Data" Value="{StaticResource fa-circle-check}" />
+    <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+  </Style>
+  <Style Selector="local|FaIcon.status.optional">
+    <Setter Property="Data" Value="{StaticResource fa-circle-minus}" />
+    <Setter Property="Foreground" Value="{StaticResource Muted}" />
+  </Style>
+
   <!-- Inside a step's chip (MainWindow's StepViewModel template): the number in a muted ring, an
        accent ring on the step to do next, a green check once the step's output exists, and the
        steps not reached yet dimmed, though they stay clickable: each tab says what it needs. -->
@@ -241,11 +294,11 @@
     <Setter Property="Foreground" Value="{DynamicResource Accent}" />
   </Style>
   <Style Selector="StackPanel.step.done Border.badge">
-    <Setter Property="Background" Value="{DynamicResource Good}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource Good}" />
+    <Setter Property="Background" Value="{DynamicResource SuccessBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SuccessBrush}" />
   </Style>
-  <Style Selector="StackPanel.step Path.badge-check">
-    <Setter Property="Stroke" Value="{DynamicResource Bg}" />
+  <Style Selector="StackPanel.step local|FaIcon.badge-check">
+    <Setter Property="Foreground" Value="{DynamicResource Bg}" />
   </Style>
   <Style Selector="StackPanel.step.upcoming">
     <Setter Property="Opacity" Value="0.5" />
@@ -264,8 +317,8 @@
   <Style Selector="TabItem:selected StackPanel.step.done Border.badge">
     <Setter Property="Background" Value="{DynamicResource AccentButtonForeground}" />
   </Style>
-  <Style Selector="TabItem:selected StackPanel.step Path.badge-check">
-    <Setter Property="Stroke" Value="{DynamicResource AccentButtonBackground}" />
+  <Style Selector="TabItem:selected StackPanel.step local|FaIcon.badge-check">
+    <Setter Property="Foreground" Value="{DynamicResource AccentButtonBackground}" />
   </Style>
 
   <!-- Inputs and lists -->

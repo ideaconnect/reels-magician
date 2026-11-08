@@ -12,14 +12,16 @@
         WindowStartupLocation="CenterScreen">
 
   <Window.Resources>
-    <local:ReadyToBrushConverter x:Key="ReadyBrush" />
     <local:ConfidenceToBrushConverter x:Key="ConfidenceBrush" />
 
+    <!-- The status icon carries the state on its own, by shape as well as colour (Theme.axaml),
+         and names it for screen readers; the state text beside it stays. -->
     <DataTemplate x:Key="ComponentRow" x:DataType="vm:ComponentRowViewModel">
       <StackPanel Margin="0,4">
-        <Grid ColumnDefinitions="14,320,*,140,90">
-          <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                   Fill="{Binding IsReady, Converter={StaticResource ReadyBrush}}" />
+        <Grid ColumnDefinitions="24,320,*,140,90">
+          <local:FaIcon Classes="status" Classes.ready="{Binding IsReady}" Classes.optional="{Binding IsOptional}"
+                        AutomationProperties.Name="{Binding StateText}"
+                        HorizontalAlignment="Left" VerticalAlignment="Center" />
           <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"
                      Margin="0,0,12,0" TextTrimming="CharacterEllipsis" />
           <TextBlock Grid.Column="2" Text="{Binding Detail}" Classes="hint" TextWrapping="NoWrap"
@@ -28,8 +30,13 @@
           <TextBlock Grid.Column="4" Text="{Binding SizeText}" Classes="hint"
                      VerticalAlignment="Center" HorizontalAlignment="Right" />
         </Grid>
-        <TextBlock Text="{Binding Warning}" Classes="warn" Margin="14,4,0,0"
-                   IsVisible="{Binding Warning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <!-- Under the status icon, a warning sign; the warning lines up with the name. -->
+        <Grid ColumnDefinitions="24,*" Margin="0,4,0,0"
+              IsVisible="{Binding Warning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+          <local:FaIcon Data="{StaticResource fa-triangle-exclamation}" Foreground="{DynamicResource WarningBrush}"
+                        Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="1,1,0,0" />
+          <TextBlock Grid.Column="1" Text="{Binding Warning}" Classes="warn" />
+        </Grid>
       </StackPanel>
     </DataTemplate>
   </Window.Resources>
@@ -45,9 +52,8 @@
           <Panel>
             <TextBlock Classes="badge-number" Text="{Binding Number}" FontSize="12" FontWeight="SemiBold"
                        HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !IsDone}" />
-            <Path Classes="badge-check" Width="12" Height="10" Data="M1,5 L4.5,8.5 L11,1.5"
-                  StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round"
-                  HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsDone}" />
+            <local:FaIcon Classes="badge-check" Data="{StaticResource fa-check}" Width="16" Height="16"
+                          HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsDone}" />
           </Panel>
         </Border>
         <Grid VerticalAlignment="Center">
@@ -100,8 +106,9 @@
                 <TextBlock Text="{Binding BackendText}" Classes="hint" Margin="0,4,0,0" />
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0" Spacing="8">
-                  <Button Content="Re-check" Command="{Binding RefreshToolsCommand}" />
-                  <Button Content="Install everything missing" Classes="accent" Command="{Binding InstallCommand}" />
+                  <Button Content="Re-check" local:FaIcon.ButtonIcon="{StaticResource fa-rotate}" Command="{Binding RefreshToolsCommand}" />
+                  <Button Content="Install everything missing" Classes="accent" local:FaIcon.ButtonIcon="{StaticResource fa-download}"
+                          Command="{Binding InstallCommand}" />
                 </StackPanel>
               </StackPanel>
             </Border>
@@ -115,7 +122,7 @@
                 <ItemsControl ItemsSource="{Binding LinkComponents}" ItemTemplate="{StaticResource ComponentRow}" />
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-                  <Button Content="Download…" Command="{Binding InstallLinkToolsCommand}" />
+                  <Button Content="Download…" local:FaIcon.ButtonIcon="{StaticResource fa-download}" Command="{Binding InstallLinkToolsCommand}" />
                 </StackPanel>
               </StackPanel>
             </Border>
@@ -167,7 +174,8 @@
                            Text="Choose an MP4 or paste a compatible video link. Links need yt-dlp, which you are asked about the first time, and are downloaded at the highest quality available up to your cap, preferring 4K." />
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBox Text="{Binding SourceInput}" VerticalContentAlignment="Center" />
-                  <Button Grid.Column="1" Content="Browse…" Command="{Binding BrowseSourceCommand}" Margin="8,0,0,0" />
+                  <Button Grid.Column="1" Content="Browse…" local:FaIcon.ButtonIcon="{StaticResource fa-folder-open}"
+                          Command="{Binding BrowseSourceCommand}" Margin="8,0,0,0" />
                 </Grid>
 
                 <Grid Margin="0,14,0,0" ColumnDefinitions="Auto,24,*">
@@ -222,15 +230,15 @@
           <TextBlock Grid.Row="0" Text="{Binding TranscriptSummary}" Classes="hint" Margin="0,0,0,10" />
 
           <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10" Spacing="8">
-            <Button Content="Split" Command="{Binding SplitCueCommand}" />
-            <Button Content="Merge with next" Command="{Binding MergeCueCommand}" />
-            <Button Content="Delete" Command="{Binding DeleteCueCommand}" />
+            <Button Content="Split" local:FaIcon.ButtonIcon="{StaticResource fa-scissors}" Command="{Binding SplitCueCommand}" />
+            <Button Content="Merge with next" local:FaIcon.ButtonIcon="{StaticResource fa-code-merge}" Command="{Binding MergeCueCommand}" />
+            <Button Content="Delete" local:FaIcon.ButtonIcon="{StaticResource fa-trash-can}" Command="{Binding DeleteCueCommand}" />
             <Border Classes="divider" />
-            <Button Content="−100 ms" Command="{Binding ShiftEarlierCommand}" />
-            <Button Content="+100 ms" Command="{Binding ShiftLaterCommand}" />
+            <Button Content="−100 ms" local:FaIcon.ButtonIcon="{StaticResource fa-backward-step}" Command="{Binding ShiftEarlierCommand}" />
+            <Button Content="+100 ms" local:FaIcon.ButtonIcon="{StaticResource fa-forward-step}" Command="{Binding ShiftLaterCommand}" />
             <Border Classes="divider" />
-            <Button Content="Import…" Command="{Binding ImportSubtitlesCommand}" />
-            <Button Content="Export SRT…" Command="{Binding ExportSubtitlesCommand}" />
+            <Button Content="Import…" local:FaIcon.ButtonIcon="{StaticResource fa-file-import}" Command="{Binding ImportSubtitlesCommand}" />
+            <Button Content="Export SRT…" local:FaIcon.ButtonIcon="{StaticResource fa-file-export}" Command="{Binding ExportSubtitlesCommand}" />
           </StackPanel>
 
           <!-- Column headings for the cue rows below; the widths must match the row template. -->
@@ -557,7 +565,8 @@
           <DockPanel Grid.Column="2">
             <TextBlock DockPanel.Dock="Top" Text="Preview" Classes="h2" />
             <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
-              <Button Content="Refresh preview" Command="{Binding RefreshPreviewCommand}" HorizontalAlignment="Right" />
+              <Button Content="Refresh preview" local:FaIcon.ButtonIcon="{StaticResource fa-rotate}" Command="{Binding RefreshPreviewCommand}"
+                      HorizontalAlignment="Right" />
               <TextBlock Text="{Binding PreviewStatus}" Classes="hint" Margin="0,8,0,0" />
             </StackPanel>
             <Border Background="#0D0D14" CornerRadius="8" BorderThickness="1"
@@ -578,11 +587,12 @@
                 <TextBlock Text="Output" Classes="h2" />
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBox Text="{Binding OutputFolder}" VerticalContentAlignment="Center" />
-                  <Button Grid.Column="1" Content="Choose folder…" Command="{Binding BrowseOutputCommand}" Margin="8,0,0,0" />
+                  <Button Grid.Column="1" Content="Choose folder…" local:FaIcon.ButtonIcon="{StaticResource fa-folder-open}"
+                          Command="{Binding BrowseOutputCommand}" Margin="8,0,0,0" />
                 </Grid>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0" Spacing="8">
-                  <Button Content="Copy path" Command="{Binding CopyOutputPathCommand}" />
-                  <Button Content="Render the reel" Classes="accent" Command="{Binding RenderCommand}" />
+                  <Button Content="Copy path" local:FaIcon.ButtonIcon="{StaticResource fa-copy}" Command="{Binding CopyOutputPathCommand}" />
+                  <Button Content="Render the reel" Classes="accent" local:FaIcon.ButtonIcon="{StaticResource fa-film}" Command="{Binding RenderCommand}" />
                 </StackPanel>
                 <TextBlock Classes="hint" Margin="0,10,0,0"
                            Text="Renders 1080×1920 H.264 at 30 fps with AAC audio, normalised to −14 LUFS — the loudness target the social platforms use." />
@@ -633,9 +643,10 @@
                 </ItemsControl>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0" Spacing="8">
-                  <Button Content="Copy path" Command="{Binding CopyDataFolderCommand}" />
-                  <Button Content="Re-measure" Command="{Binding RefreshCleanupCommand}" />
-                  <Button Content="{Binding CleanupButtonText}" Classes="accent" Command="{Binding CleanupCommand}" />
+                  <Button Content="Copy path" local:FaIcon.ButtonIcon="{StaticResource fa-copy}" Command="{Binding CopyDataFolderCommand}" />
+                  <Button Content="Re-measure" local:FaIcon.ButtonIcon="{StaticResource fa-rotate}" Command="{Binding RefreshCleanupCommand}" />
+                  <Button Content="{Binding CleanupButtonText}" Classes="accent" local:FaIcon.ButtonIcon="{StaticResource fa-broom}"
+                          Command="{Binding CleanupCommand}" />
                 </StackPanel>
 
                 <TextBlock Classes="hint" Margin="0,10,0,0"
@@ -655,7 +666,7 @@
           <ProgressBar Margin="0,8,0,0" Minimum="0" Maximum="100" Value="{Binding Progress}"
                        IsIndeterminate="{Binding Indeterminate}" IsVisible="{Binding IsBusy}" />
         </StackPanel>
-        <Button Grid.Column="1" Content="Cancel" Command="{Binding CancelCommand}" Margin="12,0,0,0"
+        <Button Grid.Column="1" Content="Cancel" local:FaIcon.ButtonIcon="{StaticResource fa-xmark}" Command="{Binding CancelCommand}" Margin="12,0,0,0"
                 VerticalAlignment="Center" IsVisible="{Binding IsBusy}" />
       </Grid>
     </Border>
@@ -666,17 +677,7 @@
         <Button Classes="coffee" Command="{Binding OpenCoffeeCommand}"
                 ToolTip.Tip="{x:Static vm:MainViewModel.CoffeeLink}">
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Viewbox Width="20" Height="20">
-              <Canvas Width="24" Height="24">
-                <!-- Steam, the cup, its handle and the saucer. -->
-                <Path Stroke="#0D0C22" StrokeThickness="1.6" StrokeLineCap="Round"
-                      Data="M7.5,1.5 C6.5,2.6 8.5,3.6 7.5,4.8 M11,1.5 C10,2.6 12,3.6 11,4.8 M14.5,1.5 C13.5,2.6 15.5,3.6 14.5,4.8" />
-                <Path Fill="#0D0C22" Data="M3,7 H19 V13 A6,6 0 0 1 13,19 H9 A6,6 0 0 1 3,13 Z" />
-                <Path Stroke="#0D0C22" StrokeThickness="2"
-                      Data="M19,9 H20.2 A2.8,2.8 0 0 1 20.2,14.6 H18.5" />
-                <Path Stroke="#0D0C22" StrokeThickness="1.8" StrokeLineCap="Round" Data="M2,22 H20" />
-              </Canvas>
-            </Viewbox>
+            <local:FaIcon Data="{StaticResource fa-mug-hot}" Width="20" Height="20" />
             <TextBlock Text="Buy me a coffee" VerticalAlignment="Center" />
           </StackPanel>
         </Button>
@@ -688,10 +689,7 @@
         <Button Grid.Column="2" Classes="sponsor" Command="{Binding OpenSponsorsCommand}"
                 ToolTip.Tip="{x:Static vm:MainViewModel.SponsorsLink}">
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Viewbox Width="18" Height="18">
-              <Path Fill="#DB61A2"
-                    Data="M12,21 C12,21 2.5,15.2 2.5,8.9 C2.5,5.9 4.9,3.5 7.9,3.5 C9.7,3.5 11.2,4.4 12,5.8 C12.8,4.4 14.3,3.5 16.1,3.5 C19.1,3.5 21.5,5.9 21.5,8.9 C21.5,15.2 12,21 12,21 Z" />
-            </Viewbox>
+            <local:FaIcon Data="{StaticResource fa-heart}" Foreground="#DB61A2" Width="18" Height="18" />
             <TextBlock Text="Sponsor on GitHub" VerticalAlignment="Center" />
           </StackPanel>
         </Button>

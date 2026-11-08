@@ -130,6 +130,10 @@ public sealed class ComponentRowViewModel(ComponentStatus status) : ViewModelBas
         _ => throw new ArgumentOutOfRangeException(nameof(status), status.State, null),
     };
     public bool IsReady => !status.NeedsDownload;
+
+    /// <summary>Optional and not installed, such as the link tools: not an error, so it is not shown as one.</summary>
+    public bool IsOptional => status.State == ComponentState.OptionalMissing;
+
     public string SizeText => status.NeedsDownload ? AssetDownloader.Humanize(status.ApproxBytes) : "—";
 
     /// <summary>Set when the component works but not as well as this machine allows, such as a Fallback build.</summary>
