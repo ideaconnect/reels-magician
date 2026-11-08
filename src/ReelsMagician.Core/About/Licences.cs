@@ -155,9 +155,12 @@ public static class Licences
         new("SharpCompress", "Unpacks the .tar.xz archives Linux tools come in", "MIT",
             "https://github.com/adamhathcock/sharpcompress", LicenceGroup.EveryBuild,
             [LicenceText.Kept("licenses/SharpCompress/LICENSE.txt")], ["SharpCompress"]),
+        new("Velopack", "Connects the app to its Windows installer",
+            "MIT", "https://github.com/velopack/velopack", LicenceGroup.EveryBuild,
+            [LicenceText.Kept("licenses/Velopack/LICENSE")], ["Velopack"]),
 
         // ── Added by the release package ──
-        new(".NET runtime", "Runs the app; the Windows zip and the AppImage include it", "MIT, with notices of its own",
+        new(".NET runtime", "Runs the app; the Windows installer and zip and the AppImage include it", "MIT, with notices of its own",
             "https://github.com/dotnet/runtime", LicenceGroup.ReleasePackage,
             [
                 LicenceText.Shipped("Microsoft.NETCore.App.Runtime.win-x64", "LICENSE.TXT", TargetOs.Windows),
@@ -179,6 +182,9 @@ public static class Licences
                 LicenceText.InAppImage("licenses/zlib/LICENSE"),
             ],
             [], OnlyOn: TargetOs.Linux),
+        new("Velopack's Setup.exe and Update.exe", "Install the app for your account, and remove it again",
+            "MIT", "https://github.com/velopack/velopack", LicenceGroup.ReleasePackage,
+            [LicenceText.Kept("licenses/Velopack/LICENSE")], [], OnlyOn: TargetOs.Windows),
 
         // ── Downloaded by the app ──
         new("ffmpeg + ffprobe", "Reads, cuts and encodes the video",

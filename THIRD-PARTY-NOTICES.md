@@ -47,15 +47,17 @@ Every build of the app includes these.
 | OpenCvSharp5.runtime.win (native OpenCV build for Windows) | Apache-2.0; its `opencv_videoio_ffmpeg` DLL is OpenCV's LGPL-2.1 build of FFmpeg | https://github.com/shimat/opencvsharp |
 | OpenCvSharp5.official.runtime.linux-x64.headless (native OpenCV build for Linux, without OpenCV's own windows) | Apache-2.0; the native library statically links FFmpeg (LGPL-2.1) and Tesseract (Apache-2.0) | https://github.com/shimat/opencvsharp |
 | SharpCompress (unpacks the `.tar.xz` archives Linux tools come in) | MIT | https://github.com/adamhathcock/sharpcompress |
+| Velopack (connects the app to its Windows installer; on Linux it isn't called) | MIT | https://github.com/velopack/velopack |
 
 ## Added by the release packages
 
-Both packages are self-contained, so nothing else needs installing to start the app.
+The packages are self-contained, so nothing else needs installing to start the app.
 
 | Component | Licence | Source |
 |---|---|---|
-| The .NET runtime (the Windows zip and the AppImage) | MIT, with third-party notices of its own | https://github.com/dotnet/runtime |
+| The .NET runtime (the Windows installer and zip, and the AppImage) | MIT, with third-party notices of its own | https://github.com/dotnet/runtime |
 | The AppImage type2 runtime, which mounts the image and starts the app (the AppImage only) | MIT; it statically links musl (MIT), libfuse (LGPL-2.1), squashfuse (BSD-2-Clause), zstd (BSD-3-Clause or GPL-2.0) and zlib (zlib licence) | https://github.com/AppImage/type2-runtime |
+| Velopack's `Setup.exe`, which installs the app for the user, and `Update.exe`, which it leaves beside the app to remove it again (the Windows installer only) | MIT | https://github.com/velopack/velopack |
 
 ## Downloaded by the app at run time
 

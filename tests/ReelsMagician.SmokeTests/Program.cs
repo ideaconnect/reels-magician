@@ -81,4 +81,5 @@ static void RunLogicChecks()
     InfoBoxChecks.Run();
     MemoryFitChecks.Run();
     LocalizationChecks.Run();
+    InstallerChecks.Run();
 }

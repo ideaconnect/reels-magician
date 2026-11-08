@@ -1,6 +1,7 @@
 using System.Runtime.Versioning;
 using Avalonia;
 using Avalonia.Dialogs;
+using Velopack;
 
 namespace ReelsMagician.App;
 
@@ -11,6 +12,13 @@ public static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        // First, before anything else starts: the Windows installer (Velopack) runs the app with
+        // --veloapp-install, --veloapp-uninstall and the like, and this answers and exits at once.
+        // A normal start returns: from the zip straight away, installed after removing old update
+        // packages. Linux is left out: the AppImage is not a Velopack package, so this would only
+        // open a log file in /tmp on every start.
+        if (OperatingSystem.IsWindows()) VelopackApp.Build().Run();
+
         // Avalonia's Wayland backend has no fallback: without a compositor the window would
         // simply never appear. Say why instead.
         if (OperatingSystem.IsLinux() && !HasWaylandSession())

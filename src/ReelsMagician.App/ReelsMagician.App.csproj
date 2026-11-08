@@ -17,6 +17,9 @@
     <PackageReference Include="Avalonia.Win32" Version="12.1.5" />
     <PackageReference Include="Avalonia.Wayland" Version="12.1.5" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.5" />
+    <!-- The Windows installer's hooks. Keep vpk in .config/dotnet-tools.json at the same version:
+         the installer it builds and this library speak to each other (InstallerChecks holds them). -->
+    <PackageReference Include="Velopack" Version="1.2.161" />
   </ItemGroup>
   <ItemGroup>
     <!-- The icons come from assets/AppIconBase.png through tools/make-icons.cs. -->

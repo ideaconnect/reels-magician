@@ -615,7 +615,7 @@
     <value>Added by the package</value>
   </data>
   <data name="LicenceGroup_ReleasePackage_Description" xml:space="preserve">
-    <value>The release packages add what the app needs to start, so nothing else has to be installed.</value>
+    <value>The release packages add what the app needs to start, so nothing else has to be installed. The Windows installer also adds what installs and removes the app.</value>
   </data>
   <data name="LicenceGroup_DownloadedByApp_Title" xml:space="preserve">
     <value>Downloaded by the app</value>
@@ -696,11 +696,14 @@
   <data name="Licence_SharpCompress_Purpose" xml:space="preserve">
     <value>Unpacks the .tar.xz archives Linux tools come in</value>
   </data>
+  <data name="Licence_Velopack_Purpose" xml:space="preserve">
+    <value>Connects the app to its Windows installer</value>
+  </data>
   <data name="Licence_NETRuntime_Name" xml:space="preserve">
     <value>.NET runtime</value>
   </data>
   <data name="Licence_NETRuntime_Purpose" xml:space="preserve">
-    <value>Runs the app; the Windows zip and the AppImage include it</value>
+    <value>Runs the app; the Windows installer and zip and the AppImage include it</value>
   </data>
   <data name="Licence_NETRuntime_Licence" xml:space="preserve">
     <value>MIT, with notices of its own</value>
@@ -713,6 +716,12 @@
   </data>
   <data name="Licence_AppImageType2Runtime_Licence" xml:space="preserve">
     <value>MIT; it statically links musl (MIT), libfuse (LGPL-2.1), squashfuse (BSD-2-Clause), zstd (BSD-3-Clause or GPL-2.0) and zlib (zlib licence)</value>
+  </data>
+  <data name="Licence_VelopackSSetupExeAndUpdateExe_Name" xml:space="preserve">
+    <value>Velopack's Setup.exe and Update.exe</value>
+  </data>
+  <data name="Licence_VelopackSSetupExeAndUpdateExe_Purpose" xml:space="preserve">
+    <value>Install the app for your account, and remove it again</value>
   </data>
   <data name="Licence_FfmpegFfprobe_Purpose" xml:space="preserve">
     <value>Reads, cuts and encodes the video</value>

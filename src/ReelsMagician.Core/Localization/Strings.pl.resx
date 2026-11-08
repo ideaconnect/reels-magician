@@ -622,7 +622,7 @@
     <value>Dodane przez pakiet</value>
   </data>
   <data name="LicenceGroup_ReleasePackage_Description" xml:space="preserve">
-    <value>Pakiety wydań dodają to, czego aplikacja potrzebuje do uruchomienia, więc nie trzeba instalować nic więcej.</value>
+    <value>Pakiety wydań dodają to, czego aplikacja potrzebuje do uruchomienia, więc nie trzeba instalować nic więcej. Instalator dla Windows dodaje też to, co aplikację instaluje i usuwa.</value>
   </data>
   <data name="LicenceGroup_DownloadedByApp_Title" xml:space="preserve">
     <value>Pobierane przez aplikację</value>
@@ -702,11 +702,14 @@
   <data name="Licence_SharpCompress_Purpose" xml:space="preserve">
     <value>Rozpakowuje archiwa .tar.xz, w których przychodzą narzędzia dla Linuksa</value>
   </data>
+  <data name="Licence_Velopack_Purpose" xml:space="preserve">
+    <value>Łączy aplikację z jej instalatorem dla Windows</value>
+  </data>
   <data name="Licence_NETRuntime_Name" xml:space="preserve">
     <value>Środowisko uruchomieniowe .NET</value>
   </data>
   <data name="Licence_NETRuntime_Purpose" xml:space="preserve">
-    <value>Uruchamia aplikację; zawiera je archiwum zip dla Windows i AppImage</value>
+    <value>Uruchamia aplikację; zawierają je instalator i archiwum zip dla Windows oraz AppImage</value>
   </data>
   <data name="Licence_NETRuntime_Licence" xml:space="preserve">
     <value>MIT, z własnymi informacjami o licencjach</value>
@@ -719,6 +722,12 @@
   </data>
   <data name="Licence_AppImageType2Runtime_Licence" xml:space="preserve">
     <value>MIT; statycznie dołącza musl (MIT), libfuse (LGPL-2.1), squashfuse (BSD-2-Clause), zstd (BSD-3-Clause lub GPL-2.0) i zlib (licencja zlib)</value>
+  </data>
+  <data name="Licence_VelopackSSetupExeAndUpdateExe_Name" xml:space="preserve">
+    <value>Setup.exe i Update.exe z Velopacka</value>
+  </data>
+  <data name="Licence_VelopackSSetupExeAndUpdateExe_Purpose" xml:space="preserve">
+    <value>Instalują aplikację dla bieżącego użytkownika i ją odinstalowują</value>
   </data>
   <data name="Licence_FfmpegFfprobe_Purpose" xml:space="preserve">
     <value>Odczytuje, tnie i koduje film</value>
