@@ -101,7 +101,9 @@ Check ($null -ne $entry) 'Apps & features lists the app'
 if ($entry) {
     Check ($entry.DisplayName -eq 'ReelsMagician') "  named ReelsMagician (got '$($entry.DisplayName)')"
     Check ($entry.Publisher -eq $authors) "  published by $authors (got '$($entry.Publisher)')"
-    Check ($entry.DisplayVersion -eq $version) "  at version $version (got '$($entry.DisplayVersion)')"
+    # Velopack writes the version without a pre-release label: 0.3.0-beta.1 shows as 0.3.0.
+    $shortVersion = $version -replace '[-+].*$', ''
+    Check ($entry.DisplayVersion -eq $shortVersion) "  at version $shortVersion (got '$($entry.DisplayVersion)')"
     Check ($entry.DisplayIcon -eq $app) "  with the app's own icon (got '$($entry.DisplayIcon)')"
     Check ($entry.UninstallString -like "*Update.exe*--uninstall*") '  with an uninstaller'
 }

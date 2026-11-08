@@ -218,7 +218,7 @@ Releases come as an installer and a zip for Windows, and an AppImage for Linux.
 
 - **Windows, with the installer (recommended):** run `ReelsMagician-win-x64-Setup.exe`. It installs
   the app for your account only, with no admin rights, into `%LOCALAPPDATA%\IDCT.ReelsMagician`
-  (about 0.4 GB), with shortcuts in the Start menu and on the desktop, and lists it under
+  (about 340 MB), with shortcuts in the Start menu and on the desktop, and lists it under
   **Installed apps** in Settings, where you uninstall it. Neither the installer nor the app is
   signed yet, so SmartScreen asks once: choose **More info**, then **Run anyway**.
 - **Windows, from the zip:** unzip `ReelsMagician-win-x64.zip` anywhere and run `ReelsMagician.exe`.
