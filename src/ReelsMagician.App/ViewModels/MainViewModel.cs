@@ -78,10 +78,8 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
         ApplyPresetCommand = new RelayCommand(ApplyPreset, () => SelectedPreset is not null);
         RefreshPreviewCommand = new AsyncRelayCommand(RefreshPreviewAsync, () => !IsBusy);
-        OpenOutputCommand = new RelayCommand(OpenOutput, () => _project.OutputPath is not null);
         CopyOutputPathCommand = new AsyncRelayCommand(
             () => _shell.CopyTextAsync(_project.OutputPath ?? ""), () => _project.OutputPath is not null);
-        OpenToolsFolderCommand = new RelayCommand(() => ShowFolder(_paths.Root));
         CopyDataFolderCommand = new AsyncRelayCommand(() => _shell.CopyTextAsync(_paths.Root));
         RefreshCleanupCommand = new RelayCommand(RefreshCleanup);
         CleanupCommand = new AsyncRelayCommand(CleanupAsync, () => !IsBusy && SelectedCleanupBytes > 0);
@@ -119,9 +117,6 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         : "Qwen runs on llama.cpp's Vulkan build on any graphics card with a Vulkan driver, and on the processor " +
           "otherwise. whisper.cpp publishes only a processor build for Linux; point ReelsMagician at your own build " +
           "in settings.json if you have one.";
-
-    /// <summary>Whether this system can open a folder in its file manager. Copying the path always works.</summary>
-    public bool CanOpenFolders => _shell.CanOpenFolders;
 
     private WhisperModelSpec _selectedWhisperModel = ModelCatalog.DefaultWhisper;
     public WhisperModelSpec SelectedWhisperModel
@@ -433,9 +428,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     public AsyncRelayCommand ExportSubtitlesCommand { get; }
     public RelayCommand ApplyPresetCommand { get; }
     public AsyncRelayCommand RefreshPreviewCommand { get; }
-    public RelayCommand OpenOutputCommand { get; }
     public AsyncRelayCommand CopyOutputPathCommand { get; }
-    public RelayCommand OpenToolsFolderCommand { get; }
     public AsyncRelayCommand CopyDataFolderCommand { get; }
 
     // ── Toolchain actions ────────────────────────────────────────────────────────────────
@@ -875,23 +868,6 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         if (folder is not null) OutputFolder = folder;
     }
 
-    private void OpenOutput()
-    {
-        if (_project.OutputPath is null || !File.Exists(_project.OutputPath)) return;
-        try { _shell.ShowInFolder(_project.OutputPath); }
-        catch (Exception ex) { this.Warn("render", $"Could not open the folder: {ex.Message}"); }
-    }
-
-    private void ShowFolder(string path)
-    {
-        try
-        {
-            Directory.CreateDirectory(path);
-            _shell.ShowInFolder(path);
-        }
-        catch (Exception ex) { this.Warn("install", $"Could not open {path}: {ex.Message}"); }
-    }
-
     private void Cancel()
     {
         _cts?.Cancel();
@@ -969,7 +945,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         foreach (var command in new[]
         {
             CancelCommand, SplitCueCommand, MergeCueCommand, DeleteCueCommand,
-            ShiftEarlierCommand, ShiftLaterCommand, ApplyPresetCommand, OpenOutputCommand,
+            ShiftEarlierCommand, ShiftLaterCommand, ApplyPresetCommand,
         })
             command.RaiseCanExecuteChanged();
     }

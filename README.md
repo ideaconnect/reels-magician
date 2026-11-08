@@ -263,9 +263,9 @@ the spoken word is emphasised — **Colour** recolours it and nothing moves at a
 enlarges it vertically, which still leaves the line's width, and so its position, untouched. **Refresh preview** renders a real frame of your reel with the captions
 burned in. Transition length lives here too.
 
-**6 · Render** — choose an output folder and go. **Copy path** copies where the reel went, and
-**Open folder** shows it wherever the system has a file manager to open. The activity log shows
-every step.
+**6 · Render** — choose an output folder and go. **Copy path** copies the reel's full path, ready to
+paste into an upload page's file dialog, a file manager or a terminal. The activity log shows every
+step.
 
 File pickers and confirmations are drawn by the app itself, the same on both systems. A question
 always defaults to the answer that changes nothing.

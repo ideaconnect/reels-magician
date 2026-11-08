@@ -16,4 +16,4 @@ ReelsMagician for Linux is released as a single AppImage file attached to each G
 - An AppImage never updates itself. To update, users download the newer file.
 - Data lives in `~/.local/share/ReelsMagician`. Removing the app means deleting the file and that folder.
 - The AppImage must be built with the current static runtime, which needs only FUSE 3 (`fusermount3`). The old runtime needs libfuse2, which Ubuntu no longer installs.
-- Showing the output folder in a file manager depends on the desktop. So the app always offers **Copy path**, and offers **Open folder** only where it works.
+- Showing a folder in a file manager depends on the desktop, and a minimal Wayland session may have none. So the app has no **Open folder** at all, on either system, and offers **Copy path** instead, which works everywhere.
