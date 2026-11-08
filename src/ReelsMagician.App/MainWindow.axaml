@@ -52,9 +52,8 @@
           <Panel>
             <TextBlock Classes="badge-number" Text="{Binding Number}" FontSize="12" FontWeight="SemiBold"
                        HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !IsDone}" />
-            <Path Classes="badge-check" Width="12" Height="10" Data="M1,5 L4.5,8.5 L11,1.5"
-                  StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round"
-                  HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsDone}" />
+            <local:FaIcon Classes="badge-check" Data="{StaticResource fa-check}" Width="16" Height="16"
+                          HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsDone}" />
           </Panel>
         </Border>
         <Grid VerticalAlignment="Center">

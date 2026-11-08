@@ -297,8 +297,8 @@
     <Setter Property="Background" Value="{DynamicResource SuccessBrush}" />
     <Setter Property="BorderBrush" Value="{DynamicResource SuccessBrush}" />
   </Style>
-  <Style Selector="StackPanel.step Path.badge-check">
-    <Setter Property="Stroke" Value="{DynamicResource Bg}" />
+  <Style Selector="StackPanel.step local|FaIcon.badge-check">
+    <Setter Property="Foreground" Value="{DynamicResource Bg}" />
   </Style>
   <Style Selector="StackPanel.step.upcoming">
     <Setter Property="Opacity" Value="0.5" />
@@ -317,8 +317,8 @@
   <Style Selector="TabItem:selected StackPanel.step.done Border.badge">
     <Setter Property="Background" Value="{DynamicResource AccentButtonForeground}" />
   </Style>
-  <Style Selector="TabItem:selected StackPanel.step Path.badge-check">
-    <Setter Property="Stroke" Value="{DynamicResource AccentButtonBackground}" />
+  <Style Selector="TabItem:selected StackPanel.step local|FaIcon.badge-check">
+    <Setter Property="Foreground" Value="{DynamicResource AccentButtonBackground}" />
   </Style>
 
   <!-- Inputs and lists -->

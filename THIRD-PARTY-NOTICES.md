@@ -16,7 +16,7 @@ Every build of the app includes these, drawn from data in this repository.
 
 | Component | Licence | Source |
 |---|---|---|
-| Font Awesome Free 7.3.1: the shapes of the icons the app draws (component status, buttons, the support bar), copied from its SVGs into `src/ReelsMagician.App/Assets/Icons.axaml` by `tools/update-icons.cs` | Icons: CC BY 4.0, which covers what the app uses. The package's fonts are under SIL OFL 1.1 and its code under MIT; the app uses neither | https://fontawesome.com, https://github.com/FortAwesome/Font-Awesome |
+| Font Awesome Free 7.3.1: the shapes of the icons the app draws (component status, the step strip's checks, buttons, the support bar), copied from its SVGs into `src/ReelsMagician.App/Assets/Icons.axaml` by `tools/update-icons.cs` | Icons: CC BY 4.0, which covers what the app uses. The package's fonts are under SIL OFL 1.1 and its code under MIT; the app uses neither | https://fontawesome.com, https://github.com/FortAwesome/Font-Awesome |
 
 The icons are by Fonticons, Inc.: "Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com",
 used under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). They are converted from SVG to
