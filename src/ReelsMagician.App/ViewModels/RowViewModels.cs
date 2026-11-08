@@ -62,9 +62,11 @@ public sealed class SubtitleRowViewModel(TranscriptSegment segment) : ViewModelB
     /// <summary>After a switch of language: the length is written the interface's way.</summary>
     public void RefreshTexts() => Raise(nameof(DurationText));
 
-    /// <summary>Flags a cue that Whisper was unsure about, so review effort can be aimed at it.</summary>
-    public bool LowConfidence =>
-        Segment.Words.Count > 0 && Segment.Words.Average(w => w.Confidence) < 0.6;
+    /// <summary>
+    /// Flags a cue that Whisper was unsure about, so review effort can be aimed at it. Subtitles
+    /// that came with the video, and the words of an edit, are never flagged for their timing alone.
+    /// </summary>
+    public bool LowConfidence => Segment.LowConfidence;
 
     private void MarkEdited()
     {

@@ -15,6 +15,7 @@ public static class UnitChecks
     {
         TranscriptEditing();
         SubtitleParsing();
+        SpreadWordsKeepTheirConfidence();
         SubtitleTrackSelection();
         WhisperJsonParsing();
         Paragraphs();
@@ -159,6 +160,132 @@ public static class UnitChecks
             "the first line keeps its word timings, though its cue opens with a blank-looking line");
         Check.Near(3.5, fromYouTube.Segments[1].Words[1].Start, 0.01,
             "a rolling cue keeps the timings of its new words");
+    }
+
+    /// <summary>
+    /// Amber marks the cues Whisper was unsure about (issue #76). A word whose timing was only
+    /// spread across its cue was not heard at all, so the spreading alone must never mark it:
+    /// subtitles that came with the video, a cue Whisper gave without tokens, an edited line and
+    /// a folded cue keep the confidence of their text.
+    /// </summary>
+    private static void SpreadWordsKeepTheirConfidence()
+    {
+        Check.Section("Spread word timings keep the confidence of their text");
+
+        const string srt = """
+            1
+            00:00:01,000 --> 00:00:03,500
+            Hello there, friend.
+
+            2
+            00:00:04,000 --> 00:00:06,000
+            This is the second line.
+            """;
+        var fromSrt = SubtitleParser.Parse(srt);
+        fromSrt.EnsureWordTimings();
+        Check.True(fromSrt.Segments.All(s => s.HasWordTimings), "SRT cues get spread word timings");
+        Check.True(fromSrt.Segments.All(s => !s.LowConfidence), "no cue of a parsed SRT file is marked uncertain");
+        Check.True(fromSrt.Segments.SelectMany(s => s.Words).All(w => w.Confidence == 1.0),
+            "a word from supplied subtitles has full confidence");
+
+        // One cue without word timings, which are spread, and one with YouTube's inline ones.
+        const string vtt = """
+            WEBVTT
+
+            00:00:01.000 --> 00:00:03.000
+            A line with no word timings.
+
+            00:00:03.000 --> 00:00:05.000
+            we are <00:00:03.500><c>going </c><00:00:04.100><c>places</c>
+            """;
+        var fromVtt = SubtitleParser.Parse(vtt);
+        fromVtt.EnsureWordTimings();
+        Check.Equal(2, fromVtt.Segments.Count, "VTT cue count");
+        Check.True(fromVtt.Segments.All(s => s.HasWordTimings && !s.LowConfidence),
+            "no cue of a parsed VTT file is marked uncertain");
+
+        // AllWords spreads a cue that has no words yet; those words aren't doubted either.
+        var bare = new Transcript { Segments = [new() { Start = 0, End = 2, Text = "no words yet" }] };
+        Check.True(bare.AllWords().All(w => w.Confidence == 1.0), "words spread for captions have full confidence");
+
+        // Whisper gives tokens, and with them its confidence, for nearly every cue. One without
+        // tokens carries nothing to doubt it by.
+        const string json = """
+        {
+          "result": { "language": "en" },
+          "transcription": [
+            { "offsets": { "from": 0, "to": 2000 }, "text": " A cue without tokens." }
+          ]
+        }
+        """;
+        var untokenised = WhisperTranscriber.ParseWhisperJson(json).Segments[0];
+        Check.True(untokenised.HasWordTimings && !untokenised.LowConfidence,
+            "a Whisper cue without tokens is not marked uncertain for its spread timings");
+
+        // Editing a line Whisper was sure of must not turn it amber.
+        var sure = new TranscriptSegment
+        {
+            Start = 10,
+            End = 12,
+            Text = "the quick brown fox",
+            Words =
+            [
+                new(10.0, 10.4, "the", 0.9),
+                new(10.4, 10.9, "quick", 0.9),
+                new(10.9, 11.5, "brown", 0.9),
+                new(11.5, 12.0, "fox", 0.9),
+            ],
+        };
+        sure.Text = "the quick brown dog";
+        sure.RetimeWords();
+        Check.Near(0.9, sure.Words[3].Confidence, 1e-9, "a replacing word takes the confidence of the word it replaced");
+        sure.Text = "the very quick brown dog";
+        sure.RetimeWords();
+        Check.Equal("very", sure.Words[1].Text, "the typed-in word lands in place");
+        Check.Near(0.9, sure.Words[1].Confidence, 1e-9, "a typed-in word takes the confidence of the words either side");
+        Check.True(!sure.LowConfidence, "editing a line Whisper was sure of does not mark it uncertain");
+
+        // And the other way round: rewriting a line Whisper was unsure of carries its doubt over.
+        // The row's Edited mark, not the colour, says that the line was reviewed.
+        var unsure = new TranscriptSegment
+        {
+            Start = 0,
+            End = 2,
+            Text = "wreck a nice beach",
+            Words = [new(0.0, 0.5, "wreck", 0.3), new(0.5, 0.7, "a", 0.4), new(0.7, 1.2, "nice", 0.5), new(1.2, 2.0, "beach", 0.3)],
+        };
+        unsure.Text = "recognise speech";
+        unsure.RetimeWords();
+        Check.Near(0.375, unsure.Words.Average(w => w.Confidence), 1e-9,
+            "rewritten words take the average confidence of the words they replaced");
+        Check.True(unsure.LowConfidence, "rewriting a line Whisper was unsure of keeps it marked");
+
+        // A timeless cue folded into its neighbour has its words respread over the merged cue,
+        // and the merged cue keeps how sure Whisper was of the words in it.
+        var folding = new Transcript
+        {
+            Segments =
+            [
+                new() { Start = 74.00, End = 74.46, Text = "Tutaj", Words = [new(74.00, 74.46, "Tutaj", 0.95)] },
+                new() { Start = 74.46, End = 74.46, Text = "już", Words = [new(74.46, 74.46, "już", 0.9)] },
+                new() { Start = 74.46, End = 75.20, Text = "Yoga", Words = [new(74.46, 75.20, "Yoga", 0.3)] },
+                new() { Start = 75.20, End = 75.20, Text = "Slim", Words = [new(75.20, 75.20, "Slim", 0.2)] },
+                new() { Start = 75.20, End = 76.00, Text = "7x", Words = [new(75.20, 76.00, "7x", 0.9)] },
+            ],
+        };
+        folding.Normalize();
+        folding.EnsureWordTimings();
+        var confident = folding.Segments.FirstOrDefault(s => s.Text == "Tutaj już");
+        var doubtful = folding.Segments.FirstOrDefault(s => s.Text == "Yoga Slim");
+        Check.True(confident is not null && doubtful is not null, "the timeless cues were folded into the cue before");
+        if (confident is null || doubtful is null) return;
+        Check.True(!confident.LowConfidence, "a folded cue Whisper was sure of is not marked uncertain");
+        Check.True(doubtful.LowConfidence, "a folded cue Whisper was unsure of stays marked");
+        Check.Equal(2, confident.Words.Count, "a folded cue has a word for each of its words");
+        Check.Near(confident.Start, confident.Words[0].Start, 1e-6, "a folded cue's first word starts with the cue");
+        Check.Near(confident.End, confident.Words[^1].End, 1e-6, "a folded cue's words are spread to its end");
+        Check.True(TimingSequencer.IsSequenced([.. folding.AllWords().Select(w => (w.Start, w.End))]),
+            "the respread words are ordered and do not overlap");
     }
 
     private static void WhisperJsonParsing()
