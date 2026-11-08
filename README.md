@@ -1,3 +1,5 @@
+<p align="center"><img src="src/ReelsMagician.App/Assets/reelsmagician-256.png" width="128" height="128" alt="ReelsMagician's icon: a film reel rising out of a magician's hat"></p>
+
 # ReelsMagician
 
 A desktop app for Windows and Linux that turns a long video into a vertical **1080×1920** reel.
@@ -214,7 +216,11 @@ Releases come as a zip for Windows and an AppImage for Linux.
 
 - **Windows:** unzip `ReelsMagician-win-x64.zip` and run `ReelsMagician.exe`. It isn't signed yet,
   so SmartScreen asks once: choose **More info**, then **Run anyway**.
-- **Linux:** `chmod +x ReelsMagician-x86_64.AppImage`, then run it from a Wayland session.
+- **Linux:** `chmod +x ReelsMagician-x86_64.AppImage`, then run it from a Wayland session. GNOME
+  and KDE show its icon in the dock once the AppImage is integrated with the desktop, which
+  [Gear Lever](https://github.com/mijorus/gearlever) or
+  [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher) does for you. Until then the
+  dock shows a generic icon (see [Troubleshooting](#troubleshooting)).
 
 ## Build and run
 
@@ -236,6 +242,11 @@ interrupted, so a dropped connection is not a restart.
 ---
 
 ## Using it
+
+The strip at the top of the window is the app's menu, one chip per step. It also shows how far
+you have got: a step's number turns into a check once its output exists, the step to do next has
+its number ringed, and the steps after it are dimmed. Every step stays open to you, and says what
+it needs.
 
 **2 · Source** — paste a link or browse to a file, set the reel length, press **Load source**.
 The first time you load a link, the app asks before downloading yt-dlp. The topic box is prefilled from the title or filename; correct it if it is wrong, because the
@@ -267,11 +278,26 @@ burned in. Transition length lives here too.
 paste into an upload page's file dialog, a file manager or a terminal. The activity log shows every
 step.
 
-**Cleanup** — on the right of the tab strip, apart from the steps: frees up space in the app's
-data folder (see [Freeing up space](#freeing-up-space)).
+**Cleanup** — on the right of the strip, apart from the steps and without a number: frees up space
+in the app's data folder (see [Freeing up space](#freeing-up-space)).
 
 File pickers and confirmations are drawn by the app itself, the same on both systems. A question
 always defaults to the answer that changes nothing.
+
+### Light and dark
+
+The switch at the top right picks the theme: **follow the system** (the desktop icon, the default),
+**light** (the sun) or **dark** (the moon). It applies at once and is remembered. The dark theme is
+true black, for OLED screens; the light one is off-white, so a bright IPS panel doesn't glare. The
+accent colour of the buttons and the selected step is your system's, where it has one.
+
+- **Windows:** follows the Windows light or dark mode and accent colour, as they change.
+- **Linux:** follows the desktop's light or dark style through `xdg-desktop-portal`, as GNOME and
+  KDE Plasma provide it. Where the portal doesn't say dark, or there is no portal (sway and other
+  wlroots desktops often have none), the app reads GTK's own setting instead: `GTK_THEME`, then
+  `gtk-application-prefer-dark-theme` or a `gtk-theme-name` ending in `-dark` in
+  `~/.config/gtk-4.0/settings.ini` and then `gtk-3.0/settings.ini`. With no answer from either, it
+  is light. GTK's files are read at start and whenever you pick **follow the system** again.
 
 ### Caption presets
 
@@ -338,7 +364,10 @@ src/ReelsMagician.App/         Avalonia front end, Windows and Wayland
 tests/ReelsMagician.SmokeTests/
 packaging/linux/               the AppImage: desktop entry, icons, licences, build and check scripts
 docs/                          system requirements and architecture decisions
+assets/AppIconBase.png         the app's icon, which every icon file is made from
+tools/make-icons.cs         makes the .ico and the PNG icons from it: dotnet run tools/make-icons.cs
 tools/make-speech-video.ps1 generates a narrated 4K test video (Windows: it uses the Windows speech engine)
+tools/update-icons.cs       copies the Font Awesome icons the app draws: dotnet run tools/update-icons.cs
 ```
 
 ## Tests
@@ -376,6 +405,14 @@ choose **Ubuntu** rather than **Ubuntu on Xorg** on the login screen. The app ha
 **Linux: the AppImage does not start** — it needs FUSE 3 (`fusermount3`, in the `fuse3` package),
 which Ubuntu installs by default. Without it, run it as
 `./ReelsMagician-x86_64.AppImage --appimage-extract-and-run`.
+
+**Linux: a generic icon in the dock** — on Wayland an app can't give its window an icon. The
+desktop finds it through the window's app id, `ReelsMagician`, in an installed
+`ReelsMagician.desktop` file, and an AppImage installs none by itself. Integrate the AppImage with
+Gear Lever or AppImageLauncher, and the dock, the app list and the window switcher show the icon.
+Once Avalonia supports the protocol that lets a window send its icon
+([AvaloniaUI/Avalonia#21910](https://github.com/AvaloniaUI/Avalonia/issues/21910)), desktops that
+implement it, such as KWin 6.7 and labwc, will show it without integration.
 
 **Linux: "no driver for this GPU"** — install Mesa's Vulkan drivers (`mesa-vulkan-drivers`), or
 the NVIDIA driver on an NVIDIA card. Without one, Qwen runs on the CPU, which works but is much
@@ -418,6 +455,7 @@ ReelsMagician is released under the [BSD 3-Clause License](LICENSE).
 The repository contains no third-party binaries and no model weights. The app downloads ffmpeg
 (GPL build), whisper.cpp, llama.cpp, and model weights from Whisper, Qwen and OpenCV from their
 original publishers on first run. It downloads yt-dlp and Deno only if you agree to it. Each stays
-under its own licence.
+under its own licence. The app's icons are [Font Awesome Free](https://fontawesome.com) icons,
+under CC BY 4.0.
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) lists every component, its licence and its
 source; read it before redistributing a build.

@@ -1,44 +1,312 @@
 <!--
-  The app's look on top of Avalonia's Fluent theme (dark). Colours match the WPF version;
-  fonts are left to the system, so Windows shows Segoe UI and Linux its own UI font.
+  The app's look on top of Avalonia's Fluent theme, in a light and a dark version that follow the
+  system unless the user picks one (AppTheme.cs). Fonts are left to the system, so Windows shows
+  Segoe UI and Linux its own UI font.
 -->
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:ReelsMagician.App"
         xmlns:dialogs="using:Avalonia.Dialogs">
 
   <Styles.Resources>
     <ResourceDictionary>
-      <!-- Fluent reads its accent from these. -->
-      <Color x:Key="SystemAccentColor">#6C7BFF</Color>
-      <Color x:Key="SystemAccentColorLight1">#7C89FF</Color>
-      <Color x:Key="SystemAccentColorLight2">#8E99FF</Color>
-      <Color x:Key="SystemAccentColorLight3">#A3ACFF</Color>
-      <Color x:Key="SystemAccentColorDark1">#5D6CF0</Color>
-      <Color x:Key="SystemAccentColorDark2">#4E5CE0</Color>
-      <Color x:Key="SystemAccentColorDark3">#3F4CC8</Color>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://ReelsMagician/Assets/Icons.axaml" />
+      </ResourceDictionary.MergedDictionaries>
 
-      <SolidColorBrush x:Key="Bg" Color="#12121A" />
-      <SolidColorBrush x:Key="Panel" Color="#1B1B26" />
-      <SolidColorBrush x:Key="PanelAlt" Color="#22222F" />
-      <SolidColorBrush x:Key="InputBg" Color="#15151F" />
-      <SolidColorBrush x:Key="BorderBrush2" Color="#32323F" />
-      <SolidColorBrush x:Key="TextBrush" Color="#ECECF2" />
-      <SolidColorBrush x:Key="Muted" Color="#9A9AAC" />
-      <SolidColorBrush x:Key="Accent" Color="#6C7BFF" />
-      <SolidColorBrush x:Key="Good" Color="#3BD68A" />
-      <SolidColorBrush x:Key="Warn" Color="#F5B94A" />
-      <SolidColorBrush x:Key="WarnBg" Color="#2A2318" />
+      <!--
+        The palette, one dictionary per theme, neutral greys with no tint. Every brush here is a
+        theme resource, so it must be used through DynamicResource: a StaticResource would keep the
+        colour of the theme the window opened in. The logic checks (ThemeChecks) hold both
+        dictionaries to the same keys and every text colour to 4.5:1 on the backgrounds it sits on.
+
+        Dark suits AMOLED screens: the window is true black, so its pixels switch off, and cards are
+        told apart by their border rather than their fill. Text is not pure white, which smears on
+        OLED when scrolling. Light suits IPS screens: an off-white window that doesn't glare, with
+        white cards.
+      -->
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="Bg" Color="#000000" />
+          <SolidColorBrush x:Key="Panel" Color="#0F0F0F" />
+          <SolidColorBrush x:Key="PanelAlt" Color="#1A1A1A" />
+          <SolidColorBrush x:Key="InputBg" Color="#1A1A1A" />
+          <SolidColorBrush x:Key="BorderBrush2" Color="#2B2B2B" />
+          <SolidColorBrush x:Key="TextBrush" Color="#EDEDED" />
+          <SolidColorBrush x:Key="Muted" Color="#A3A3A3" />
+          <!-- A reel proposal under the pointer and the chosen one, and the selected cue. -->
+          <SolidColorBrush x:Key="CardHover" Color="#161616" />
+          <SolidColorBrush x:Key="CardSelected" Color="#1A1A1A" />
+          <SolidColorBrush x:Key="RowSelected" Color="#262626" />
+          <!-- Accent text and outlines: a lighter shade of the accent, which reads on black. -->
+          <SolidColorBrush x:Key="Accent" Color="{DynamicResource SystemAccentColorLight2}" />
+
+          <!-- What a status means: success, error, warning and info, for text and icons, and a
+               tinted background for a notice of each kind. -->
+          <SolidColorBrush x:Key="SuccessBrush" Color="#3BD68A" />
+          <SolidColorBrush x:Key="ErrorBrush" Color="#F85149" />
+          <SolidColorBrush x:Key="WarningBrush" Color="#F5B94A" />
+          <SolidColorBrush x:Key="InfoBrush" Color="#4493F8" />
+          <SolidColorBrush x:Key="SuccessBg" Color="#152B20" />
+          <SolidColorBrush x:Key="ErrorBg" Color="#301817" />
+          <SolidColorBrush x:Key="WarningBg" Color="#2F2717" />
+          <SolidColorBrush x:Key="InfoBg" Color="#162130" />
+
+          <!-- GitHub's dark button, for the Sponsors link. -->
+          <SolidColorBrush x:Key="SponsorBackground" Color="#21262D" />
+          <SolidColorBrush x:Key="SponsorBackgroundPointerOver" Color="#30363D" />
+          <SolidColorBrush x:Key="SponsorBackgroundPressed" Color="#282E33" />
+          <SolidColorBrush x:Key="SponsorForeground" Color="#F0F6FC" />
+          <SolidColorBrush x:Key="SponsorBorder" Color="#3D444D" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="Bg" Color="#F3F3F3" />
+          <SolidColorBrush x:Key="Panel" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="PanelAlt" Color="#FAFAFA" />
+          <SolidColorBrush x:Key="InputBg" Color="#FAFAFA" />
+          <SolidColorBrush x:Key="BorderBrush2" Color="#D4D4D4" />
+          <SolidColorBrush x:Key="TextBrush" Color="#1B1B1B" />
+          <SolidColorBrush x:Key="Muted" Color="#5E5E5E" />
+          <SolidColorBrush x:Key="CardHover" Color="#F7F7F7" />
+          <SolidColorBrush x:Key="CardSelected" Color="#F0F0F0" />
+          <SolidColorBrush x:Key="RowSelected" Color="#EBEBEB" />
+          <!-- On light backgrounds, a darker shade of the accent. -->
+          <SolidColorBrush x:Key="Accent" Color="{DynamicResource SystemAccentColorDark1}" />
+
+          <SolidColorBrush x:Key="SuccessBrush" Color="#1A7F37" />
+          <SolidColorBrush x:Key="ErrorBrush" Color="#CF222E" />
+          <SolidColorBrush x:Key="WarningBrush" Color="#8A5C00" />
+          <SolidColorBrush x:Key="InfoBrush" Color="#0969DA" />
+          <SolidColorBrush x:Key="SuccessBg" Color="#EDF5EF" />
+          <SolidColorBrush x:Key="ErrorBg" Color="#FBEDEE" />
+          <SolidColorBrush x:Key="WarningBg" Color="#F6F2EB" />
+          <SolidColorBrush x:Key="InfoBg" Color="#EBF3FC" />
+
+          <!-- GitHub's light button. -->
+          <SolidColorBrush x:Key="SponsorBackground" Color="#F6F8FA" />
+          <SolidColorBrush x:Key="SponsorBackgroundPointerOver" Color="#EFF2F5" />
+          <SolidColorBrush x:Key="SponsorBackgroundPressed" Color="#E6EAEF" />
+          <SolidColorBrush x:Key="SponsorForeground" Color="#1F2328" />
+          <SolidColorBrush x:Key="SponsorBorder" Color="#D1D9E0" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+
+      <!-- The accent is the system's: Fluent takes it, and its shades, from Windows or from the
+           Linux desktop's portal. Only when the system has none does AppTheme.cs set this blue
+           instead, the blue end of the icon's film strip. White button text on it reaches 4.95:1. -->
+      <Color x:Key="FallbackAccentColor">#0068F0</Color>
+
+      <!-- The same in both themes: the caption preview's frame stands in for the video, so it stays
+           black, and the Sponsors heart keeps GitHub's pink. -->
+      <SolidColorBrush x:Key="VideoFrame" Color="#000000" />
+      <SolidColorBrush x:Key="SponsorHeart" Color="#DB61A2" />
 
       <!-- Fluent's defaults are sized for touch; this is a dense desktop tool. -->
       <x:Double x:Key="ControlContentThemeFontSize">13</x:Double>
-      <x:Double x:Key="TabItemHeaderFontSize">14</x:Double>
-      <x:Double x:Key="TabItemMinHeight">38</x:Double>
+
+      <!--
+        The step strip: the tabs as a bar of their own, with the page they open framed under it,
+        so the strip reads as the app's menu and the page as what it opened. Every colour comes
+        from a resource, never a hex value here, so a theme variant restyles it as a whole.
+      -->
+      <ControlTheme x:Key="StepStrip" TargetType="TabControl">
+        <Setter Property="Padding" Value="14,0,6,10" />
+        <Setter Property="Template">
+          <ControlTemplate>
+            <DockPanel>
+              <Border Name="PART_Strip" DockPanel.Dock="Top" Background="{DynamicResource Panel}"
+                      BorderBrush="{DynamicResource BorderBrush2}" BorderThickness="1"
+                      CornerRadius="8,8,0,0" Padding="3">
+                <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+              </Border>
+              <!-- The same border carries on round the page, so the strip is its top edge. -->
+              <Border Name="PART_Page" BorderBrush="{DynamicResource BorderBrush2}"
+                      BorderThickness="1,0,1,1" CornerRadius="0,0,8,8">
+                <Panel ClipToBounds="True">
+                  <ContentPresenter Name="PART_SelectedContentHost2"
+                                    Margin="{TemplateBinding Padding}"
+                                    HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                    VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                    IsVisible="False" />
+                  <ContentPresenter Name="PART_SelectedContentHost"
+                                    Margin="{TemplateBinding Padding}"
+                                    HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                    VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                </Panel>
+              </Border>
+            </DockPanel>
+          </ControlTemplate>
+        </Setter>
+      </ControlTheme>
+
+      <!--
+        A tab of the strip: a rounded chip with a chevron before it showing the order. The selected
+        chip takes the accent fill, as the main buttons do; the rest stay muted on the bar. Items
+        with the aside class (Cleanup) are outlined instead, with no chevron and no number, so they
+        do not read as further steps.
+      -->
+      <ControlTheme x:Key="StepTab" TargetType="TabItem">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="Padding" Value="7,5,14,5" />
+        <!-- A 34 px chip, plus the 3 px round it that the focus ring is drawn in. -->
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="Cursor" Value="Hand" />
+        <!-- The focus ring is drawn round the chip in the template, not round the whole item. -->
+        <Setter Property="FocusAdorner" Value="{x:Null}" />
+        <Setter Property="Template">
+          <ControlTemplate>
+            <!-- No background here: only the chip takes clicks, not the chevron before it. -->
+            <StackPanel Orientation="Horizontal">
+              <Path Name="PART_Connector" Data="M0,0 L4,4.5 L0,9" Stroke="{DynamicResource Muted}"
+                    StrokeThickness="1.5" StrokeLineCap="Round" StrokeJoin="Round" Opacity="0.6"
+                    Margin="4,0" VerticalAlignment="Center" IsHitTestVisible="False" />
+              <!-- The margin keeps the focus ring inside the item, so it is never clipped. -->
+              <Panel Margin="3">
+                <Border Name="PART_Chip"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        Padding="{TemplateBinding Padding}">
+                  <ContentPresenter Name="PART_ContentPresenter"
+                                    Content="{TemplateBinding Header}"
+                                    ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                    VerticalAlignment="Center" />
+                </Border>
+                <Border Name="PART_FocusRing" Margin="-3" CornerRadius="19" BorderThickness="2"
+                        BorderBrush="{DynamicResource TextBrush}" IsVisible="False" IsHitTestVisible="False" />
+              </Panel>
+            </StackPanel>
+          </ControlTemplate>
+        </Setter>
+
+        <Style Selector="^:nth-child(1) /template/ Path#PART_Connector">
+          <Setter Property="IsVisible" Value="False" />
+        </Style>
+
+        <Style Selector="^:pointerover">
+          <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
+          <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="^:pressed">
+          <Setter Property="Background" Value="{DynamicResource BorderBrush2}" />
+        </Style>
+
+        <Style Selector="^:selected">
+          <Setter Property="Background" Value="{DynamicResource AccentButtonBackground}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonBackground}" />
+          <Setter Property="Foreground" Value="{DynamicResource AccentButtonForeground}" />
+          <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+        <Style Selector="^:selected:pointerover">
+          <Setter Property="Background" Value="{DynamicResource AccentButtonBackgroundPointerOver}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonBackgroundPointerOver}" />
+          <Setter Property="Foreground" Value="{DynamicResource AccentButtonForegroundPointerOver}" />
+        </Style>
+        <Style Selector="^:selected:pressed">
+          <Setter Property="Background" Value="{DynamicResource AccentButtonBackgroundPressed}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonBackgroundPressed}" />
+          <Setter Property="Foreground" Value="{DynamicResource AccentButtonForegroundPressed}" />
+        </Style>
+
+        <Style Selector="^:focus-visible /template/ Border#PART_FocusRing">
+          <Setter Property="IsVisible" Value="True" />
+        </Style>
+
+        <Style Selector="^.aside">
+          <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush2}" />
+          <Setter Property="Padding" Value="14,5" />
+          <Setter Property="Margin" Value="8,0,0,0" />
+          <!-- As on the steps, the bold label's width is held, so selecting it shifts nothing. -->
+          <Setter Property="HeaderTemplate">
+            <DataTemplate x:DataType="x:String">
+              <Grid>
+                <TextBlock Text="{Binding}" FontWeight="Bold" Opacity="0" />
+                <TextBlock Text="{Binding}" HorizontalAlignment="Center" />
+              </Grid>
+            </DataTemplate>
+          </Setter>
+        </Style>
+        <Style Selector="^.aside /template/ Path#PART_Connector">
+          <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="^.aside:selected">
+          <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonBackground}" />
+        </Style>
+      </ControlTheme>
+
+      <!-- A Font Awesome icon (FaIcon.cs): the path unstretched on a canvas the size of the icons'
+           shared viewBox, scaled to the control's size. At 16 px the glyph's em is 12.8 px tall. -->
+      <ControlTheme x:Key="{x:Type local:FaIcon}" TargetType="local:FaIcon">
+        <Setter Property="Width" Value="16" />
+        <Setter Property="Height" Value="16" />
+        <Setter Property="Template">
+          <ControlTemplate>
+            <Viewbox Stretch="Uniform">
+              <Canvas Width="640" Height="640">
+                <Path Data="{TemplateBinding Data}" Fill="{TemplateBinding Foreground}" Stretch="None" />
+              </Canvas>
+            </Viewbox>
+          </ControlTemplate>
+        </Setter>
+      </ControlTheme>
+
+      <!--
+        A segment of the appearance switch in the header: one of a group of radio buttons drawn as
+        a single control, an icon per segment, with the chosen one in the accent fill of the main
+        buttons. The icon takes the segment's text colour.
+      -->
+      <ControlTheme x:Key="Segment" TargetType="RadioButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+        <Setter Property="Padding" Value="10,6" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusAdorner" Value="{x:Null}" />
+        <Setter Property="Template">
+          <ControlTemplate>
+            <Panel>
+              <Border Name="PART_Segment" Background="{TemplateBinding Background}"
+                      CornerRadius="{TemplateBinding CornerRadius}" Padding="{TemplateBinding Padding}">
+                <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                  Foreground="{TemplateBinding Foreground}"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+              <Border Name="PART_FocusRing" CornerRadius="{TemplateBinding CornerRadius}" BorderThickness="2"
+                      BorderBrush="{DynamicResource TextBrush}" IsVisible="False" IsHitTestVisible="False" />
+            </Panel>
+          </ControlTemplate>
+        </Setter>
+
+        <Style Selector="^:pointerover">
+          <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
+          <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="^:checked">
+          <Setter Property="Background" Value="{DynamicResource AccentButtonBackground}" />
+          <Setter Property="Foreground" Value="{DynamicResource AccentButtonForeground}" />
+        </Style>
+        <Style Selector="^:checked:pointerover">
+          <Setter Property="Background" Value="{DynamicResource AccentButtonBackgroundPointerOver}" />
+          <Setter Property="Foreground" Value="{DynamicResource AccentButtonForegroundPointerOver}" />
+        </Style>
+        <Style Selector="^:focus-visible /template/ Border#PART_FocusRing">
+          <Setter Property="IsVisible" Value="True" />
+        </Style>
+      </ControlTheme>
     </ResourceDictionary>
   </Styles.Resources>
 
   <Style Selector="Window">
-    <Setter Property="Background" Value="{StaticResource Bg}" />
-    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    <Setter Property="Background" Value="{DynamicResource Bg}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
     <Setter Property="FontSize" Value="13" />
   </Style>
 
@@ -54,17 +322,17 @@
     <Setter Property="Margin" Value="0,0,0,6" />
   </Style>
   <Style Selector="TextBlock.hint">
-    <Setter Property="Foreground" Value="{StaticResource Muted}" />
+    <Setter Property="Foreground" Value="{DynamicResource Muted}" />
     <Setter Property="FontSize" Value="12" />
     <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
   <Style Selector="TextBlock.label">
-    <Setter Property="Foreground" Value="{StaticResource Muted}" />
+    <Setter Property="Foreground" Value="{DynamicResource Muted}" />
     <Setter Property="FontSize" Value="12" />
     <Setter Property="Margin" Value="0,0,0,4" />
   </Style>
   <Style Selector="TextBlock.warn">
-    <Setter Property="Foreground" Value="{StaticResource Warn}" />
+    <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
     <Setter Property="FontSize" Value="12" />
     <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
@@ -75,31 +343,87 @@
 
   <!-- Panels -->
   <Style Selector="Border.card">
-    <Setter Property="Background" Value="{StaticResource Panel}" />
-    <Setter Property="BorderBrush" Value="{StaticResource BorderBrush2}" />
+    <Setter Property="Background" Value="{DynamicResource Panel}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush2}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="8" />
     <Setter Property="Padding" Value="14" />
     <Setter Property="Margin" Value="0,0,0,12" />
   </Style>
   <Style Selector="Border.notice">
-    <Setter Property="Background" Value="{StaticResource WarnBg}" />
+    <Setter Property="Background" Value="{DynamicResource WarningBg}" />
     <Setter Property="CornerRadius" Value="6" />
     <Setter Property="Padding" Value="10" />
   </Style>
   <Style Selector="Border.divider">
     <Setter Property="Width" Value="1" />
-    <Setter Property="Background" Value="{StaticResource BorderBrush2}" />
+    <Setter Property="Background" Value="{DynamicResource BorderBrush2}" />
     <Setter Property="Margin" Value="4,4" />
+  </Style>
+
+  <!-- A component's status on the Setup tab, told apart by shape as well as colour: a green check
+       when it is there, a red X when it still has to download, and a muted dash for an optional
+       one that is not installed, which is no error. -->
+  <Style Selector="local|FaIcon.status">
+    <Setter Property="Data" Value="{StaticResource fa-circle-xmark}" />
+    <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}" />
+  </Style>
+  <Style Selector="local|FaIcon.status.ready">
+    <Setter Property="Data" Value="{StaticResource fa-circle-check}" />
+    <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+  </Style>
+  <Style Selector="local|FaIcon.status.optional">
+    <Setter Property="Data" Value="{StaticResource fa-circle-minus}" />
+    <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+  </Style>
+
+  <!-- Inside a step's chip (MainWindow's StepViewModel template): the number in a muted ring, an
+       accent ring on the step to do next, a green check once the step's output exists, and the
+       steps not reached yet dimmed, though they stay clickable: each tab says what it needs. -->
+  <Style Selector="StackPanel.step Border.badge">
+    <Setter Property="BorderBrush" Value="{DynamicResource Muted}" />
+  </Style>
+  <Style Selector="StackPanel.step.current Border.badge">
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+  </Style>
+  <Style Selector="StackPanel.step.current TextBlock.badge-number">
+    <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+  </Style>
+  <Style Selector="StackPanel.step.done Border.badge">
+    <Setter Property="Background" Value="{DynamicResource SuccessBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SuccessBrush}" />
+  </Style>
+  <Style Selector="StackPanel.step local|FaIcon.badge-check">
+    <Setter Property="Foreground" Value="{DynamicResource Bg}" />
+  </Style>
+  <Style Selector="StackPanel.step.upcoming">
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
+  <!-- On the selected chip's accent fill, the badge takes the fill's text colour, and the page
+       that is open is never dimmed. -->
+  <Style Selector="TabItem:selected StackPanel.step">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+  <Style Selector="TabItem:selected StackPanel.step Border.badge">
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonForeground}" />
+  </Style>
+  <Style Selector="TabItem:selected StackPanel.step TextBlock.badge-number">
+    <Setter Property="Foreground" Value="{DynamicResource AccentButtonForeground}" />
+  </Style>
+  <Style Selector="TabItem:selected StackPanel.step.done Border.badge">
+    <Setter Property="Background" Value="{DynamicResource AccentButtonForeground}" />
+  </Style>
+  <Style Selector="TabItem:selected StackPanel.step local|FaIcon.badge-check">
+    <Setter Property="Foreground" Value="{DynamicResource AccentButtonBackground}" />
   </Style>
 
   <!-- Inputs and lists -->
   <Style Selector="TextBox">
-    <Setter Property="Background" Value="{StaticResource InputBg}" />
+    <Setter Property="Background" Value="{DynamicResource InputBg}" />
   </Style>
   <Style Selector="ListBox">
-    <Setter Property="Background" Value="{StaticResource InputBg}" />
-    <Setter Property="BorderBrush" Value="{StaticResource BorderBrush2}" />
+    <Setter Property="Background" Value="{DynamicResource InputBg}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush2}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="6" />
   </Style>
@@ -120,29 +444,34 @@
   <Style Selector="ListBox.cards > ListBoxItem">
     <Setter Property="Margin" Value="0,0,0,8" />
     <Setter Property="Padding" Value="12" />
-    <Setter Property="Background" Value="{StaticResource Panel}" />
-    <Setter Property="BorderBrush" Value="{StaticResource BorderBrush2}" />
+    <Setter Property="Background" Value="{DynamicResource Panel}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush2}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="6" />
   </Style>
-  <Style Selector="ListBox.cards > ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="#232338" />
-    <Setter Property="BorderBrush" Value="{StaticResource Accent}" />
-  </Style>
   <Style Selector="ListBox.cards > ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="#222230" />
+    <Setter Property="Background" Value="{DynamicResource CardHover}" />
+  </Style>
+  <Style Selector="ListBox.cards > ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource CardSelected}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
   </Style>
 
-  <!-- The cue table: compact rows, selection shown as a left accent rather than a fill. -->
+  <!-- The cue table: compact rows, the selected one on a darker or lighter fill. -->
   <Style Selector="ListBox.cues > ListBoxItem">
     <Setter Property="Padding" Value="6,3" />
   </Style>
   <Style Selector="ListBox.cues > ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="#20203A" />
+    <Setter Property="Background" Value="{DynamicResource RowSelected}" />
   </Style>
   <Style Selector="ListBox.cues TextBox">
     <Setter Property="MinHeight" Value="28" />
     <Setter Property="Padding" Value="6,4" />
+  </Style>
+  <!-- A cue Whisper was unsure about, in the warning colour, so review effort lands where it
+       counts. A style rather than a converter, so the colour follows the theme. -->
+  <Style Selector="ListBox.cues TextBox.low">
+    <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
   </Style>
 
   <!-- The file picker is Avalonia's, with OK before Cancel. Laying that one row out right to left
@@ -161,8 +490,8 @@
     <Setter Property="MinHeight" Value="0" />
   </Style>
 
-  <!-- The support bar: each button in its service's own colours, Buy Me a Coffee's yellow and
-       the pink heart of GitHub Sponsors on GitHub's dark button. -->
+  <!-- The support bar: each button in its service's own colours, Buy Me a Coffee's yellow in both
+       themes, and the pink heart of GitHub Sponsors on GitHub's own button, dark or light. -->
   <Style Selector="Button.coffee, Button.sponsor">
     <Setter Property="CornerRadius" Value="8" />
     <Setter Property="Padding" Value="14,7" />
@@ -184,19 +513,19 @@
     <Setter Property="Foreground" Value="#0D0C22" />
   </Style>
   <Style Selector="Button.sponsor">
-    <Setter Property="Background" Value="#21262D" />
-    <Setter Property="Foreground" Value="#F0F6FC" />
-    <Setter Property="BorderBrush" Value="#3D444D" />
+    <Setter Property="Background" Value="{DynamicResource SponsorBackground}" />
+    <Setter Property="Foreground" Value="{DynamicResource SponsorForeground}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SponsorBorder}" />
     <Setter Property="BorderThickness" Value="1" />
   </Style>
   <Style Selector="Button.sponsor:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="#30363D" />
-    <Setter Property="BorderBrush" Value="#DB61A2" />
-    <Setter Property="Foreground" Value="#F0F6FC" />
+    <Setter Property="Background" Value="{DynamicResource SponsorBackgroundPointerOver}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SponsorHeart}" />
+    <Setter Property="Foreground" Value="{DynamicResource SponsorForeground}" />
   </Style>
   <Style Selector="Button.sponsor:pressed /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="#282E33" />
-    <Setter Property="BorderBrush" Value="#DB61A2" />
-    <Setter Property="Foreground" Value="#F0F6FC" />
+    <Setter Property="Background" Value="{DynamicResource SponsorBackgroundPressed}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SponsorHeart}" />
+    <Setter Property="Foreground" Value="{DynamicResource SponsorForeground}" />
   </Style>
 </Styles>

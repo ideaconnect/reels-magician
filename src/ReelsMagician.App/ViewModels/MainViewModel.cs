@@ -40,6 +40,8 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         _shell = shell;
         _paths.EnsureCreated();
         _settings = AppSettings.Load(_paths);
+        // Before the window first shows, so it opens in the theme it will keep.
+        AppTheme.Apply(_settings.Appearance);
         _toolchain = new ToolchainManager(_paths, this);
         _linkConsent = new LinkToolsConsent(shell, _toolchain);
 
@@ -145,6 +147,48 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             _settings.Save(_paths);
             RefreshTools();
         }
+    }
+
+    // ── Appearance ───────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// The theme: the system's light or dark setting, or one of the two. Switching applies at once,
+    /// with no restart, and is saved.
+    /// </summary>
+    public Appearance Appearance
+    {
+        get => _settings.Appearance;
+        set
+        {
+            if (_settings.Appearance == value) return;
+            _settings.Appearance = value;
+            _settings.Save(_paths);
+            AppTheme.Apply(value);
+            Raise();
+            Raise(nameof(FollowsSystemTheme));
+            Raise(nameof(UsesLightTheme));
+            Raise(nameof(UsesDarkTheme));
+        }
+    }
+
+    // One per segment of the header's switch. A segment that is unchecked because another was
+    // chosen changes nothing; the chosen one sets the appearance.
+    public bool FollowsSystemTheme
+    {
+        get => Appearance == Appearance.System;
+        set { if (value) Appearance = Appearance.System; }
+    }
+
+    public bool UsesLightTheme
+    {
+        get => Appearance == Appearance.Light;
+        set { if (value) Appearance = Appearance.Light; }
+    }
+
+    public bool UsesDarkTheme
+    {
+        get => Appearance == Appearance.Dark;
+        set { if (value) Appearance = Appearance.Dark; }
     }
 
     // ── Freeing up space ─────────────────────────────────────────────────────────────────
@@ -415,6 +459,23 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             // Renders and downloads change the folder sizes, so they are measured afresh on opening.
             if (Set(ref _activeTab, value) && value == CleanupTab) RefreshCleanup();
         }
+    }
+
+    // ── Step strip ───────────────────────────────────────────────────────────────────────
+
+    public StepViewModel SetupStep { get; } = new(1, "Setup");
+    public StepViewModel SourceStep { get; } = new(2, "Source");
+    public StepViewModel SubtitlesStep { get; } = new(3, "Subtitles");
+    public StepViewModel ReelStep { get; } = new(4, "Reel");
+    public StepViewModel CaptionsStep { get; } = new(5, "Captions");
+    public StepViewModel RenderStep { get; } = new(6, "Render");
+
+    /// <summary>Shows on each step's chip whether its output exists yet.</summary>
+    private void RefreshSteps()
+    {
+        var states = ReelSteps.Progress(_tools.IsComplete, _project);
+        StepViewModel[] steps = [SetupStep, SourceStep, SubtitlesStep, ReelStep, CaptionsStep, RenderStep];
+        for (var i = 0; i < steps.Length; i++) steps[i].State = states[i];
     }
 
     // ── Commands ─────────────────────────────────────────────────────────────────────────
@@ -968,6 +1029,10 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     private void RefreshCommands()
     {
+        // The step strip reads the same project flags as the commands below, so it follows
+        // every change they do.
+        RefreshSteps();
+
         // A property setter that runs during construction reaches here before the commands
         // exist; there is nothing to refresh yet, and the constructor refreshes at its end.
         if (CleanupCommand is null) return;

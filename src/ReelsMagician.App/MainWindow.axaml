@@ -7,19 +7,18 @@
         x:Class="ReelsMagician.App.MainWindow"
         x:DataType="vm:MainViewModel"
         Title="ReelsMagician — reels from long videos"
-        Icon="/Assets/reelsmagician-256.png"
         Width="1360" Height="900" MinWidth="1120" MinHeight="680"
         WindowStartupLocation="CenterScreen">
 
   <Window.Resources>
-    <local:ReadyToBrushConverter x:Key="ReadyBrush" />
-    <local:ConfidenceToBrushConverter x:Key="ConfidenceBrush" />
-
+    <!-- The status icon carries the state on its own, by shape as well as colour (Theme.axaml),
+         and names it for screen readers; the state text beside it stays. -->
     <DataTemplate x:Key="ComponentRow" x:DataType="vm:ComponentRowViewModel">
       <StackPanel Margin="0,4">
-        <Grid ColumnDefinitions="14,320,*,140,90">
-          <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                   Fill="{Binding IsReady, Converter={StaticResource ReadyBrush}}" />
+        <Grid ColumnDefinitions="24,320,*,140,90">
+          <local:FaIcon Classes="status" Classes.ready="{Binding IsReady}" Classes.optional="{Binding IsOptional}"
+                        AutomationProperties.Name="{Binding StateText}"
+                        HorizontalAlignment="Left" VerticalAlignment="Center" />
           <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"
                      Margin="0,0,12,0" TextTrimming="CharacterEllipsis" />
           <TextBlock Grid.Column="2" Text="{Binding Detail}" Classes="hint" TextWrapping="NoWrap"
@@ -28,28 +27,83 @@
           <TextBlock Grid.Column="4" Text="{Binding SizeText}" Classes="hint"
                      VerticalAlignment="Center" HorizontalAlignment="Right" />
         </Grid>
-        <TextBlock Text="{Binding Warning}" Classes="warn" Margin="14,4,0,0"
-                   IsVisible="{Binding Warning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <!-- Under the status icon, a warning sign; the warning lines up with the name. -->
+        <Grid ColumnDefinitions="24,*" Margin="0,4,0,0"
+              IsVisible="{Binding Warning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+          <local:FaIcon Data="{StaticResource fa-triangle-exclamation}" Foreground="{DynamicResource WarningBrush}"
+                        Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="1,1,0,0" />
+          <TextBlock Grid.Column="1" Text="{Binding Warning}" Classes="warn" />
+        </Grid>
       </StackPanel>
     </DataTemplate>
   </Window.Resources>
 
+  <Window.DataTemplates>
+    <!-- A step's chip in the strip: its number in a badge, a check once its output exists, and
+         its name. The styles in Assets/Theme.axaml colour it by state. -->
+    <DataTemplate DataType="vm:StepViewModel">
+      <StackPanel Classes="step" Classes.done="{Binding IsDone}" Classes.current="{Binding IsCurrent}"
+                  Classes.upcoming="{Binding IsUpcoming}" Orientation="Horizontal" Spacing="8">
+        <Border Classes="badge" Width="22" Height="22" CornerRadius="11" BorderThickness="1.5"
+                VerticalAlignment="Center">
+          <Panel>
+            <TextBlock Classes="badge-number" Text="{Binding Number}" FontSize="12" FontWeight="SemiBold"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !IsDone}" />
+            <local:FaIcon Classes="badge-check" Data="{StaticResource fa-check}" Width="16" Height="16"
+                          HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsDone}" />
+          </Panel>
+        </Border>
+        <Grid VerticalAlignment="Center">
+          <!-- Holds the width of the bold label, so selecting a step never shifts the strip. -->
+          <TextBlock Text="{Binding Title}" FontWeight="Bold" Opacity="0" />
+          <TextBlock Classes="step-title" Text="{Binding Title}" HorizontalAlignment="Center" />
+        </Grid>
+      </StackPanel>
+    </DataTemplate>
+  </Window.DataTemplates>
+
   <Grid Margin="16" RowDefinitions="Auto,*,Auto,Auto">
 
-    <!-- Header -->
-    <Grid Grid.Row="0" Margin="0,0,0,10" ColumnDefinitions="*,Auto">
-      <StackPanel>
+    <!-- Header: the app's icon, then its name and what it does. -->
+    <Grid Grid.Row="0" Margin="0,0,0,10" ColumnDefinitions="Auto,*,Auto">
+      <!-- Decoration beside the name, hidden from screen readers. 128 px of image drawn at 40 px
+           stays sharp up to 300 % scaling. -->
+      <Image Source="/Assets/reelsmagician-128.png" Width="40" Height="40" Margin="0,0,12,0"
+             VerticalAlignment="Center" RenderOptions.BitmapInterpolationMode="HighQuality"
+             AutomationProperties.AccessibilityView="Raw" />
+      <StackPanel Grid.Column="1">
         <TextBlock Text="ReelsMagician" Classes="h1" />
         <TextBlock Classes="hint"
                    Text="Turn a long video into a vertical 1080×1920 reel: transcribe, review the subtitles, let Qwen pick the best stretch, keep the subject centred, and burn in captions." />
       </StackPanel>
-      <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
+      <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
         <TextBlock Text="{Binding GpuText}" Classes="hint" VerticalAlignment="Center" MaxWidth="460" />
+        <!-- The theme: follow the system, light or dark, applied at once and remembered. -->
+        <Border Background="{DynamicResource Panel}" BorderBrush="{DynamicResource BorderBrush2}"
+                BorderThickness="1" CornerRadius="8" Padding="2" VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal" Spacing="2">
+            <RadioButton Theme="{StaticResource Segment}" GroupName="Appearance" IsChecked="{Binding FollowsSystemTheme}"
+                         ToolTip.Tip="Follow the system's light or dark setting"
+                         AutomationProperties.Name="Theme: follow the system">
+              <local:FaIcon Data="{StaticResource fa-desktop}" />
+            </RadioButton>
+            <RadioButton Theme="{StaticResource Segment}" GroupName="Appearance" IsChecked="{Binding UsesLightTheme}"
+                         ToolTip.Tip="Light theme" AutomationProperties.Name="Theme: light">
+              <local:FaIcon Data="{StaticResource fa-sun}" />
+            </RadioButton>
+            <RadioButton Theme="{StaticResource Segment}" GroupName="Appearance" IsChecked="{Binding UsesDarkTheme}"
+                         ToolTip.Tip="Dark theme" AutomationProperties.Name="Theme: dark">
+              <local:FaIcon Data="{StaticResource fa-moon}" />
+            </RadioButton>
+          </StackPanel>
+        </Border>
       </StackPanel>
     </Grid>
 
-    <!-- Main tabs -->
-    <TabControl Grid.Row="1" SelectedIndex="{Binding ActiveTab}">
+    <!-- Main tabs: a stepper. The strip is a bar of its own with the page it opens framed under
+         it, and each step is a chip showing its number, or a check once its output exists. -->
+    <TabControl Grid.Row="1" SelectedIndex="{Binding ActiveTab}"
+                Theme="{StaticResource StepStrip}" ItemContainerTheme="{StaticResource StepTab}">
       <!-- The steps run from the left; Cleanup docks to the right, apart from them. -->
       <TabControl.ItemsPanel>
         <ItemsPanelTemplate>
@@ -58,7 +112,7 @@
       </TabControl.ItemsPanel>
 
       <!-- ══ Setup ══ -->
-      <TabItem Header="1 · Setup">
+      <TabItem Header="{Binding SetupStep}" AutomationProperties.Name="{Binding SetupStep.AccessibleName}">
         <ScrollViewer Padding="0,12,8,0">
           <StackPanel>
             <Border Classes="card">
@@ -73,8 +127,9 @@
                 <TextBlock Text="{Binding BackendText}" Classes="hint" Margin="0,4,0,0" />
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0" Spacing="8">
-                  <Button Content="Re-check" Command="{Binding RefreshToolsCommand}" />
-                  <Button Content="Install everything missing" Classes="accent" Command="{Binding InstallCommand}" />
+                  <Button Content="Re-check" local:FaIcon.ButtonIcon="{StaticResource fa-rotate}" Command="{Binding RefreshToolsCommand}" />
+                  <Button Content="Install everything missing" Classes="accent" local:FaIcon.ButtonIcon="{StaticResource fa-download}"
+                          Command="{Binding InstallCommand}" />
                 </StackPanel>
               </StackPanel>
             </Border>
@@ -88,7 +143,7 @@
                 <ItemsControl ItemsSource="{Binding LinkComponents}" ItemTemplate="{StaticResource ComponentRow}" />
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-                  <Button Content="Download…" Command="{Binding InstallLinkToolsCommand}" />
+                  <Button Content="Download…" local:FaIcon.ButtonIcon="{StaticResource fa-download}" Command="{Binding InstallLinkToolsCommand}" />
                 </StackPanel>
               </StackPanel>
             </Border>
@@ -130,7 +185,7 @@
       </TabItem>
 
       <!-- ══ Source ══ -->
-      <TabItem Header="2 · Source">
+      <TabItem Header="{Binding SourceStep}" AutomationProperties.Name="{Binding SourceStep.AccessibleName}">
         <ScrollViewer Padding="0,12,8,0">
           <StackPanel>
             <Border Classes="card">
@@ -140,7 +195,8 @@
                            Text="Choose an MP4 or paste a compatible video link. Links need yt-dlp, which you are asked about the first time, and are downloaded at the highest quality available up to your cap, preferring 4K." />
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBox Text="{Binding SourceInput}" VerticalContentAlignment="Center" />
-                  <Button Grid.Column="1" Content="Browse…" Command="{Binding BrowseSourceCommand}" Margin="8,0,0,0" />
+                  <Button Grid.Column="1" Content="Browse…" local:FaIcon.ButtonIcon="{StaticResource fa-folder-open}"
+                          Command="{Binding BrowseSourceCommand}" Margin="8,0,0,0" />
                 </Grid>
 
                 <Grid Margin="0,14,0,0" ColumnDefinitions="Auto,24,*">
@@ -189,25 +245,25 @@
       </TabItem>
 
       <!-- ══ Subtitles ══ -->
-      <TabItem Header="3 · Subtitles">
+      <TabItem Header="{Binding SubtitlesStep}" AutomationProperties.Name="{Binding SubtitlesStep.AccessibleName}">
         <Grid Margin="0,12,0,0" RowDefinitions="Auto,Auto,Auto,*,Auto">
 
           <TextBlock Grid.Row="0" Text="{Binding TranscriptSummary}" Classes="hint" Margin="0,0,0,10" />
 
           <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10" Spacing="8">
-            <Button Content="Split" Command="{Binding SplitCueCommand}" />
-            <Button Content="Merge with next" Command="{Binding MergeCueCommand}" />
-            <Button Content="Delete" Command="{Binding DeleteCueCommand}" />
+            <Button Content="Split" local:FaIcon.ButtonIcon="{StaticResource fa-scissors}" Command="{Binding SplitCueCommand}" />
+            <Button Content="Merge with next" local:FaIcon.ButtonIcon="{StaticResource fa-code-merge}" Command="{Binding MergeCueCommand}" />
+            <Button Content="Delete" local:FaIcon.ButtonIcon="{StaticResource fa-trash-can}" Command="{Binding DeleteCueCommand}" />
             <Border Classes="divider" />
-            <Button Content="−100 ms" Command="{Binding ShiftEarlierCommand}" />
-            <Button Content="+100 ms" Command="{Binding ShiftLaterCommand}" />
+            <Button Content="−100 ms" local:FaIcon.ButtonIcon="{StaticResource fa-backward-step}" Command="{Binding ShiftEarlierCommand}" />
+            <Button Content="+100 ms" local:FaIcon.ButtonIcon="{StaticResource fa-forward-step}" Command="{Binding ShiftLaterCommand}" />
             <Border Classes="divider" />
-            <Button Content="Import…" Command="{Binding ImportSubtitlesCommand}" />
-            <Button Content="Export SRT…" Command="{Binding ExportSubtitlesCommand}" />
+            <Button Content="Import…" local:FaIcon.ButtonIcon="{StaticResource fa-file-import}" Command="{Binding ImportSubtitlesCommand}" />
+            <Button Content="Export SRT…" local:FaIcon.ButtonIcon="{StaticResource fa-file-export}" Command="{Binding ExportSubtitlesCommand}" />
           </StackPanel>
 
           <!-- Column headings for the cue rows below; the widths must match the row template. -->
-          <Border Grid.Row="2" Background="{StaticResource PanelAlt}" CornerRadius="6,6,0,0" Padding="12,7">
+          <Border Grid.Row="2" Background="{DynamicResource PanelAlt}" CornerRadius="6,6,0,0" Padding="12,7">
             <Grid ColumnDefinitions="118,118,64,54,*,60">
               <TextBlock Text="Start" Classes="label" Margin="0" />
               <TextBlock Grid.Column="1" Text="End" Classes="label" Margin="0" />
@@ -230,8 +286,7 @@
                   <TextBlock Grid.Column="2" Text="{Binding DurationText}" Classes="hint" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="3" Text="{Binding WordCount}" Classes="hint" VerticalAlignment="Center" />
                   <TextBox Grid.Column="4" Text="{Binding Text, UpdateSourceTrigger=LostFocus}" TextWrapping="Wrap"
-                           AcceptsReturn="False"
-                           Foreground="{Binding LowConfidence, Converter={StaticResource ConfidenceBrush}}" />
+                           AcceptsReturn="False" Classes.low="{Binding LowConfidence}" />
                   <TextBlock Grid.Column="5" Text="edited" Classes="hint" VerticalAlignment="Center"
                              Margin="8,0,0,0" IsVisible="{Binding Edited}" />
                 </Grid>
@@ -248,7 +303,7 @@
       </TabItem>
 
       <!-- ══ Reel ══ -->
-      <TabItem Header="4 · Reel">
+      <TabItem Header="{Binding ReelStep}" AutomationProperties.Name="{Binding ReelStep.AccessibleName}">
         <Grid Margin="0,12,0,0" ColumnDefinitions="1.35*,16,*" RowDefinitions="Auto,*,Auto">
 
           <TextBlock Grid.Row="0" Grid.ColumnSpan="3" Text="{Binding PlanSummary}" Classes="hint" Margin="0,0,0,10" />
@@ -280,10 +335,10 @@
                 <ItemsControl ItemsSource="{Binding ClipFramings}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:ClipFramingViewModel">
-                      <Border Background="{StaticResource PanelAlt}" CornerRadius="6" Padding="10" Margin="0,0,0,8">
+                      <Border Background="{DynamicResource PanelAlt}" CornerRadius="6" Padding="10" Margin="0,0,0,8">
                         <StackPanel>
                           <DockPanel>
-                            <TextBlock DockPanel.Dock="Right" Text="{Binding SubjectText}" Foreground="{StaticResource Accent}" />
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding SubjectText}" Foreground="{DynamicResource Accent}" />
                             <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
                           </DockPanel>
                           <TextBlock Text="{Binding TimeLabel}" Classes="hint" Margin="0,4,0,0" />
@@ -314,7 +369,7 @@
       </TabItem>
 
       <!-- ══ Captions ══ -->
-      <TabItem Header="5 · Captions">
+      <TabItem Header="{Binding CaptionsStep}" AutomationProperties.Name="{Binding CaptionsStep.AccessibleName}">
         <Grid Margin="0,12,0,0" ColumnDefinitions="*,16,380">
 
           <ScrollViewer Padding="0,0,8,0">
@@ -382,7 +437,7 @@
                       <Grid ColumnDefinitions="*,Auto">
                         <TextBox Text="{Binding StyleEditor.PrimaryColor, UpdateSourceTrigger=LostFocus}" />
                         <Border Grid.Column="1" Width="30" Margin="6,0,0,0" CornerRadius="4" BorderThickness="1"
-                                Background="{Binding StyleEditor.PrimaryBrush}" BorderBrush="{StaticResource BorderBrush2}" />
+                                Background="{Binding StyleEditor.PrimaryBrush}" BorderBrush="{DynamicResource BorderBrush2}" />
                       </Grid>
                     </StackPanel>
                     <StackPanel Grid.Column="2" IsEnabled="{Binding StyleEditor.IsHighlightMode}">
@@ -390,7 +445,7 @@
                       <Grid ColumnDefinitions="*,Auto">
                         <TextBox Text="{Binding StyleEditor.HighlightColor, UpdateSourceTrigger=LostFocus}" />
                         <Border Grid.Column="1" Width="30" Margin="6,0,0,0" CornerRadius="4" BorderThickness="1"
-                                Background="{Binding StyleEditor.HighlightBrush}" BorderBrush="{StaticResource BorderBrush2}" />
+                                Background="{Binding StyleEditor.HighlightBrush}" BorderBrush="{DynamicResource BorderBrush2}" />
                       </Grid>
                     </StackPanel>
                   </Grid>
@@ -401,7 +456,7 @@
                       <Grid ColumnDefinitions="*,Auto">
                         <TextBox Text="{Binding StyleEditor.OutlineColor, UpdateSourceTrigger=LostFocus}" />
                         <Border Grid.Column="1" Width="30" Margin="6,0,0,0" CornerRadius="4" BorderThickness="1"
-                                Background="{Binding StyleEditor.OutlineBrush}" BorderBrush="{StaticResource BorderBrush2}" />
+                                Background="{Binding StyleEditor.OutlineBrush}" BorderBrush="{DynamicResource BorderBrush2}" />
                       </Grid>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
@@ -451,7 +506,7 @@
                       <Grid ColumnDefinitions="*,Auto">
                         <TextBox Text="{Binding StyleEditor.BackgroundColor, UpdateSourceTrigger=LostFocus}" />
                         <Border Grid.Column="1" Width="30" Margin="6,0,0,0" CornerRadius="4" BorderThickness="1"
-                                Background="{Binding StyleEditor.BackgroundBrush}" BorderBrush="{StaticResource BorderBrush2}" />
+                                Background="{Binding StyleEditor.BackgroundBrush}" BorderBrush="{DynamicResource BorderBrush2}" />
                       </Grid>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
@@ -530,11 +585,13 @@
           <DockPanel Grid.Column="2">
             <TextBlock DockPanel.Dock="Top" Text="Preview" Classes="h2" />
             <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
-              <Button Content="Refresh preview" Command="{Binding RefreshPreviewCommand}" HorizontalAlignment="Right" />
+              <Button Content="Refresh preview" local:FaIcon.ButtonIcon="{StaticResource fa-rotate}" Command="{Binding RefreshPreviewCommand}"
+                      HorizontalAlignment="Right" />
               <TextBlock Text="{Binding PreviewStatus}" Classes="hint" Margin="0,8,0,0" />
             </StackPanel>
-            <Border Background="#0D0D14" CornerRadius="8" BorderThickness="1"
-                    BorderBrush="{StaticResource BorderBrush2}" Padding="8">
+            <!-- Black in both themes: it stands in for the video. -->
+            <Border Background="{DynamicResource VideoFrame}" CornerRadius="8" BorderThickness="1"
+                    BorderBrush="{DynamicResource BorderBrush2}" Padding="8">
               <Image Source="{Binding PreviewImage}" Stretch="Uniform"
                      RenderOptions.BitmapInterpolationMode="HighQuality" />
             </Border>
@@ -543,7 +600,7 @@
       </TabItem>
 
       <!-- ══ Render ══ -->
-      <TabItem Header="6 · Render">
+      <TabItem Header="{Binding RenderStep}" AutomationProperties.Name="{Binding RenderStep.AccessibleName}">
         <ScrollViewer Padding="0,12,8,0">
           <StackPanel>
             <Border Classes="card">
@@ -551,11 +608,12 @@
                 <TextBlock Text="Output" Classes="h2" />
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBox Text="{Binding OutputFolder}" VerticalContentAlignment="Center" />
-                  <Button Grid.Column="1" Content="Choose folder…" Command="{Binding BrowseOutputCommand}" Margin="8,0,0,0" />
+                  <Button Grid.Column="1" Content="Choose folder…" local:FaIcon.ButtonIcon="{StaticResource fa-folder-open}"
+                          Command="{Binding BrowseOutputCommand}" Margin="8,0,0,0" />
                 </Grid>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0" Spacing="8">
-                  <Button Content="Copy path" Command="{Binding CopyOutputPathCommand}" />
-                  <Button Content="Render the reel" Classes="accent" Command="{Binding RenderCommand}" />
+                  <Button Content="Copy path" local:FaIcon.ButtonIcon="{StaticResource fa-copy}" Command="{Binding CopyOutputPathCommand}" />
+                  <Button Content="Render the reel" Classes="accent" local:FaIcon.ButtonIcon="{StaticResource fa-film}" Command="{Binding RenderCommand}" />
                 </StackPanel>
                 <TextBlock Classes="hint" Margin="0,10,0,0"
                            Text="Renders 1080×1920 H.264 at 30 fps with AAC audio, normalised to −14 LUFS — the loudness target the social platforms use." />
@@ -569,7 +627,7 @@
                          ScrollViewer.HorizontalScrollBarVisibility="Auto">
                   <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="x:String">
-                      <TextBlock Text="{Binding}" Classes="mono" Foreground="{StaticResource Muted}" />
+                      <TextBlock Text="{Binding}" Classes="mono" Foreground="{DynamicResource Muted}" />
                     </DataTemplate>
                   </ListBox.ItemTemplate>
                 </ListBox>
@@ -579,14 +637,14 @@
         </ScrollViewer>
       </TabItem>
 
-      <!-- ══ Cleanup: not a step, so it sits on the right of the tab strip ══ -->
-      <TabItem Header="Cleanup" DockPanel.Dock="Right">
+      <!-- ══ Cleanup: not a step, so it sits on the right of the strip, outlined and unnumbered ══ -->
+      <TabItem Header="Cleanup" Classes="aside" DockPanel.Dock="Right" AutomationProperties.Name="Cleanup">
         <ScrollViewer Padding="0,12,8,0">
           <StackPanel>
             <Border Classes="card">
               <StackPanel>
                 <TextBlock Text="Free up space" Classes="h2" />
-                <SelectableTextBlock Text="{Binding DataFolderText}" Foreground="{StaticResource Muted}"
+                <SelectableTextBlock Text="{Binding DataFolderText}" Foreground="{DynamicResource Muted}"
                                      FontSize="12" TextWrapping="Wrap" Margin="0,0,0,10" />
 
                 <ItemsControl ItemsSource="{Binding CleanupItems}">
@@ -606,9 +664,10 @@
                 </ItemsControl>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0" Spacing="8">
-                  <Button Content="Copy path" Command="{Binding CopyDataFolderCommand}" />
-                  <Button Content="Re-measure" Command="{Binding RefreshCleanupCommand}" />
-                  <Button Content="{Binding CleanupButtonText}" Classes="accent" Command="{Binding CleanupCommand}" />
+                  <Button Content="Copy path" local:FaIcon.ButtonIcon="{StaticResource fa-copy}" Command="{Binding CopyDataFolderCommand}" />
+                  <Button Content="Re-measure" local:FaIcon.ButtonIcon="{StaticResource fa-rotate}" Command="{Binding RefreshCleanupCommand}" />
+                  <Button Content="{Binding CleanupButtonText}" Classes="accent" local:FaIcon.ButtonIcon="{StaticResource fa-broom}"
+                          Command="{Binding CleanupCommand}" />
                 </StackPanel>
 
                 <TextBlock Classes="hint" Margin="0,10,0,0"
@@ -628,7 +687,7 @@
           <ProgressBar Margin="0,8,0,0" Minimum="0" Maximum="100" Value="{Binding Progress}"
                        IsIndeterminate="{Binding Indeterminate}" IsVisible="{Binding IsBusy}" />
         </StackPanel>
-        <Button Grid.Column="1" Content="Cancel" Command="{Binding CancelCommand}" Margin="12,0,0,0"
+        <Button Grid.Column="1" Content="Cancel" local:FaIcon.ButtonIcon="{StaticResource fa-xmark}" Command="{Binding CancelCommand}" Margin="12,0,0,0"
                 VerticalAlignment="Center" IsVisible="{Binding IsBusy}" />
       </Grid>
     </Border>
@@ -639,17 +698,7 @@
         <Button Classes="coffee" Command="{Binding OpenCoffeeCommand}"
                 ToolTip.Tip="{x:Static vm:MainViewModel.CoffeeLink}">
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Viewbox Width="20" Height="20">
-              <Canvas Width="24" Height="24">
-                <!-- Steam, the cup, its handle and the saucer. -->
-                <Path Stroke="#0D0C22" StrokeThickness="1.6" StrokeLineCap="Round"
-                      Data="M7.5,1.5 C6.5,2.6 8.5,3.6 7.5,4.8 M11,1.5 C10,2.6 12,3.6 11,4.8 M14.5,1.5 C13.5,2.6 15.5,3.6 14.5,4.8" />
-                <Path Fill="#0D0C22" Data="M3,7 H19 V13 A6,6 0 0 1 13,19 H9 A6,6 0 0 1 3,13 Z" />
-                <Path Stroke="#0D0C22" StrokeThickness="2"
-                      Data="M19,9 H20.2 A2.8,2.8 0 0 1 20.2,14.6 H18.5" />
-                <Path Stroke="#0D0C22" StrokeThickness="1.8" StrokeLineCap="Round" Data="M2,22 H20" />
-              </Canvas>
-            </Viewbox>
+            <local:FaIcon Data="{StaticResource fa-mug-hot}" Width="20" Height="20" />
             <TextBlock Text="Buy me a coffee" VerticalAlignment="Center" />
           </StackPanel>
         </Button>
@@ -661,10 +710,7 @@
         <Button Grid.Column="2" Classes="sponsor" Command="{Binding OpenSponsorsCommand}"
                 ToolTip.Tip="{x:Static vm:MainViewModel.SponsorsLink}">
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <Viewbox Width="18" Height="18">
-              <Path Fill="#DB61A2"
-                    Data="M12,21 C12,21 2.5,15.2 2.5,8.9 C2.5,5.9 4.9,3.5 7.9,3.5 C9.7,3.5 11.2,4.4 12,5.8 C12.8,4.4 14.3,3.5 16.1,3.5 C19.1,3.5 21.5,5.9 21.5,8.9 C21.5,15.2 12,21 12,21 Z" />
-            </Viewbox>
+            <local:FaIcon Data="{StaticResource fa-heart}" Foreground="{DynamicResource SponsorHeart}" Width="18" Height="18" />
             <TextBlock Text="Sponsor on GitHub" VerticalAlignment="Center" />
           </StackPanel>
         </Button>

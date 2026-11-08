@@ -34,6 +34,10 @@ public sealed class AppSettings
 
     public List<string> RecentSources { get; set; } = [];
 
+    /// <summary>The theme: the system's light or dark setting by default, or one of the two.</summary>
+    [JsonConverter(typeof(AppearanceJsonConverter))]
+    public Appearance Appearance { get; set; } = Appearance.System;
+
     [JsonIgnore] public string? LoadedFrom { get; private set; }
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
