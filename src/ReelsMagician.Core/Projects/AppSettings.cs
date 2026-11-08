@@ -20,7 +20,13 @@ public sealed class AppSettings
 
     /// <summary>-1 offloads every layer to the GPU; 0 forces CPU.</summary>
     public int LlamaGpuLayers { get; set; } = -1;
-    public int LlamaContextSize { get; set; } = 16384;
+
+    /// <summary>
+    /// The context llama-server gets. Choosing a model on the Setup tab sets that model's
+    /// recommended context, so a new install starts at the default model's, taken from the
+    /// catalogue rather than a number of its own that could drift from it (issue #70).
+    /// </summary>
+    public int LlamaContextSize { get; set; } = ModelCatalog.DefaultLlm.RecommendedContext;
 
     /// <summary>"auto" lets Whisper detect the language.</summary>
     public string WhisperLanguage { get; set; } = "auto";
