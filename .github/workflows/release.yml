@@ -37,7 +37,8 @@ jobs:
           dotnet publish src/ReelsMagician.App -c Release -r win-x64 --self-contained -p:Version=$version -o out/ReelsMagician
           # The zip must carry the licences of what it bundles (THIRD-PARTY-NOTICES.md).
           $notices = 'LICENSE', 'THIRD-PARTY-NOTICES.md', 'licenses/Avalonia/licence.md', 'licenses/OpenCvSharp/LICENSE',
-            'licenses/FFmpeg/COPYING.LGPLv2.1', 'licenses/SkiaSharp.NativeAssets.Win32/THIRD-PARTY-NOTICES.txt',
+            'licenses/FFmpeg/COPYING.LGPLv2.1', 'licenses/FontAwesome/LICENSE.txt',
+            'licenses/SkiaSharp.NativeAssets.Win32/THIRD-PARTY-NOTICES.txt',
             'licenses/Avalonia.Angle.Windows.Natives/LICENSE', 'licenses/Microsoft.NETCore.App.Runtime.win-x64/THIRD-PARTY-NOTICES.TXT'
           $missing = $notices | Where-Object { -not (Test-Path "out/ReelsMagician/$_") }
           if ($missing) { throw "The publish lacks: $($missing -join ', ')" }

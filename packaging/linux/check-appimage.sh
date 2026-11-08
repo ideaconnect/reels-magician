@@ -35,7 +35,7 @@ for file in \
   usr/bin/libSkiaSharp.so usr/bin/libHarfBuzzSharp.so usr/bin/libOpenCvSharpExtern.so \
   usr/bin/LICENSE usr/bin/THIRD-PARTY-NOTICES.md \
   usr/bin/licenses/Avalonia/licence.md usr/bin/licenses/OpenCvSharp/LICENSE \
-  usr/bin/licenses/FFmpeg/COPYING.LGPLv2.1 \
+  usr/bin/licenses/FFmpeg/COPYING.LGPLv2.1 usr/bin/licenses/FontAwesome/LICENSE.txt \
   usr/bin/licenses/SkiaSharp.NativeAssets.Linux/THIRD-PARTY-NOTICES.txt \
   usr/bin/licenses/Microsoft.NETCore.App.Runtime.linux-x64/THIRD-PARTY-NOTICES.TXT \
   usr/bin/licenses/AppImage-type2-runtime/LICENSE usr/bin/licenses/libfuse/LGPL2.txt

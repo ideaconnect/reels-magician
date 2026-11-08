@@ -237,6 +237,11 @@ interrupted, so a dropped connection is not a restart.
 
 ## Using it
 
+The strip at the top of the window is the app's menu, one chip per step. It also shows how far
+you have got: a step's number turns into a check once its output exists, the step to do next has
+its number ringed, and the steps after it are dimmed. Every step stays open to you, and says what
+it needs.
+
 **2 · Source** — paste a link or browse to a file, set the reel length, press **Load source**.
 The first time you load a link, the app asks before downloading yt-dlp. The topic box is prefilled from the title or filename; correct it if it is wrong, because the
 analysis is anchored to it. Then **Transcribe**.
@@ -267,8 +272,8 @@ burned in. Transition length lives here too.
 paste into an upload page's file dialog, a file manager or a terminal. The activity log shows every
 step.
 
-**Cleanup** — on the right of the tab strip, apart from the steps: frees up space in the app's
-data folder (see [Freeing up space](#freeing-up-space)).
+**Cleanup** — on the right of the strip, apart from the steps and without a number: frees up space
+in the app's data folder (see [Freeing up space](#freeing-up-space)).
 
 File pickers and confirmations are drawn by the app itself, the same on both systems. A question
 always defaults to the answer that changes nothing.
@@ -339,6 +344,7 @@ tests/ReelsMagician.SmokeTests/
 packaging/linux/               the AppImage: desktop entry, icons, licences, build and check scripts
 docs/                          system requirements and architecture decisions
 tools/make-speech-video.ps1 generates a narrated 4K test video (Windows: it uses the Windows speech engine)
+tools/update-icons.cs       copies the Font Awesome icons the app draws: dotnet run tools/update-icons.cs
 ```
 
 ## Tests
@@ -418,6 +424,7 @@ ReelsMagician is released under the [BSD 3-Clause License](LICENSE).
 The repository contains no third-party binaries and no model weights. The app downloads ffmpeg
 (GPL build), whisper.cpp, llama.cpp, and model weights from Whisper, Qwen and OpenCV from their
 original publishers on first run. It downloads yt-dlp and Deno only if you agree to it. Each stays
-under its own licence.
+under its own licence. The app's icons are [Font Awesome Free](https://fontawesome.com) icons,
+under CC BY 4.0.
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) lists every component, its licence and its
 source; read it before redistributing a build.

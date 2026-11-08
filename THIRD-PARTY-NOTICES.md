@@ -2,12 +2,26 @@
 
 ReelsMagician's own source code is licensed under the BSD 3-Clause License (see `LICENSE`).
 
-This repository contains **no third-party binaries and no model weights**. Everything below is
-fetched from its original publisher. NuGet restores the libraries when the app is built, the
+This repository contains **no third-party binaries and no model weights**. Apart from the Font
+Awesome icons, whose shapes are copied into the source, everything below is fetched from its
+original publisher. NuGet restores the libraries when the app is built, the
 release packages add the runtimes the app needs to start, and the app itself downloads its tools
 and models on the user's machine: when they press **Install everything missing** or, for the
 optional link tools, only after they agree to the download. Each component stays under its own
 licence, which you accept from its publisher when it is downloaded.
+
+## Copied into the source
+
+Every build of the app includes these, drawn from data in this repository.
+
+| Component | Licence | Source |
+|---|---|---|
+| Font Awesome Free 7.3.1: the shapes of the icons the app draws (component status, the step strip's checks, buttons, the support bar), copied from its SVGs into `src/ReelsMagician.App/Assets/Icons.axaml` by `tools/update-icons.cs` | Icons: CC BY 4.0, which covers what the app uses. The package's fonts are under SIL OFL 1.1 and its code under MIT; the app uses neither | https://fontawesome.com, https://github.com/FortAwesome/Font-Awesome |
+
+The icons are by Fonticons, Inc.: "Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com",
+used under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). They are converted from SVG to
+XAML path data, with their shapes unchanged. Font Awesome's licence is in
+`licenses/FontAwesome/LICENSE.txt`.
 
 ## Restored by NuGet at build time
 
@@ -77,6 +91,6 @@ its corresponding source.
 
 `dotnet publish` puts these notices next to the executable, so every release package carries
 them: `LICENSE`, this file, and a `licenses` folder. That folder holds the licence and notice
-files each bundled package and the .NET runtime ship, and, for the packages that ship none, the
-texts kept in this repository's `licenses` folder. The AppImage adds those in
-`packaging/linux/licenses` for its runtime. Keep all of them when you pass a build on.
+files each bundled package and the .NET runtime ship, and the texts kept in this repository's
+`licenses` folder: Font Awesome's, and those of the packages that ship none. The AppImage adds
+those in `packaging/linux/licenses` for its runtime. Keep all of them when you pass a build on.

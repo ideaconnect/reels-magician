@@ -417,6 +417,23 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         }
     }
 
+    // ── Step strip ───────────────────────────────────────────────────────────────────────
+
+    public StepViewModel SetupStep { get; } = new(1, "Setup");
+    public StepViewModel SourceStep { get; } = new(2, "Source");
+    public StepViewModel SubtitlesStep { get; } = new(3, "Subtitles");
+    public StepViewModel ReelStep { get; } = new(4, "Reel");
+    public StepViewModel CaptionsStep { get; } = new(5, "Captions");
+    public StepViewModel RenderStep { get; } = new(6, "Render");
+
+    /// <summary>Shows on each step's chip whether its output exists yet.</summary>
+    private void RefreshSteps()
+    {
+        var states = ReelSteps.Progress(_tools.IsComplete, _project);
+        StepViewModel[] steps = [SetupStep, SourceStep, SubtitlesStep, ReelStep, CaptionsStep, RenderStep];
+        for (var i = 0; i < steps.Length; i++) steps[i].State = states[i];
+    }
+
     // ── Commands ─────────────────────────────────────────────────────────────────────────
 
     public AsyncRelayCommand InstallCommand { get; }
@@ -968,6 +985,10 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     private void RefreshCommands()
     {
+        // The step strip reads the same project flags as the commands below, so it follows
+        // every change they do.
+        RefreshSteps();
+
         // A property setter that runs during construction reaches here before the commands
         // exist; there is nothing to refresh yet, and the constructor refreshes at its end.
         if (CleanupCommand is null) return;
