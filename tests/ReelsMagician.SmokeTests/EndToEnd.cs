@@ -27,13 +27,13 @@ public static class EndToEnd
             if (fraction is >= 1) Console.WriteLine();
         });
 
-    /// <param name="includeLinkTools">
-    /// Also fetch yt-dlp and Deno, which the app downloads only after the user agrees. The
-    /// 'link' mode needs them; the 'tools' mode leaves them out.
-    /// </param>
-    public static async Task InstallAsync(bool includeLinkTools = true)
+    /// <summary>
+    /// Installs what "Install everything missing" installs, and nothing more: yt-dlp and Deno
+    /// come only from the 'link' mode, as the app fetches them only after the user agrees.
+    /// </summary>
+    public static async Task InstallAsync()
     {
-        Check.Section(includeLinkTools ? "Toolchain install (real downloads)" : "Required toolchain install (real downloads)");
+        Check.Section("Toolchain install (real downloads)");
 
         var paths = new ToolPaths();
         var sink = CreateSink();
@@ -45,13 +45,9 @@ public static class EndToEnd
         Check.True(gpu.Adapters.Count > 0, "at least one display adapter was detected");
 
         var tools = await manager.EnsureAsync(settings, CancellationToken.None);
-
-        // Opt-in in the app, where the user is asked first. The 'link' mode needs them here.
-        if (includeLinkTools) tools = await manager.InstallLinkToolsAsync(settings, CancellationToken.None);
         Console.WriteLine();
 
         Check.True(tools.HasFfmpeg, $"ffmpeg resolved ({tools.FfmpegPath})");
-        if (includeLinkTools) Check.True(tools.HasYtDlp, $"yt-dlp installed ({tools.YtDlpPath})");
         Check.True(tools.WhisperCliPath is not null, $"whisper.cpp installed ({tools.WhisperCliPath})");
         Check.True(tools.LlamaServerPath is not null, $"llama.cpp installed ({tools.LlamaServerPath})");
         Check.True(tools.WhisperModelPath is not null, "Whisper weights downloaded");
@@ -86,14 +82,25 @@ public static class EndToEnd
         var paths = new ToolPaths();
         var sink = CreateSink();
         var settings = AppSettings.Load(paths);
-        var tools = new ToolchainManager(paths, sink).Detect(settings);
+        var manager = new ToolchainManager(paths, sink);
+        var tools = manager.Detect(settings);
 
-        if (!tools.HasFfmpeg || !tools.HasYtDlp)
+        if (!tools.HasFfmpeg)
         {
-            Console.WriteLine("  SKIP  ffmpeg or yt-dlp missing — run with 'install' first.");
+            Console.WriteLine("  SKIP  ffmpeg missing — run with 'install' first.");
             return;
         }
 
+        // Running this mode is the go-ahead that the app's prompt asks the user for.
+        if (!tools.HasYtDlp || !tools.HasJsRuntime)
+        {
+            Console.WriteLine("    Fetching the optional link tools this mode tests.");
+            tools = await manager.InstallLinkToolsAsync(settings, CancellationToken.None);
+            Console.WriteLine();
+        }
+
+        Check.True(tools.HasYtDlp, $"yt-dlp is installed ({tools.YtDlpPath ?? "none"})");
+        if (!tools.HasYtDlp) return;
         Check.True(tools.HasJsRuntime, $"a JavaScript runtime is installed ({tools.JsRuntimePath ?? "none"})");
 
         var work = Path.Combine(Path.GetTempPath(), "reelsmagician-yt");

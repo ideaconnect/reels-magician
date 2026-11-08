@@ -345,17 +345,15 @@ dotnet run --project tests/ReelsMagician.SmokeTests -c Release
 # Logic checks only, needing no tools; this is what CI runs on Windows and Ubuntu
 dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- logic
 
-# Install the whole toolchain, the optional link tools included, and assert the right backends were chosen
+# Install what "Install everything missing" installs, never yt-dlp or Deno, and assert the right backends were chosen
 dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- install
-
-# The same, but only the required tools: never yt-dlp or Deno
-dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- tools
 
 # Full pipeline: Whisper, Qwen, framing and render over a narrated test video
 pwsh tools/make-speech-video.ps1
 dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- e2e
 
-# Resolve a real compatible video link: download, 4K check, language, subtitles, progress
+# Resolve a real compatible video link: download, 4K check, language, subtitles, progress.
+# This is the only mode that fetches yt-dlp and Deno, and only when they are missing.
 dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- link [url]
 ```
 
