@@ -55,4 +55,5 @@ static void RunLogicChecks()
     IconChecks.Run();
     AppearanceChecks.Run();
     ThemeChecks.Run();
+    AppIconChecks.Run();
 }

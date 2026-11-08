@@ -6,9 +6,9 @@
 #
 # 1. It starts. With no Wayland session, the AppImage runtime, AppRun and the .NET host all run,
 #    and the app exits with code 1 after saying it needs one. Extract-and-run needs no FUSE.
-# 2. It holds what the app loads and the licences it must carry, its libraries need nothing a
-#    desktop may lack, and every file has the mode appimagetool expects, with the execute bits
-#    intact.
+# 2. It holds what the app loads, the licences it must carry, and its desktop entry with its
+#    icons in every size; its libraries need nothing a desktop may lack, and every file has the
+#    mode appimagetool expects, with the execute bits intact.
 set -eu
 
 image=$(cd "$(dirname "$1")" && pwd)/$(basename "$1")
@@ -38,9 +38,18 @@ for file in \
   usr/bin/licenses/FFmpeg/COPYING.LGPLv2.1 usr/bin/licenses/FontAwesome/LICENSE.txt \
   usr/bin/licenses/SkiaSharp.NativeAssets.Linux/THIRD-PARTY-NOTICES.txt \
   usr/bin/licenses/Microsoft.NETCore.App.Runtime.linux-x64/THIRD-PARTY-NOTICES.TXT \
-  usr/bin/licenses/AppImage-type2-runtime/LICENSE usr/bin/licenses/libfuse/LGPL2.txt
+  usr/bin/licenses/AppImage-type2-runtime/LICENSE usr/bin/licenses/libfuse/LGPL2.txt \
+  .DirIcon reelsmagician.png ReelsMagician.desktop usr/share/applications/ReelsMagician.desktop
 do
   if [ ! -e "$root/$file" ]; then echo "Missing from the AppImage: $file" >&2; failed=1; fi
+done
+# The desktop entry's icon in every hicolor size, each as large as its folder says. A PNG keeps
+# its width and height as big-endian words at bytes 16 and 20.
+for size in 16 24 32 48 64 128 256 512; do
+  icon="$root/usr/share/icons/hicolor/${size}x${size}/apps/reelsmagician.png"
+  if [ ! -e "$icon" ]; then echo "Missing from the AppImage: the $size px icon" >&2; failed=1; continue; fi
+  found=$(od -An -tu1 -j16 -N8 "$icon" | awk '{ print $1*16777216+$2*65536+$3*256+$4 "x" $5*16777216+$6*65536+$7*256+$8 }')
+  if [ "$found" != "${size}x$size" ]; then echo "The $size px icon in the AppImage is $found" >&2; failed=1; fi
 done
 for file in AppRun usr/bin/ReelsMagician; do
   if [ -e "$root/$file" ] && [ ! -x "$root/$file" ]; then echo "Not executable in the AppImage: $file" >&2; failed=1; fi
@@ -66,4 +75,4 @@ if [ -n "$odd" ]; then
   failed=1
 fi
 [ "$failed" -eq 0 ] || exit 1
-echo "Holds the native libraries and the licences; they need only what every desktop has, and the modes are right."
+echo "Holds the native libraries, the licences and the icons; the libraries need only what every desktop has, and the modes are right."

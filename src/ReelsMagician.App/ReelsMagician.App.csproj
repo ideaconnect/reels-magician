@@ -19,7 +19,8 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.5" />
   </ItemGroup>
   <ItemGroup>
-    <AvaloniaResource Include="Assets\reelsmagician-256.png" />
+    <!-- The icons come from assets/AppIconBase.png through tools/make-icons.cs. -->
+    <AvaloniaResource Include="Assets\reelsmagician.ico;Assets\reelsmagician-256.png;Assets\reelsmagician-128.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ReelsMagician.Core\ReelsMagician.Core.csproj" />
