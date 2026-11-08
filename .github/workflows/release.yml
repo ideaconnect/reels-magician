@@ -65,6 +65,8 @@ jobs:
           dotnet publish src/ReelsMagician.App -c Release -r linux-x64 --self-contained -p:Version=$version -o out/publish
       - name: Build the AppImage
         run: sh packaging/linux/build-appimage.sh out/publish ReelsMagician-x86_64.AppImage "$VERSION"
+      - name: Check the AppImage
+        run: sh packaging/linux/check-appimage.sh ReelsMagician-x86_64.AppImage
       - uses: actions/upload-artifact@v7
         with:
           name: linux

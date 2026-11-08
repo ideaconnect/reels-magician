@@ -227,7 +227,8 @@ dotnet run --project src/ReelsMagician.App -c Release
 
 The same commands work on Windows and Linux. On Linux, run it from a Wayland session. The
 release packages are built by `.github/workflows/release.yml`, and the AppImage by
-`packaging/linux/build-appimage.sh`.
+`packaging/linux/build-appimage.sh`. Before the AppImage is uploaded,
+`packaging/linux/check-appimage.sh` checks that it starts and holds its libraries and licences.
 
 On first launch, open **1 · Setup** and press **Install everything missing**. It resumes if
 interrupted, so a dropped connection is not a restart.
@@ -332,7 +333,7 @@ src/ReelsMagician.Core/        no UI, fully testable
   Projects/     settings, project state, pipeline orchestration
 src/ReelsMagician.App/         Avalonia front end, Windows and Wayland
 tests/ReelsMagician.SmokeTests/
-packaging/linux/               the AppImage: desktop entry, icons, build script
+packaging/linux/               the AppImage: desktop entry, icons, licences, build and check scripts
 docs/                          system requirements and architecture decisions
 tools/make-speech-video.ps1 generates a narrated 4K test video (Windows: it uses the Windows speech engine)
 ```
