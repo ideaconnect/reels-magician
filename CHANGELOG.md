@@ -13,7 +13,7 @@ Changes to ReelsMagician, newest first. Version numbers will be assigned once th
 - **Releases:** Windows gets a zip with everything included; Linux gets a single AppImage that needs only FUSE 3, which Ubuntu installs by default. The app has an icon of its own for the first time. Both carry the licences of everything they include, in a `licenses` folder next to the app.
 - **New interface toolkit:** the interface is rebuilt on Avalonia, so the same app runs on Windows and on Linux, where it runs natively on Wayland. The tabs, wording and colours stay as they were.
 - **The app's own dialogs:** the app now draws its own file pickers and confirmation dialogs instead of using the system's, so they look and behave the same on both systems. Questions still default to the answer that changes nothing.
-- **Copy path:** the output and data folders now have a **Copy path** button. **Open folder** appears wherever the system can show a folder.
+- **Copy path instead of Open folder:** the reel and the data folder have a **Copy path** button, which works the same on every system. **Open folder** and **Open data folder** are gone: they handed the folder to the system's file manager, which a Linux desktop may not have, and there the buttons did nothing.
 - **Linux downloads:** on Linux the app downloads Linux builds of every tool. llama.cpp runs on the graphics card through Vulkan; whisper.cpp runs on the processor, since that is the only Linux build its publisher offers.
 
 ### Changed

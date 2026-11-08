@@ -5,7 +5,8 @@ public sealed record FileFilter(string Name, params string[] Patterns);
 
 /// <summary>
 /// What the view models need from the window around them: the app's own dialogs and file
-/// pickers, the clipboard, and the system's file manager where one can be opened.
+/// pickers, and the clipboard. Nothing here depends on the desktop: the app hands no folder to a
+/// file manager, so it works the same with or without one, and Copy path stands in for it.
 /// </summary>
 public interface IAppShell
 {
@@ -19,10 +20,4 @@ public interface IAppShell
     Task<string?> PickFolderAsync(string title, string? startFolder);
 
     Task CopyTextAsync(string text);
-
-    /// <summary>Whether this system can show a folder in its file manager.</summary>
-    bool CanOpenFolders { get; }
-
-    /// <summary>Opens a folder, or the folder holding a file with the file selected where the system can.</summary>
-    void ShowInFolder(string path);
 }

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
@@ -8,7 +7,6 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ReelsMagician.App.Dialogs;
 using ReelsMagician.App.ViewModels;
-using ReelsMagician.Core.Toolchain;
 
 namespace ReelsMagician.App;
 
@@ -76,30 +74,6 @@ public partial class MainWindow : Window, IAppShell
     public async Task CopyTextAsync(string text)
     {
         if (Clipboard is { } clipboard) await clipboard.SetTextAsync(text);
-    }
-
-    /// <summary>
-    /// Windows always has Explorer. On Linux the app only hands the folder to xdg-open when it
-    /// is installed; it never relies on the desktop for anything else.
-    /// </summary>
-    public bool CanOpenFolders { get; } = OperatingSystem.IsWindows() || ToolPaths.FindOnPath("xdg-open") is not null;
-
-    public void ShowInFolder(string path)
-    {
-        if (OperatingSystem.IsWindows())
-        {
-            var start = File.Exists(path)
-                ? new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"")
-                : new ProcessStartInfo("explorer.exe", $"\"{path}\"");
-            start.UseShellExecute = true;
-            Process.Start(start);
-            return;
-        }
-
-        var folder = File.Exists(path) ? Path.GetDirectoryName(path)! : path;
-        var open = new ProcessStartInfo("xdg-open") { UseShellExecute = false };
-        open.ArgumentList.Add(folder);
-        Process.Start(open);
     }
 
     private static FilePickerFileType ToFileType(FileFilter filter) => new(filter.Name) { Patterns = filter.Patterns };
