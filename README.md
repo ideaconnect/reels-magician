@@ -155,8 +155,6 @@ warns when this computer probably has too little.
 - **Whisper can repeat one line through long stretches of music**, as on a film
   ([#75](https://github.com/ideaconnect/reels-magician/issues/75)). Check the Subtitles step, or
   put the video's own subtitles next to it (see [Making a reel](#making-a-reel)).
-- **Subtitles that come with the video are all marked amber**, as if Whisper had been unsure of them
-  ([#76](https://github.com/ideaconnect/reels-magician/issues/76)).
 - **The builds aren't signed yet**, so Windows SmartScreen warns the first time.
 - **Self-updating starts with the first release that has the Windows installer.** 0.1.0 and 0.2.0
   can't update themselves. The Windows zip, and an AppImage in a folder you can't write to, only
@@ -221,13 +219,14 @@ the title or filename; correct it if it is wrong, because the analysis is anchor
 **Transcribe**.
 
 **3 · Subtitles** — the review step. Every cue with its times, editable in place. Amber text marks
-cues Whisper was unsure about, so you can aim your attention. Split, merge, nudge by 100 ms,
-delete, or import and export SRT.
+cues Whisper was unsure about, so you can aim your attention; subtitles that came with the video
+are never amber. Split, merge, nudge by 100 ms, delete, or import and export SRT.
 
 Edits are safe: when you change a line, word timings are re-derived so that words which survived
 the edit keep their original timing and only new ones are re-spread. A typo fix never
 desynchronises the rest of the line — which matters, because these timings drive the karaoke
-highlight.
+highlight. An edit doesn't change the line's colour either: a line stays amber, or not, by what
+Whisper made of that part of it, and the **Edited** column shows the lines you have changed.
 
 Press **Analyse and pick the reel** when you are happy.
 
