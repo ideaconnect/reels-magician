@@ -52,8 +52,143 @@
 
       <!-- Fluent's defaults are sized for touch; this is a dense desktop tool. -->
       <x:Double x:Key="ControlContentThemeFontSize">13</x:Double>
-      <x:Double x:Key="TabItemHeaderFontSize">14</x:Double>
-      <x:Double x:Key="TabItemMinHeight">38</x:Double>
+
+      <!--
+        The step strip: the tabs as a bar of their own, with the page they open framed under it,
+        so the strip reads as the app's menu and the page as what it opened. Every colour comes
+        from a resource, never a hex value here, so a theme variant restyles it as a whole.
+      -->
+      <ControlTheme x:Key="StepStrip" TargetType="TabControl">
+        <Setter Property="Padding" Value="14,0,6,10" />
+        <Setter Property="Template">
+          <ControlTemplate>
+            <DockPanel>
+              <Border Name="PART_Strip" DockPanel.Dock="Top" Background="{DynamicResource Panel}"
+                      BorderBrush="{DynamicResource BorderBrush2}" BorderThickness="1"
+                      CornerRadius="8,8,0,0" Padding="3">
+                <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+              </Border>
+              <!-- The same border carries on round the page, so the strip is its top edge. -->
+              <Border Name="PART_Page" BorderBrush="{DynamicResource BorderBrush2}"
+                      BorderThickness="1,0,1,1" CornerRadius="0,0,8,8">
+                <Panel ClipToBounds="True">
+                  <ContentPresenter Name="PART_SelectedContentHost2"
+                                    Margin="{TemplateBinding Padding}"
+                                    HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                    VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                    IsVisible="False" />
+                  <ContentPresenter Name="PART_SelectedContentHost"
+                                    Margin="{TemplateBinding Padding}"
+                                    HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                    VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                </Panel>
+              </Border>
+            </DockPanel>
+          </ControlTemplate>
+        </Setter>
+      </ControlTheme>
+
+      <!--
+        A tab of the strip: a rounded chip with a chevron before it showing the order. The selected
+        chip takes the accent fill, as the main buttons do; the rest stay muted on the bar. Items
+        with the aside class (Cleanup) are outlined instead, with no chevron and no number, so they
+        do not read as further steps.
+      -->
+      <ControlTheme x:Key="StepTab" TargetType="TabItem">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="Padding" Value="7,5,14,5" />
+        <!-- A 34 px chip, plus the 3 px round it that the focus ring is drawn in. -->
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="Cursor" Value="Hand" />
+        <!-- The focus ring is drawn round the chip in the template, not round the whole item. -->
+        <Setter Property="FocusAdorner" Value="{x:Null}" />
+        <Setter Property="Template">
+          <ControlTemplate>
+            <!-- No background here: only the chip takes clicks, not the chevron before it. -->
+            <StackPanel Orientation="Horizontal">
+              <Path Name="PART_Connector" Data="M0,0 L4,4.5 L0,9" Stroke="{DynamicResource Muted}"
+                    StrokeThickness="1.5" StrokeLineCap="Round" StrokeJoin="Round" Opacity="0.6"
+                    Margin="4,0" VerticalAlignment="Center" IsHitTestVisible="False" />
+              <!-- The margin keeps the focus ring inside the item, so it is never clipped. -->
+              <Panel Margin="3">
+                <Border Name="PART_Chip"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        Padding="{TemplateBinding Padding}">
+                  <ContentPresenter Name="PART_ContentPresenter"
+                                    Content="{TemplateBinding Header}"
+                                    ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                    VerticalAlignment="Center" />
+                </Border>
+                <Border Name="PART_FocusRing" Margin="-3" CornerRadius="19" BorderThickness="2"
+                        BorderBrush="{DynamicResource TextBrush}" IsVisible="False" IsHitTestVisible="False" />
+              </Panel>
+            </StackPanel>
+          </ControlTemplate>
+        </Setter>
+
+        <Style Selector="^:nth-child(1) /template/ Path#PART_Connector">
+          <Setter Property="IsVisible" Value="False" />
+        </Style>
+
+        <Style Selector="^:pointerover">
+          <Setter Property="Background" Value="{DynamicResource PanelAlt}" />
+          <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+        <Style Selector="^:pressed">
+          <Setter Property="Background" Value="{DynamicResource BorderBrush2}" />
+        </Style>
+
+        <Style Selector="^:selected">
+          <Setter Property="Background" Value="{DynamicResource AccentButtonBackground}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonBackground}" />
+          <Setter Property="Foreground" Value="{DynamicResource AccentButtonForeground}" />
+          <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+        <Style Selector="^:selected:pointerover">
+          <Setter Property="Background" Value="{DynamicResource AccentButtonBackgroundPointerOver}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonBackgroundPointerOver}" />
+          <Setter Property="Foreground" Value="{DynamicResource AccentButtonForegroundPointerOver}" />
+        </Style>
+        <Style Selector="^:selected:pressed">
+          <Setter Property="Background" Value="{DynamicResource AccentButtonBackgroundPressed}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonBackgroundPressed}" />
+          <Setter Property="Foreground" Value="{DynamicResource AccentButtonForegroundPressed}" />
+        </Style>
+
+        <Style Selector="^:focus-visible /template/ Border#PART_FocusRing">
+          <Setter Property="IsVisible" Value="True" />
+        </Style>
+
+        <Style Selector="^.aside">
+          <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush2}" />
+          <Setter Property="Padding" Value="14,5" />
+          <Setter Property="Margin" Value="8,0,0,0" />
+          <!-- As on the steps, the bold label's width is held, so selecting it shifts nothing. -->
+          <Setter Property="HeaderTemplate">
+            <DataTemplate x:DataType="x:String">
+              <Grid>
+                <TextBlock Text="{Binding}" FontWeight="Bold" Opacity="0" />
+                <TextBlock Text="{Binding}" HorizontalAlignment="Center" />
+              </Grid>
+            </DataTemplate>
+          </Setter>
+        </Style>
+        <Style Selector="^.aside /template/ Path#PART_Connector">
+          <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="^.aside:selected">
+          <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonBackground}" />
+        </Style>
+      </ControlTheme>
 
       <!-- A Font Awesome icon (FaIcon.cs): the path unstretched on a canvas the size of the icons'
            shared viewBox, scaled to the control's size. At 16 px the glyph's em is 12.8 px tall. -->
@@ -144,6 +279,46 @@
   <Style Selector="local|FaIcon.status.optional">
     <Setter Property="Data" Value="{StaticResource fa-circle-minus}" />
     <Setter Property="Foreground" Value="{StaticResource Muted}" />
+  </Style>
+
+  <!-- Inside a step's chip (MainWindow's StepViewModel template): the number in a muted ring, an
+       accent ring on the step to do next, a green check once the step's output exists, and the
+       steps not reached yet dimmed, though they stay clickable: each tab says what it needs. -->
+  <Style Selector="StackPanel.step Border.badge">
+    <Setter Property="BorderBrush" Value="{DynamicResource Muted}" />
+  </Style>
+  <Style Selector="StackPanel.step.current Border.badge">
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+  </Style>
+  <Style Selector="StackPanel.step.current TextBlock.badge-number">
+    <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+  </Style>
+  <Style Selector="StackPanel.step.done Border.badge">
+    <Setter Property="Background" Value="{DynamicResource SuccessBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SuccessBrush}" />
+  </Style>
+  <Style Selector="StackPanel.step Path.badge-check">
+    <Setter Property="Stroke" Value="{DynamicResource Bg}" />
+  </Style>
+  <Style Selector="StackPanel.step.upcoming">
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
+  <!-- On the selected chip's accent fill, the badge takes the fill's text colour, and the page
+       that is open is never dimmed. -->
+  <Style Selector="TabItem:selected StackPanel.step">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+  <Style Selector="TabItem:selected StackPanel.step Border.badge">
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonForeground}" />
+  </Style>
+  <Style Selector="TabItem:selected StackPanel.step TextBlock.badge-number">
+    <Setter Property="Foreground" Value="{DynamicResource AccentButtonForeground}" />
+  </Style>
+  <Style Selector="TabItem:selected StackPanel.step.done Border.badge">
+    <Setter Property="Background" Value="{DynamicResource AccentButtonForeground}" />
+  </Style>
+  <Style Selector="TabItem:selected StackPanel.step Path.badge-check">
+    <Setter Property="Stroke" Value="{DynamicResource AccentButtonBackground}" />
   </Style>
 
   <!-- Inputs and lists -->
