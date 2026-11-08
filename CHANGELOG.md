@@ -27,6 +27,8 @@ Changes to ReelsMagician, newest first. Version numbers will be assigned once th
 
 - **Repeated speech:** words spoken again were sometimes dropped or cut short, as if they were a caption repeating the previous line. Only a real rolling repeat is trimmed now: one that starts as the previous cue ends and repeats it on a line of its own.
 - **One-word captions:** in captions that come with a video, a line adding a single new word could appear up to a second late. It now appears when that word is spoken.
+- **Free up space:** after deleting, the status bar says how much was freed, or which files are still in use, instead of only "Freeing up space complete.". A progress line arriving late from a finished step can no longer replace that, or the path of a rendered reel.
+- **Failed installs:** when an install fails or is cancelled partway, the Setup tab now shows the tools it did install, instead of listing them as missing until you press **Refresh**.
 - **Typed paths:** a source or output folder typed as `~/Videos/…` now starts in the home folder, instead of failing to load or creating a folder named `~`. A relative output folder no longer fails the render after it has started; it is taken from the home folder, and an empty one means the default folder.
 - **Quoted links:** a link pasted in quotes skipped the ffmpeg check and the question before yt-dlp is downloaded. Quotes are now removed once, before anything looks at the input, and single quotes from a Linux terminal are removed too.
 - **Where the reel went:** after a render, the status bar could say "Reel complete" instead of naming the file it wrote. It names the file again.
