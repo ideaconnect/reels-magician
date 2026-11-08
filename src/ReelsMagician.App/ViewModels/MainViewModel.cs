@@ -29,6 +29,12 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     private Toolset _tools = new();
     private CancellationTokenSource? _cts;
 
+    // The number of the stage that is running, or 0 while none is. A progress report keeps the
+    // number of the stage it came from and is dropped once that stage has finished, so a report
+    // still queued from the stage's threads cannot replace the status it finished with.
+    private int _runningStage;
+    private int _stagesStarted;
+
     public MainViewModel(IAppShell shell)
     {
         _shell = shell;
@@ -217,13 +223,13 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             RefreshCleanup();
             RefreshTools();
 
-            Status = result.Complete
+            if (!result.Complete)
+                this.Warn("cleanup", "Close anything using these files and try again.");
+
+            return result.Complete
                 ? $"Freed {AssetDownloader.Humanize(result.BytesFreed)}."
                 : $"Freed {AssetDownloader.Humanize(result.BytesFreed)}, but some files are still in use: " +
                   string.Join("; ", result.Failures.Take(3));
-
-            if (!result.Complete)
-                this.Warn("cleanup", "Close anything using these files and try again.");
         }).ConfigureAwait(true);
     }
 
@@ -609,12 +615,8 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             var pipeline = new ReelPipeline(_tools, _settings, _paths, this);
             var result = await pipeline.RenderAsync(_project, output, ct).ConfigureAwait(true);
 
-            // The render's last progress reports are still queued from its own thread; let them
-            // land first, or one of them replaces the path the user needs with "Reel complete".
-            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
-            Status = $"Reel written to {result.OutputPath}";
-
             RefreshCommands();
+            return $"Reel written to {result.OutputPath}";
         }).ConfigureAwait(true);
     }
 
@@ -871,8 +873,19 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         Status = "Cancelling…";
     }
 
-    /// <summary>Runs one pipeline stage with shared busy state, cancellation and error reporting.</summary>
-    private async Task RunStageAsync(string label, Func<CancellationToken, Task> work)
+    /// <summary>Runs one pipeline stage that ends with "<paramref name="label"/> complete."</summary>
+    private Task RunStageAsync(string label, Func<CancellationToken, Task> work) =>
+        RunStageAsync(label, async ct =>
+        {
+            await work(ct).ConfigureAwait(true);
+            return (string?)null;
+        });
+
+    /// <summary>
+    /// Runs one pipeline stage with shared busy state, cancellation and error reporting. The work
+    /// returns the status to finish with, or null for "<paramref name="label"/> complete.".
+    /// </summary>
+    private async Task RunStageAsync(string label, Func<CancellationToken, Task<string?>> work)
     {
         if (IsBusy) return;
 
@@ -881,34 +894,37 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         IsBusy = true;
         Indeterminate = true;
         Progress = 0;
+        Volatile.Write(ref _runningStage, ++_stagesStarted);
         Status = label + "…";
         this.Info(label.ToLowerInvariant(), label + " started.");
 
+        string finalStatus;
         try
         {
-            await work(cts.Token).ConfigureAwait(true);
-            if (!Status.StartsWith("Reel written", StringComparison.Ordinal))
-                Status = label + " complete.";
+            finalStatus = await work(cts.Token).ConfigureAwait(true) ?? label + " complete.";
         }
         catch (OperationCanceledException)
         {
-            Status = label + " cancelled.";
+            finalStatus = label + " cancelled.";
             this.Warn(label.ToLowerInvariant(), "Cancelled by the user.");
         }
         catch (Exception ex)
         {
-            Status = $"{label} failed: {ex.Message}";
+            finalStatus = $"{label} failed: {ex.Message}";
             this.Error(label.ToLowerInvariant(), ex.Message);
             ErrorReporter.Report(ex, $"{label} failed");
         }
         finally
         {
+            // From here on, reports still queued from this stage are dropped.
+            Volatile.Write(ref _runningStage, 0);
             _cts = null;
             IsBusy = false;
             Indeterminate = false;
             Progress = 0;
             RefreshCommands();
         }
+        Status = finalStatus;
     }
 
     private void RefreshCommands()
@@ -956,8 +972,13 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     void IProgressSink.Report(string stage, string message, double? fraction)
     {
+        // Progress belongs to a running stage. A report from one that has finished, a late line
+        // of ffmpeg output say, would replace the status that stage finished with.
+        var from = Volatile.Read(ref _runningStage);
+        if (from == 0) return;
         Post(() =>
         {
+            if (from != _runningStage) return;
             Status = message;
             Indeterminate = fraction is null;
             Progress = fraction is null ? 0 : Math.Clamp(fraction.Value, 0, 1) * 100;
