@@ -30,23 +30,25 @@ switch (mode)
         break;
 
     case "logic":
-        UnitChecks.Run();
-        PlatformChecks.Run();
-        CaptionParsingChecks.Run();
-        SourceAndCleanupChecks.Run();
-        ToolBuildChecks.Run();
-        LinkToolChecks.Run();
+        RunLogicChecks();
         break;
 
     default:
-        UnitChecks.Run();
-        PlatformChecks.Run();
-        CaptionParsingChecks.Run();
-        SourceAndCleanupChecks.Run();
-        ToolBuildChecks.Run();
-        LinkToolChecks.Run();
+        RunLogicChecks();
         await RenderChecks.RunAsync();
         break;
 }
 
 return Check.Report();
+
+// The checks that need no tools at all. CI runs them as the logic mode, and the default mode
+// adds a real render, so a check class listed here runs in both.
+static void RunLogicChecks()
+{
+    UnitChecks.Run();
+    PlatformChecks.Run();
+    CaptionParsingChecks.Run();
+    SourceAndCleanupChecks.Run();
+    ToolBuildChecks.Run();
+    LinkToolChecks.Run();
+}
