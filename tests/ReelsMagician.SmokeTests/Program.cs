@@ -65,4 +65,5 @@ static void RunLogicChecks()
     AppIconChecks.Run();
     ScrollShadowChecks.Run();
     LicenceChecks.Run();
+    InfoBoxChecks.Run();
 }

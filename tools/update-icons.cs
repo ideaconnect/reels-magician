@@ -38,6 +38,8 @@ string[] Icons =
     "mug-hot", "heart",
     // The About tab: idct.tech, the repository's pages, a component's source and its licence.
     "globe", "brands/github", "bug", "tag", "arrow-up-right-from-square", "file-lines",
+    // An information note (InfoBox); its warning and error kinds use triangle-exclamation and circle-xmark.
+    "circle-info",
 ];
 
 var root = Path.GetFullPath(Path.Combine(
