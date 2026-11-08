@@ -103,3 +103,12 @@ them: `LICENSE`, this file, and a `licenses` folder. That folder holds the licen
 files each bundled package and the .NET runtime ship, and the texts kept in this repository's
 `licenses` folder: Font Awesome's, and those of the packages that ship none. The AppImage adds
 those in `packaging/linux/licenses` for its runtime. Keep all of them when you pass a build on.
+
+## In the documentation only
+
+The README's screenshots in `docs/screenshots/` show frames of a film that isn't ReelsMagician's.
+They are not part of any build of the app.
+
+| Content | Licence | Source |
+|---|---|---|
+| Frames of *Tears of Steel* and its English subtitles, in the app's screenshots and the three frames of a reel made from it | CC BY 3.0: (CC) Blender Foundation \| mango.blender.org | https://mango.blender.org/ |
