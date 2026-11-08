@@ -26,8 +26,11 @@ public sealed class AppSettings
     public string WhisperLanguage { get; set; } = "auto";
     public int WhisperThreads { get; set; } = Math.Max(4, Environment.ProcessorCount - 2);
 
-    public string OutputDirectory { get; set; } =
+    /// <summary>Where reels go until the user picks another folder.</summary>
+    public static string DefaultOutputDirectory =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), ToolPaths.FolderName);
+
+    public string OutputDirectory { get; set; } = DefaultOutputDirectory;
 
     public List<string> RecentSources { get; set; } = [];
 

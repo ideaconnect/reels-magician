@@ -380,6 +380,13 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         }
     }
 
+    /// <summary>
+    /// The full path of the output folder as typed: <c>~</c> is the home folder, a relative folder
+    /// is taken from it, and an empty box means the default folder. The box itself keeps the
+    /// text as typed, so it does not change under the user's cursor.
+    /// </summary>
+    private string OutputFolderPath => UserPaths.ResolveOutputFolder(OutputFolder, AppSettings.DefaultOutputDirectory);
+
     public ObservableCollection<string> Log { get; } = [];
 
     private string _status = "Ready.";
@@ -625,9 +632,10 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         {
             _project.RenderOptions = _project.RenderOptions with { CrossfadeSeconds = CrossfadeMs / 1000.0 };
 
-            Directory.CreateDirectory(OutputFolder);
+            var folder = OutputFolderPath;
+            Directory.CreateDirectory(folder);
             var name = Sanitise(_project.SelectedCandidate?.Title ?? _project.Topic);
-            var output = Path.Combine(OutputFolder, $"{name}_{DateTime.Now:yyyyMMdd-HHmmss}.mp4");
+            var output = Path.Combine(folder, $"{name}_{DateTime.Now:yyyyMMdd-HHmmss}.mp4");
 
             var pipeline = new ReelPipeline(_tools, _settings, _paths, this);
             var result = await pipeline.RenderAsync(_project, output, ct).ConfigureAwait(true);
@@ -772,7 +780,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     {
         CommitSubtitleEdits();
         var file = await _shell.PickSaveFileAsync("Export subtitles", Sanitise(Topic) + ".srt",
-            Directory.Exists(OutputFolder) ? OutputFolder : null, new FileFilter("SubRip", "*.srt")).ConfigureAwait(true);
+            Directory.Exists(OutputFolderPath) ? OutputFolderPath : null, new FileFilter("SubRip", "*.srt")).ConfigureAwait(true);
         if (file is null) return;
 
         try
@@ -863,7 +871,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     private async Task BrowseOutputAsync()
     {
         var folder = await _shell.PickFolderAsync("Choose where reels are saved",
-            Directory.Exists(OutputFolder) ? OutputFolder : null).ConfigureAwait(true);
+            Directory.Exists(OutputFolderPath) ? OutputFolderPath : null).ConfigureAwait(true);
         if (folder is not null) OutputFolder = folder;
     }
 

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using ReelsMagician.Core.Diagnostics;
+using ReelsMagician.Core.Projects;
 using ReelsMagician.Core.Toolchain;
 
 namespace ReelsMagician.Core.Media;
@@ -39,13 +40,14 @@ public sealed partial class SourceResolver(Toolset tools, IProgressSink sink)
         !string.IsNullOrWhiteSpace(input) && UrlPattern().IsMatch(input.Trim());
 
     /// <summary>
-    /// The source the user typed or pasted, without surrounding whitespace or quotes. Paths copied
-    /// from Explorer come in double quotes and paths copied from a Linux terminal often in single
-    /// ones. Everything that decides between a link and a file must look at this same string,
-    /// or a quoted link would count as a file in one place and a link in another.
+    /// The source the user typed or pasted, without surrounding whitespace or quotes, and with a
+    /// leading <c>~</c> read as the home folder. Paths copied from Explorer come in double quotes,
+    /// and paths copied from a Linux terminal often in single ones and starting with <c>~</c>.
+    /// Everything that decides between a link and a file must look at this same string, or a
+    /// quoted link would count as a file in one place and a link in another.
     /// </summary>
     public static string NormaliseInput(string? input) =>
-        (input ?? "").Trim().Trim('"', '\'').Trim();
+        UserPaths.ExpandHome((input ?? "").Trim().Trim('"', '\'').Trim());
 
     /// <param name="fetchSubtitles">
     /// When false, the caption round trip is skipped entirely. Worth honouring: it is an extra
@@ -62,6 +64,8 @@ public sealed partial class SourceResolver(Toolset tools, IProgressSink sink)
 
     private async Task<ResolvedSource> UseLocalFileAsync(string path, CancellationToken ct)
     {
+        // Kept as a full path: the later steps run ffmpeg in the project's work folder.
+        if (path.Length > 0) path = Path.GetFullPath(path);
         if (!File.Exists(path))
             throw new FileNotFoundException($"Could not find '{path}'.", path);
 
