@@ -9,7 +9,7 @@ Changes to ReelsMagician, newest first. Version numbers will be assigned once th
 - **Processing core:** the core now builds for Linux as well as Windows, and passes the same checks on both.
 - **Linux graphics:** on Linux the app finds the graphics card, and Vulkan support, from the system itself.
 - **Linux archives:** tool archives in the formats Linux builds use (`.tar.gz`, `.tar.xz`) unpack with their permissions and links intact.
-- **OpenCV:** face and people detection now use OpenCvSharp 4.13.
+- **OpenCV:** face and people detection now use OpenCvSharp 5, on OpenCV 5.0. On Linux the app ships OpenCV's headless build, so it needs nothing from the desktop: no GTK 3 to install.
 - **Releases:** Windows gets a zip with everything included; Linux gets a single AppImage that needs only FUSE 3, which Ubuntu installs by default. The app has an icon of its own for the first time. Both carry the licences of everything they include, in a `licenses` folder next to the app.
 - **New interface toolkit:** the interface is rebuilt on Avalonia, so the same app runs on Windows and on Linux, where it runs natively on Wayland. The tabs, wording and colours stay as they were.
 - **The app's own dialogs:** the app now draws its own file pickers and confirmation dialogs instead of using the system's, so they look and behave the same on both systems. Questions still default to the answer that changes nothing.
@@ -21,6 +21,7 @@ Changes to ReelsMagician, newest first. Version numbers will be assigned once th
 - **Fallback builds are reported:** when the best build of whisper.cpp or llama.cpp that this machine supports cannot be found and a lesser one is installed instead (a CPU build on a machine with a capable graphics card, say), the app says so during the install and on the Setup tab, instead of quietly running slower.
 
 - **Video links:** yt-dlp and Deno are no longer part of the default install. **Install everything missing** never fetches them. The app downloads them only after you agree, either the first time you load a compatible video link or from the optional card on the Setup tab. A yt-dlp already on your PATH is used without asking.
+- **Face detection:** faces are now found by YuNet, the face detector in OpenCV's model zoo. It also finds a head turned to the side and a small face, such as a webcam in the corner of a screen recording, and takes about a quarter of the time per frame. It is a 0.2 MB download instead of 11 MB: press **Install everything missing** once to get it, and the old detector's files are deleted.
 - **Reel names:** a reel's file name is now made of ASCII letters, digits and underscores only: `Laptop czy tablet? Wszystko w jednym` becomes `Laptop_czy_tablet_Wszystko_w_jednym`. It comes out the same on Windows and Linux, and copies to any USB stick or shared folder. The suggested name for exported subtitles is made the same way.
 - **Links without ffmpeg:** loading a link before ffmpeg is installed now stops and points you to Setup, instead of failing after the download.
 

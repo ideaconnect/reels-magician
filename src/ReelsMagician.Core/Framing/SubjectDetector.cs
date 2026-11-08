@@ -1,5 +1,4 @@
 using OpenCvSharp;
-using OpenCvSharp.Dnn;
 using ReelsMagician.Core.Diagnostics;
 
 namespace ReelsMagician.Core.Framing;
@@ -34,27 +33,31 @@ public sealed record SubjectHit(
 /// </summary>
 public sealed class SubjectDetector : IDisposable
 {
-    // Input geometry and channel means baked into the ResNet-10 SSD face detector.
-    private static readonly Size FaceInput = new(300, 300);
-    private static readonly Scalar FaceMean = new(104, 177, 123);
-    private const float FaceConfidenceThreshold = 0.55f;
+    // YuNet finds faces from about 10 to 300 pixels across, which the 480-pixel-wide analysis
+    // frames stay within. Its boxes come in pixels of the frame it was given.
+    private const float FaceConfidenceThreshold = 0.6f;
+    private const float FaceOverlapThreshold = 0.3f;
+    private const int MaxFaces = 50;
 
-    private readonly Net? _faceNet;
+    private readonly FaceDetectorYN? _faceDetector;
     private readonly HOGDescriptor? _personDetector;
     private readonly IProgressSink _sink;
 
     private Mat? _previousGray;
     private SubjectHit? _previous;
 
-    public SubjectDetector(string? faceProtoPath, string? faceWeightsPath, IProgressSink sink, bool detectPeople = true)
+    public SubjectDetector(string? faceModelPath, IProgressSink sink, bool detectPeople = true)
     {
         _sink = sink;
+        EnsureOpenCvLoads();
 
-        if (File.Exists(faceProtoPath ?? "") && File.Exists(faceWeightsPath ?? ""))
+        if (File.Exists(faceModelPath ?? ""))
         {
             try
             {
-                _faceNet = CvDnn.ReadNetFromCaffe(faceProtoPath!, faceWeightsPath!);
+                // The input size is set for each frame; this one only has to be valid.
+                _faceDetector = FaceDetectorYN.Create(faceModelPath!, "", new Size(320, 320),
+                    FaceConfidenceThreshold, FaceOverlapThreshold, MaxFaces);
             }
             catch (Exception ex)
             {
@@ -78,6 +81,28 @@ public sealed class SubjectDetector : IDisposable
                 sink.Debug("framing", $"Person detector unavailable: {ex.Message}");
                 _personDetector = null;
             }
+        }
+    }
+
+    /// <summary>
+    /// Stops with a message that names the problem when OpenCV's native library cannot load.
+    /// Otherwise the first OpenCV call fails with .NET's "type initializer threw an exception",
+    /// and the library the system is missing is only in the inner exception.
+    /// </summary>
+    private static void EnsureOpenCvLoads()
+    {
+        try
+        {
+            // Also the first call into the native library. OpenCV 5's new network engine would
+            // otherwise warn on every run that it ignores the compute target YuNet asks for.
+            Cv2.SetLogLevel(OpenCvSharp.LogLevel.ERROR);
+        }
+        catch (Exception ex) when (ex is TypeInitializationException or DllNotFoundException)
+        {
+            var cause = ex;
+            while (cause.InnerException is not null) cause = cause.InnerException;
+            throw new InvalidOperationException(
+                $"OpenCV, which follows the speaker, could not load: {cause.Message.Split('\n')[0].Trim()}", ex);
         }
     }
 
@@ -106,33 +131,27 @@ public sealed class SubjectDetector : IDisposable
 
     private SubjectHit? DetectFace(Mat frame, double time)
     {
-        if (_faceNet is null) return null;
+        if (_faceDetector is null) return null;
         try
         {
-            using var blob = CvDnn.BlobFromImage(frame, 1.0, FaceInput, FaceMean, swapRB: false, crop: false);
-            _faceNet.SetInput(blob);
-            using var output = _faceNet.Forward();
+            _faceDetector.SetInputSize(new Size(frame.Width, frame.Height));
+            using var faces = new Mat();
+            _faceDetector.Detect(frame, faces);
+            if (faces.Empty()) return null;
 
-            // The SSD head emits 1×1×N×7 rows of [batch, class, confidence, x1, y1, x2, y2],
-            // with the box corners already normalised to the input image.
-            using var detections = output.Reshape(1, output.Size(2));
-
+            // One row per face: the box's left, top, width and height in pixels, five landmarks
+            // as x and y pairs, then the confidence.
+            double W = frame.Width, H = frame.Height;
             var best = (Score: double.MinValue, Row: -1);
-            var rows = detections.Rows;
+            var rows = faces.Rows;
             for (var i = 0; i < rows; i++)
             {
-                var confidence = detections.At<float>(i, 2);
-                if (confidence < FaceConfidenceThreshold) continue;
+                var confidence = faces.At<float>(i, 14);
+                var w = faces.At<float>(i, 2) / W;
+                var h = faces.At<float>(i, 3) / H;
+                if (w <= 0.005 || h <= 0.005) continue;
 
-                var x1 = detections.At<float>(i, 3);
-                var y1 = detections.At<float>(i, 4);
-                var x2 = detections.At<float>(i, 5);
-                var y2 = detections.At<float>(i, 6);
-                var w = x2 - x1;
-                var h = y2 - y1;
-                if (w <= 0.005f || h <= 0.005f) continue;
-
-                var cx = x1 + w / 2;
+                var cx = faces.At<float>(i, 0) / W + w / 2;
 
                 // A nearer face is a bigger face, and that is the foreground subject; the
                 // continuity bonus stops the crop ping-ponging between two similar faces.
@@ -144,23 +163,21 @@ public sealed class SubjectDetector : IDisposable
             }
             if (best.Row < 0) return null;
 
-            var bx1 = detections.At<float>(best.Row, 3);
-            var by1 = detections.At<float>(best.Row, 4);
-            var bx2 = detections.At<float>(best.Row, 5);
-            var by2 = detections.At<float>(best.Row, 6);
-            var bw = bx2 - bx1;
-            var bh = by2 - by1;
+            var bx = faces.At<float>(best.Row, 0) / W;
+            var by = faces.At<float>(best.Row, 1) / H;
+            var bw = faces.At<float>(best.Row, 2) / W;
+            var bh = faces.At<float>(best.Row, 3) / H;
 
             // Aim below the face so the crop holds head and shoulders, not a floating head.
-            var centerY = by1 + bh * 1.35;
+            var centerY = by + bh * 1.35;
 
             return new SubjectHit(
                 time,
-                Math.Clamp(bx1 + bw / 2, 0, 1),
+                Math.Clamp(bx + bw / 2, 0, 1),
                 Math.Clamp(centerY, 0, 1),
                 Math.Clamp(bw, 0, 1),
                 Math.Clamp(bh, 0, 1),
-                Math.Clamp(detections.At<float>(best.Row, 2), 0, 1),
+                Math.Clamp(faces.At<float>(best.Row, 14), 0, 1),
                 SubjectKind.Face);
         }
         catch (Exception ex)
@@ -302,7 +319,7 @@ public sealed class SubjectDetector : IDisposable
 
     public void Dispose()
     {
-        _faceNet?.Dispose();
+        _faceDetector?.Dispose();
         _personDetector?.Dispose();
         _previousGray?.Dispose();
     }
