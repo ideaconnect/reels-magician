@@ -22,9 +22,9 @@ Every build of the app includes these.
 | SkiaSharp, with its native Skia library (draws the interface) | MIT; Skia itself is BSD-3-Clause, and the native library carries further notices of its own | https://github.com/mono/SkiaSharp |
 | HarfBuzzSharp, with its native HarfBuzz library (shapes text) | MIT; HarfBuzz itself is under the "Old MIT" licence | https://github.com/mono/SkiaSharp |
 | Avalonia.Angle.Windows.Natives, a build of ANGLE (Windows only) | BSD-3-Clause | https://github.com/AvaloniaUI/angle |
-| OpenCvSharp4 | Apache-2.0 | https://github.com/shimat/opencvsharp |
-| OpenCvSharp4.runtime.win (native OpenCV build for Windows) | Apache-2.0; its `opencv_videoio_ffmpeg` DLL is OpenCV's LGPL-2.1 build of FFmpeg | https://github.com/shimat/opencvsharp |
-| OpenCvSharp4.official.runtime.linux-x64 (native OpenCV build for Linux) | Apache-2.0; the native library statically links FFmpeg (LGPL-2.1) and Tesseract (Apache-2.0) | https://github.com/shimat/opencvsharp |
+| OpenCvSharp5 (OpenCV 5.0 for .NET) | Apache-2.0 | https://github.com/shimat/opencvsharp |
+| OpenCvSharp5.runtime.win (native OpenCV build for Windows) | Apache-2.0; its `opencv_videoio_ffmpeg` DLL is OpenCV's LGPL-2.1 build of FFmpeg | https://github.com/shimat/opencvsharp |
+| OpenCvSharp5.official.runtime.linux-x64.headless (native OpenCV build for Linux, without OpenCV's own windows) | Apache-2.0; the native library statically links FFmpeg (LGPL-2.1) and Tesseract (Apache-2.0) | https://github.com/shimat/opencvsharp |
 | SharpCompress (unpacks the `.tar.xz` archives Linux tools come in) | MIT | https://github.com/adamhathcock/sharpcompress |
 
 ## Added by the release packages
@@ -49,8 +49,7 @@ user's PATH (ffmpeg, most likely) is reused instead of downloaded.
 | llama.cpp (and, on Windows with an NVIDIA card it can drive, the CUDA runtime archive llama.cpp publishes next to its CUDA build) | MIT; the CUDA runtime libraries are under NVIDIA's CUDA EULA | https://github.com/ggml-org/llama.cpp |
 | Whisper models (ggml conversions) | MIT | https://huggingface.co/ggerganov/whisper.cpp |
 | Qwen3 4B / 8B GGUF models | Apache-2.0 | https://huggingface.co/Qwen |
-| Face detector prototxt | Apache-2.0 | https://github.com/opencv/opencv (`samples/dnn/face_detector`) |
-| Face detector weights (`res10_300x300_ssd_iter_140000.caffemodel`) | Published by the OpenCV project for its DNN samples; the source branch carries no separate licence file | https://github.com/opencv/opencv_3rdparty (`dnn_samples_face_detector_20170830`) |
+| YuNet face detector (`face_detection_yunet_2026may.onnx`) | MIT | https://github.com/opencv/opencv_zoo (`models/face_detection_yunet`) |
 
 ## Downloaded only if the user agrees
 

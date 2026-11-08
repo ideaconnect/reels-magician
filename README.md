@@ -139,7 +139,7 @@ downloaded again.
 | llama.cpp | ggml-org/llama.cpp | ~124 MB, ~600 MB as the CUDA build |
 | Whisper large-v3-turbo (q5) | ggerganov/whisper.cpp | ~547 MB |
 | Qwen3 8B Instruct (Q4_K_M) | Qwen/Qwen3-8B-GGUF | ~4.7 GB |
-| Face detector (OpenCV SSD) | opencv / opencv_3rdparty | ~10 MB |
+| Face detector (YuNet) | opencv / opencv_zoo | ~0.2 MB |
 
 Smaller Whisper and Qwen models are selectable on the Setup tab if you are short on disk or VRAM.
 

@@ -105,7 +105,7 @@ public sealed class ReelPipeline(Toolset tools, AppSettings settings, ToolPaths 
 
         var options = project.FramingOptions;
         var ffmpeg = Ffmpeg;
-        using var detector = new SubjectDetector(tools.FaceProtoPath, tools.FaceWeightsPath, sink);
+        using var detector = new SubjectDetector(tools.FaceModelPath, sink);
 
         project.RenderClips.Clear();
 

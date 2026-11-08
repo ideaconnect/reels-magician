@@ -88,10 +88,8 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         var llmPath = Path.Combine(paths.Models, llm.FileName);
         if (File.Exists(llmPath)) ts.LlmModelPath = llmPath;
 
-        var proto = Path.Combine(paths.Models, ModelCatalog.FaceProtoFileName);
-        if (File.Exists(proto)) ts.FaceProtoPath = proto;
-        var weights = Path.Combine(paths.Models, ModelCatalog.FaceWeightsFileName);
-        if (File.Exists(weights)) ts.FaceWeightsPath = weights;
+        var face = Path.Combine(paths.Models, ModelCatalog.FaceModelFileName);
+        if (File.Exists(face)) ts.FaceModelPath = face;
 
         return ts;
     }
@@ -133,7 +131,7 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
                 ts.LlmModelPath is not null ? ComponentState.Installed : ComponentState.RequiredMissing,
                 llm.Notes, llm.ApproxBytes),
 
-            new("face-model", "Face detector (OpenCV SSD)",
+            new("face-model", "Face detector (YuNet)",
                 ts.HasFaceModel ? ComponentState.Installed : ComponentState.RequiredMissing,
                 "Keeps a speaker centred in the vertical crop", ModelCatalog.FaceModelApproxBytes),
         ];
@@ -178,10 +176,10 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
             }
             if (!ts.HasFaceModel)
             {
-                await dl.DownloadAsync(ModelCatalog.FaceProtoUrl,
-                    Path.Combine(paths.Models, ModelCatalog.FaceProtoFileName), "face detector graph", ct).ConfigureAwait(false);
-                await dl.DownloadAsync(ModelCatalog.FaceWeightsUrl,
-                    Path.Combine(paths.Models, ModelCatalog.FaceWeightsFileName), "face detector weights", ct).ConfigureAwait(false);
+                await dl.DownloadAsync(ModelCatalog.FaceModelUrl,
+                    Path.Combine(paths.Models, ModelCatalog.FaceModelFileName), "face detector", ct).ConfigureAwait(false);
+                foreach (var retired in ModelCatalog.RetiredFaceModelFileNames)
+                    TryDelete(Path.Combine(paths.Models, retired));
             }
         }).ConfigureAwait(false);
 

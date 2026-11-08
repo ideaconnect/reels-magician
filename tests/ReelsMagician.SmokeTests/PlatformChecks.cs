@@ -22,6 +22,27 @@ public static class PlatformChecks
         LinuxGpuDetection();
         VulkanDriverVariables();
         TarArchives();
+        OpenCvLoads();
+    }
+
+    /// <summary>
+    /// OpenCV's native library loads and runs here, with nothing installed beyond the system's
+    /// own libraries. On Linux that is the headless build, which links no GTK (issue #37).
+    /// </summary>
+    private static void OpenCvLoads()
+    {
+        Check.Section("OpenCV's native library loads and runs (issue #37)");
+
+        var warnings = new List<string>();
+        var sink = new DelegateProgressSink(e => { if (e.Level == LogLevel.Warn) warnings.Add(e.Message); }, (_, _, _) => { });
+        using var detector = new ReelsMagician.Core.Framing.SubjectDetector(faceModelPath: null, sink);
+        Check.True(warnings.Any(w => w.Contains("No face model")), "with no face model, the detector says so and carries on");
+
+        using var frame = new OpenCvSharp.Mat(270, 480, OpenCvSharp.MatType.CV_8UC3, OpenCvSharp.Scalar.All(0));
+        var hit = detector.Analyze(frame, 0);
+        Check.True(hit.Kind != ReelsMagician.Core.Framing.SubjectKind.Face,
+            $"the people and saliency detectors ran on a blank frame, and found no face in it (got {hit.Kind})");
+        Check.True(OpenCvSharp.Cv2.GetVersionString().StartsWith("5."), $"it is OpenCV 5 ({OpenCvSharp.Cv2.GetVersionString()})");
     }
 
     /// <summary>

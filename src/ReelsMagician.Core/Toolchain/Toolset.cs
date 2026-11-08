@@ -13,8 +13,7 @@ public sealed class Toolset
     public string? LlamaServerPath { get; set; }
     public string? WhisperModelPath { get; set; }
     public string? LlmModelPath { get; set; }
-    public string? FaceProtoPath { get; set; }
-    public string? FaceWeightsPath { get; set; }
+    public string? FaceModelPath { get; set; }
 
     public string WhisperBackend { get; set; } = "not installed";
     public string LlamaBackend { get; set; } = "not installed";
@@ -32,7 +31,7 @@ public sealed class Toolset
     public bool HasJsRuntime => JsRuntimePath is not null;
     public bool HasWhisper => WhisperCliPath is not null && WhisperModelPath is not null;
     public bool HasLlm => LlamaServerPath is not null && LlmModelPath is not null;
-    public bool HasFaceModel => FaceProtoPath is not null && FaceWeightsPath is not null;
+    public bool HasFaceModel => FaceModelPath is not null;
 
     /// <summary>Both optional tools a compatible video link needs: yt-dlp and its JavaScript runtime.</summary>
     public bool HasLinkTools => HasYtDlp && HasJsRuntime;

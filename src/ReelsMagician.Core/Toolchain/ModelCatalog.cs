@@ -58,18 +58,21 @@ public static class ModelCatalog
     ];
 
     /// <summary>
-    /// OpenCV's ResNet-10 SSD face detector: two small files, and an output blob that decodes
-    /// directly to boxes. Used to keep a speaker centred in the vertical crop.
+    /// YuNet, the face detector in OpenCV's model zoo: one small ONNX file, used to keep a speaker
+    /// centred in the vertical crop. This version takes frames of any size, as OpenCV 5 needs.
+    /// Pinned to the opencv_zoo commit that published it.
     /// </summary>
-    public const string FaceProtoFileName = "face_detector.prototxt";
-    public const string FaceProtoUrl =
-        "https://raw.githubusercontent.com/opencv/opencv/4.x/samples/dnn/face_detector/deploy.prototxt";
+    public const string FaceModelFileName = "face_detection_yunet_2026may.onnx";
+    public const string FaceModelUrl =
+        "https://media.githubusercontent.com/media/opencv/opencv_zoo/26cc381e4d2594bb9f47a26eb8fd96c94a13660d/models/face_detection_yunet/face_detection_yunet_2026may.onnx";
 
-    public const string FaceWeightsFileName = "face_detector_res10.caffemodel";
-    public const string FaceWeightsUrl =
-        "https://raw.githubusercontent.com/opencv/opencv_3rdparty/dnn_samples_face_detector_20170830/res10_300x300_ssd_iter_140000.caffemodel";
+    public const long FaceModelApproxBytes = 230_000;
 
-    public const long FaceModelApproxBytes = 10_700_000;
+    /// <summary>
+    /// The ResNet-10 SSD face detector that earlier versions downloaded. It is a Caffe model, which
+    /// OpenCV 5 cannot read, so installing YuNet deletes it.
+    /// </summary>
+    public static readonly string[] RetiredFaceModelFileNames = ["face_detector.prototxt", "face_detector_res10.caffemodel"];
 
     public static WhisperModelSpec DefaultWhisper => WhisperModels[2];
     public static LlmModelSpec DefaultLlm => LlmModels[1];

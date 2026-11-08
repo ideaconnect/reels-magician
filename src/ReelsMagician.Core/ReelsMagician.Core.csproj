@@ -5,9 +5,11 @@
     <RootNamespace>ReelsMagician.Core</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="OpenCvSharp4" Version="4.13.0.20261107" />
-    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.13.0.20261107" />
-    <PackageReference Include="OpenCvSharp4.official.runtime.linux-x64" Version="4.13.0.20261107" />
+    <PackageReference Include="OpenCvSharp5" Version="5.0.0.20261107" />
+    <PackageReference Include="OpenCvSharp5.runtime.win" Version="5.0.0.20261107" />
+    <!-- The headless build: OpenCV without its own windows, so it links nothing beyond the C and
+         C++ runtimes. The full build links GTK 3, which a Linux system may not have (#37). -->
+    <PackageReference Include="OpenCvSharp5.official.runtime.linux-x64.headless" Version="5.0.0.20261107" />
     <!-- .NET reads zip and gzip itself; ffmpeg's Linux builds come as .tar.xz. -->
     <PackageReference Include="SharpCompress" Version="0.50.8" />
   </ItemGroup>

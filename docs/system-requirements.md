@@ -26,7 +26,7 @@ What the app downloads on first run, with the default models:
 | llama.cpp | ~130 MB, ~600 MB as the NVIDIA build on Windows |
 | Whisper large-v3-turbo (quantised) | ~574 MB |
 | Qwen3 8B Instruct (Q4_K_M) | ~5 GB |
-| Face detector | ~11 MB |
+| Face detector | ~0.2 MB |
 
 An ffmpeg already installed on your system is used instead of downloading another copy.
 
@@ -53,6 +53,7 @@ The Linux version is an AppImage: a single file that runs without being installe
   - **Ubuntu 24.04:** choose **Ubuntu**, not **Ubuntu on Xorg**, on the login screen.
   - **KDE Plasma, sway and other Wayland desktops:** should work too. The app draws its own windows and file dialogs, so it needs nothing from the desktop except Wayland itself. That includes no `xdg-desktop-portal`.
 - **FUSE 3:** the AppImage mounts itself with `fusermount3`. Ubuntu includes it in the `fuse3` package, and the older `libfuse2` isn't needed.
+- **Nothing else to install:** the AppImage carries everything else the app needs, OpenCV included. From the system it uses only what every Linux desktop already has: the C and C++ runtime libraries, fontconfig, OpenSSL, ICU, and the session's Wayland and graphics libraries.
 
 ### Running and updating
 

@@ -34,8 +34,7 @@ public static class LinkToolChecks
         Seed(paths.LlamaDir, ToolPaths.ExeName("llama-server"));
         Seed(paths.Models, ModelCatalog.ResolveWhisper(settings.WhisperModelId).FileName);
         Seed(paths.Models, ModelCatalog.ResolveLlm(settings.LlmModelId).FileName);
-        Seed(paths.Models, ModelCatalog.FaceProtoFileName);
-        Seed(paths.Models, ModelCatalog.FaceWeightsFileName);
+        Seed(paths.Models, ModelCatalog.FaceModelFileName);
 
         var manager = new ToolchainManager(paths, NullProgressSink.Instance);
         var installed = manager.EnsureAsync(settings, CancellationToken.None).GetAwaiter().GetResult();
