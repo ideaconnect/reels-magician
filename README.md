@@ -284,6 +284,21 @@ in the app's data folder (see [Freeing up space](#freeing-up-space)).
 File pickers and confirmations are drawn by the app itself, the same on both systems. A question
 always defaults to the answer that changes nothing.
 
+### Light and dark
+
+The switch at the top right picks the theme: **follow the system** (the desktop icon, the default),
+**light** (the sun) or **dark** (the moon). It applies at once and is remembered. The dark theme is
+true black, for OLED screens; the light one is off-white, so a bright IPS panel doesn't glare. The
+accent colour of the buttons and the selected step is your system's, where it has one.
+
+- **Windows:** follows the Windows light or dark mode and accent colour, as they change.
+- **Linux:** follows the desktop's light or dark style through `xdg-desktop-portal`, as GNOME and
+  KDE Plasma provide it. Where the portal doesn't say dark, or there is no portal (sway and other
+  wlroots desktops often have none), the app reads GTK's own setting instead: `GTK_THEME`, then
+  `gtk-application-prefer-dark-theme` or a `gtk-theme-name` ending in `-dark` in
+  `~/.config/gtk-4.0/settings.ini` and then `gtk-3.0/settings.ini`. With no answer from either, it
+  is light. GTK's files are read at start and whenever you pick **follow the system** again.
+
 ### Caption presets
 
 | Preset | Look |

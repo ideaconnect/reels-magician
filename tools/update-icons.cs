@@ -29,6 +29,8 @@ string[] Icons =
     "circle-check", "circle-xmark", "circle-minus", "triangle-exclamation",
     // A done step in the step strip.
     "check",
+    // The appearance switch in the header: follow the system, light, dark.
+    "desktop", "sun", "moon",
     // Buttons.
     "folder-open", "rotate", "download", "copy", "scissors", "code-merge", "trash-can", "backward-step",
     "forward-step", "file-import", "file-export", "film", "broom", "xmark",

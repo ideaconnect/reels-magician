@@ -55,7 +55,7 @@ public static class IconChecks
     private static string Listing(string what, List<string> keys) =>
         keys.Count == 0 ? "" : $" ({what}: {string.Join(", ", keys)})";
 
-    private static string? FindRepositoryRoot()
+    internal static string? FindRepositoryRoot()
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
             if (File.Exists(Path.Combine(dir.FullName, "ReelsMagician.slnx"))) return dir.FullName;

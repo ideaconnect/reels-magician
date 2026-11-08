@@ -51,7 +51,7 @@ The Linux version is an AppImage: a single file that runs without being installe
 - **Wayland session:** the app doesn't run under X11.
   - **Ubuntu 25.10 and newer:** GNOME always runs on Wayland, so nothing to do.
   - **Ubuntu 24.04:** choose **Ubuntu**, not **Ubuntu on Xorg**, on the login screen.
-  - **KDE Plasma, sway and other Wayland desktops:** should work too. The app draws its own windows and file dialogs, so it needs nothing from the desktop except Wayland itself. That includes no `xdg-desktop-portal`.
+  - **KDE Plasma, sway and other Wayland desktops:** should work too. The app draws its own windows and file dialogs, so it needs nothing from the desktop except Wayland itself. That includes no `xdg-desktop-portal`: with one, the app follows its light or dark style and accent colour; without one, it reads GTK's own light or dark setting, and is light when that says nothing either.
 - **FUSE 3:** the AppImage mounts itself with `fusermount3`. Ubuntu includes it in the `fuse3` package, and the older `libfuse2` isn't needed.
 - **Nothing else to install:** the AppImage carries everything else the app needs, OpenCV included. From the system it uses only what every Linux desktop already has: the C and C++ runtime libraries, fontconfig, OpenSSL, ICU, and the session's Wayland and graphics libraries.
 
