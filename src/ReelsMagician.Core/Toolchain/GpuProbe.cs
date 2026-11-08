@@ -11,7 +11,12 @@ public enum GpuVendor { Unknown, Nvidia, Amd, Intel, Qualcomm }
 /// The memory a model can use on this card, as the system reports it before llama.cpp is
 /// installed; null when it doesn't say. llama.cpp's own report replaces it once it is there.
 /// </param>
-public sealed record GpuInfo(string Name, GpuVendor Vendor, bool HasVulkanDriver, long? MemoryBytes = null);
+/// <param name="Integrated">
+/// An integrated GPU, whose memory is the computer's own. Set where the system tells it apart
+/// from a discrete card, which is amdgpu's APUs on Linux; false wherever it can't tell.
+/// </param>
+public sealed record GpuInfo(string Name, GpuVendor Vendor, bool HasVulkanDriver, long? MemoryBytes = null,
+    bool Integrated = false);
 
 /// <summary>
 /// What the NVIDIA driver reports through CUDA: the newest CUDA version it runs, the
@@ -36,6 +41,15 @@ public sealed record GpuCapabilities(
     public bool VulkanAvailable => HasVulkanLoader && VulkanIcdCount > 0;
     public bool HasNvidia => Adapters.Any(a => a.Vendor == GpuVendor.Nvidia);
     public bool HasAmd => Adapters.Any(a => a.Vendor == GpuVendor.Amd);
+
+    /// <summary>
+    /// Whether llama.cpp's Vulkan build runs on an integrated GPU here: every adapter with a
+    /// Vulkan driver is one. llama.cpp loads a model onto the discrete GPUs when there are any,
+    /// and onto an integrated one only when there are none (src/llama.cpp, build 12189), though
+    /// <c>--list-devices</c> lists both.
+    /// </summary>
+    public bool VulkanRunsOnIntegrated =>
+        Adapters.Any(a => a.HasVulkanDriver) && Adapters.Where(a => a.HasVulkanDriver).All(a => a.Integrated);
 
     public string PrimaryAdapterName => Adapters.Count > 0 ? Adapters[0].Name : "unknown";
 
@@ -103,8 +117,9 @@ public static class GpuProbe
                           (driver is null ? "" : $" ({driver})");
             if (adapters.Any(a => a.Name == display)) continue;
 
+            var (memory, integrated) = driver == "amdgpu" ? AmdgpuMemory(device) : (null, false);
             adapters.Add(new GpuInfo(display, vendor, manifests.Any(m => DriverServes(m, vendor, driver)),
-                driver == "amdgpu" ? AmdgpuMemory(device) : null));
+                memory, integrated));
         }
 
         return new GpuCapabilities(adapters, hasLoader, adapters.Count(a => a.HasVulkanDriver));
@@ -117,13 +132,15 @@ public static class GpuProbe
     /// 760M with 6 GiB of VRAM and 12.6 GiB of GTT llama.cpp reports 19,062 MiB, the sum. amdgpu
     /// shows mem_info_vram_vendor only when it knows who made the card's memory chips, which an
     /// APU doesn't have; a card that shows it is taken for a discrete one, where only VRAM counts,
-    /// as llama.cpp's Vulkan backend reports only the card's own memory there.
+    /// as llama.cpp's Vulkan backend reports only the card's own memory there. The same test tells
+    /// an integrated card; one without the counters isn't taken for integrated.
     /// </summary>
-    private static long? AmdgpuMemory(string device)
+    private static (long? Bytes, bool Integrated) AmdgpuMemory(string device)
     {
-        if (!long.TryParse(ReadTrimmed(Path.Combine(device, "mem_info_vram_total")), out var vram) || vram <= 0) return null;
-        if (File.Exists(Path.Combine(device, "mem_info_vram_vendor"))) return vram;
-        return long.TryParse(ReadTrimmed(Path.Combine(device, "mem_info_gtt_total")), out var gtt) && gtt > 0 ? vram + gtt : vram;
+        if (!long.TryParse(ReadTrimmed(Path.Combine(device, "mem_info_vram_total")), out var vram) || vram <= 0) return (null, false);
+        if (File.Exists(Path.Combine(device, "mem_info_vram_vendor"))) return (vram, false);
+        var gtt = long.TryParse(ReadTrimmed(Path.Combine(device, "mem_info_gtt_total")), out var g) && g > 0 ? g : 0;
+        return (vram + gtt, true);
     }
 
     /// <summary>

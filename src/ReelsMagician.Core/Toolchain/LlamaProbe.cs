@@ -21,7 +21,11 @@ public sealed record DeviceMemory(string Name, long TotalBytes, long? FreeBytes 
 /// Whether <c>--help</c> lists <c>--fit</c>, with which llama.cpp moves layers to the processor
 /// when a model is too big for the GPU, instead of failing.
 /// </param>
-public sealed record LlamaFeatures(IReadOnlyList<DeviceMemory>? Devices, bool SupportsFit);
+/// <param name="SupportsFitTarget">
+/// Whether <c>--help</c> lists <c>--fit-target</c>, the memory <c>--fit</c> leaves free on each
+/// device, which an integrated GPU needs more of (issue #71).
+/// </param>
+public sealed record LlamaFeatures(IReadOnlyList<DeviceMemory>? Devices, bool SupportsFit, bool SupportsFitTarget = false);
 
 /// <summary>
 /// Asks llama-server for its devices and options, once per build: the answers are kept in the
@@ -44,6 +48,10 @@ public sealed partial class LlamaProbe(string cacheFile)
     // The option itself, not --fit-target or --fit-ctx.
     [GeneratedRegex(@"(^|[\s,])--fit(?![\w-])", RegexOptions.Multiline)]
     private static partial Regex FitOption();
+
+    // "-fitt, --fit-target MiB0,MiB1,MiB2,...", as build 12189 lists it.
+    [GeneratedRegex(@"(^|[\s,])--fit-target(?![\w-])", RegexOptions.Multiline)]
+    private static partial Regex FitTargetOption();
 
     /// <summary>
     /// The devices in <c>llama-server --list-devices</c> output: null when it has no
@@ -72,18 +80,25 @@ public sealed partial class LlamaProbe(string cacheFile)
     /// <summary>Whether <c>llama-server --help</c> lists <c>--fit</c>.</summary>
     public static bool HelpListsFit(string help) => FitOption().IsMatch(help);
 
+    /// <summary>Whether <c>llama-server --help</c> lists <c>--fit-target</c>.</summary>
+    public static bool HelpListsFitTarget(string help) => FitTargetOption().IsMatch(help);
+
     /// <summary>The GPUs the system reports, so a new card or driver asks llama-server again.</summary>
     public static string GpuKey(GpuCapabilities? gpu) => gpu?.Describe(Lang.Log) ?? "";
 
     private static long Mib(string digits) =>
         long.Parse(digits, NumberStyles.None, CultureInfo.InvariantCulture) * (1L << 20);
 
-    /// <summary>What was found for this build and these GPUs before, or null if it hasn't been asked.</summary>
+    /// <summary>
+    /// What was found for this build and these GPUs before, or null if it hasn't been asked. An
+    /// answer kept before the app asked about <c>--fit-target</c> counts as not asked, so that
+    /// build is asked again.
+    /// </summary>
     public LlamaFeatures? Cached(string exe, string gpuKey)
     {
         var key = KeyFor(exe, gpuKey);
         if (key is null) return null;
-        lock (Gate) return Load().FirstOrDefault(e => e.Key == key)?.ToFeatures();
+        lock (Gate) return Load().FirstOrDefault(e => e.Key == key && e.SupportsFitTarget is not null)?.ToFeatures();
     }
 
     /// <summary>
@@ -98,7 +113,8 @@ public sealed partial class LlamaProbe(string cacheFile)
         var help = await RunAsync(exe, "--help", ct).ConfigureAwait(false);
         if (devices is null && help is null) return null;
 
-        var features = new LlamaFeatures(devices is null ? null : ParseDevices(devices), help is not null && HelpListsFit(help));
+        var features = new LlamaFeatures(devices is null ? null : ParseDevices(devices),
+            help is not null && HelpListsFit(help), help is not null && HelpListsFitTarget(help));
         if (KeyFor(exe, gpuKey) is { } key)
         {
             lock (Gate)
@@ -160,9 +176,10 @@ public sealed partial class LlamaProbe(string cacheFile)
         catch (Exception) { /* the next detection asks again */ }
     }
 
-    private sealed record Entry(string Key, List<DeviceMemory>? Devices, bool SupportsFit)
+    /// <param name="SupportsFitTarget">Null in an entry kept before the app asked about it.</param>
+    private sealed record Entry(string Key, List<DeviceMemory>? Devices, bool SupportsFit, bool? SupportsFitTarget = null)
     {
-        public static Entry From(string key, LlamaFeatures f) => new(key, f.Devices?.ToList(), f.SupportsFit);
-        public LlamaFeatures ToFeatures() => new(Devices, SupportsFit);
+        public static Entry From(string key, LlamaFeatures f) => new(key, f.Devices?.ToList(), f.SupportsFit, f.SupportsFitTarget);
+        public LlamaFeatures ToFeatures() => new(Devices, SupportsFit, SupportsFitTarget == true);
     }
 }

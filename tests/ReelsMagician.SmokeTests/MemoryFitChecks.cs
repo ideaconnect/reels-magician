@@ -29,6 +29,7 @@ public static class MemoryFitChecks
         Budgets();
         LinuxAmdgpuMemory();
         GpuLayers();
+        FitTarget();
         OutOfMemoryLogs();
         CrashRecord();
         Probe();
@@ -77,6 +78,13 @@ public static class MemoryFitChecks
             "an older build's help, without it, does not");
         Check.True(!LlamaProbe.HelpListsFit("-fitt, --fit-target MiB\n-fitc, --fit-ctx N\n"),
             "--fit-target and --fit-ctx alone are not --fit");
+
+        Check.True(LlamaProbe.HelpListsFitTarget(help), "build 12189's help lists --fit-target (issue #71)");
+        Check.True(!LlamaProbe.HelpListsFitTarget("-fit,  --fit [on|off]                   whether to adjust unset arguments\n" +
+                                                  "-fitc, --fit-ctx N                      minimum ctx size\n"),
+            "a help with --fit and --fit-ctx but no --fit-target does not");
+        Check.True(!LlamaProbe.HelpListsFitTarget("-ngl,  --gpu-layers, --n-gpu-layers N   number of layers to store in VRAM\n"),
+            "nor does an older build's help");
     }
 
     private static void Estimates()
@@ -265,6 +273,11 @@ public static class MemoryFitChecks
         Check.True(gpus.ElementAtOrDefault(2) is { MemoryBytes: null }, "an amdgpu card without the counters reports nothing");
         Check.True(gpus.ElementAtOrDefault(3) is { MemoryBytes: null }, "nor does an Intel one, whose driver has none");
 
+        Check.True(gpus.ElementAtOrDefault(0) is { Integrated: true }, "the APU is integrated (issue #71)");
+        Check.True(gpus.ElementAtOrDefault(1) is { Integrated: false }, "the card that names its memory's vendor is not");
+        Check.True(gpus.ElementAtOrDefault(2) is { Integrated: false }, "nor is one without the counters, which says neither");
+        Check.True(gpus.ElementAtOrDefault(3) is { Integrated: false }, "nor the Intel one, which the probe can't tell");
+
         Directory.Delete(drm, recursive: true);
     }
 
@@ -280,6 +293,70 @@ public static class MemoryFitChecks
             "a number set in settings.json is passed as it is");
         Check.Equal("-ngl 0", string.Join(' ', LlamaServerSession.GpuLayerArgs(0, supportsFit: true)),
             "including 0, the processor only");
+
+        Check.Equal("--fit on --fit-target 3072", string.Join(' ', LlamaServerSession.GpuLayerArgs(-1, supportsFit: true, 3072)),
+            "a margin goes after --fit as --fit-target, in MiB (issue #71)");
+        Check.Equal("-ngl 999", string.Join(' ', LlamaServerSession.GpuLayerArgs(-1, supportsFit: false, 3072)),
+            "but never to a build without --fit, which has nothing to apply it to");
+        Check.Equal("-ngl 20", string.Join(' ', LlamaServerSession.GpuLayerArgs(20, supportsFit: true, 3072)),
+            "nor with a number set in settings.json, which switches fitting off");
+    }
+
+    private static void FitTarget()
+    {
+        Check.Section("An integrated GPU gets a larger --fit margin (issue #71)");
+
+        // Suseł: the Radeon 760M, an APU by amdgpu's counters, with build 12189 and its Vulkan list.
+        var apu = new GpuInfo("AMD GPU [1002:15bf] (amdgpu)", GpuVendor.Amd, true, 19062 * MiB, Integrated: true);
+        var discrete = new GpuInfo("AMD GPU [1002:7480] (amdgpu)", GpuVendor.Amd, true, 8 * GiB);
+        Toolset Machine(BuildKind? build, LlamaFeatures? features, params GpuInfo[] adapters) => new()
+        {
+            Gpu = new GpuCapabilities(adapters, true, adapters.Count(a => a.HasVulkanDriver)),
+            LlamaServerPath = "/llama/llama-server", LlamaBuild = build, LlamaFeatures = features,
+        };
+        var b12189 = new LlamaFeatures(LlamaProbe.ParseDevices(SuselDevices), SupportsFit: true, SupportsFitTarget: true);
+
+        Check.Equal(3072, LlamaServerSession.IntegratedFitTargetMib, "the margin is 3,072 MiB, the one that served on Suseł");
+        Check.Equal((int?)3072, LlamaServerSession.FitTargetMib(Machine(BuildKind.Vulkan, b12189, apu)),
+            "Suseł's APU with the Vulkan build gets it");
+        Check.Equal((int?)3072, LlamaServerSession.FitTargetMib(Machine(null, b12189, apu)),
+            "and so does a custom build there, which the list shows on the GPU");
+        Check.Equal((int?)3072, LlamaServerSession.FitTargetMib(Machine(BuildKind.Vulkan, b12189 with { Devices = null }, apu)),
+            "and a build that could not list its devices, going by the system's word");
+
+        Check.Equal((int?)null, LlamaServerSession.FitTargetMib(Machine(BuildKind.Vulkan, b12189, discrete)),
+            "a discrete card keeps llama.cpp's own margin");
+        Check.Equal((int?)null, LlamaServerSession.FitTargetMib(Machine(BuildKind.Vulkan, b12189, apu, discrete)),
+            "and so does an APU beside a discrete card, as llama.cpp loads the model onto the discrete one");
+        Check.Equal((int?)3072, LlamaServerSession.FitTargetMib(Machine(BuildKind.Vulkan, b12189, apu, discrete with { HasVulkanDriver = false })),
+            "unless the discrete card has no Vulkan driver, so the APU is the one llama.cpp sees");
+        Check.Equal((int?)null, LlamaServerSession.FitTargetMib(Machine(BuildKind.Vulkan, b12189,
+                new GpuInfo("Intel(R) UHD Graphics 770", GpuVendor.Intel, true))),
+            "a GPU the system can't tell apart is left alone");
+        Check.Equal((int?)null, LlamaServerSession.FitTargetMib(Machine(BuildKind.Vulkan, b12189 with { SupportsFitTarget = false }, apu)),
+            "a build whose help doesn't list --fit-target is never given it");
+        Check.Equal((int?)null, LlamaServerSession.FitTargetMib(Machine(BuildKind.Vulkan, b12189 with { SupportsFit = false }, apu)),
+            "nor one without --fit");
+        Check.Equal((int?)null, LlamaServerSession.FitTargetMib(Machine(BuildKind.Vulkan, null, apu)),
+            "nor a build that hasn't been asked yet");
+        Check.Equal((int?)null, LlamaServerSession.FitTargetMib(Machine(BuildKind.Vulkan, b12189 with { Devices = [] }, apu)),
+            "a llama.cpp that lists no GPU runs on the processor, with no GPU margin to set");
+        Check.Equal((int?)null, LlamaServerSession.FitTargetMib(Machine(BuildKind.Cpu, b12189 with { Devices = null }, apu)),
+            "and so does an installed CPU build");
+        Check.Equal((int?)null, LlamaServerSession.FitTargetMib(new Toolset { LlamaFeatures = b12189 }),
+            "with no GPU detected at all, nothing changes");
+
+        // The whole command line llama-server starts with, as the analysis builds it.
+        var suselTools = Machine(BuildKind.Vulkan, b12189, apu);
+        suselTools.LlmModelPath = "/models/Qwen3-8B-Q4_K_M.gguf";
+        var line = string.Join(' ', LlamaServerSession.ServerArgs(suselTools, new AppSettings(), 32768, 18709));
+        Check.Contains(line, "-m /models/Qwen3-8B-Q4_K_M.gguf --host 127.0.0.1 --port 18709 -c 32768 --fit on --fit-target 3072 -t ",
+            "on Suseł, llama-server starts with --fit on --fit-target 3072, after the context");
+        Check.True(!LlamaServerSession.ServerArgs(Machine(BuildKind.Vulkan, b12189, discrete), new AppSettings(), 32768, 18709)
+                .Contains("--fit-target"),
+            "on a discrete card, with no --fit-target");
+        Check.True(!LlamaServerSession.ServerArgs(suselTools, new AppSettings { LlamaGpuLayers = 30 }, 32768, 18709).Contains("--fit-target"),
+            "and with LlamaGpuLayers set, none either");
     }
 
     private static void OutOfMemoryLogs()
@@ -391,7 +468,8 @@ public static class MemoryFitChecks
             $"echo \"$1\" >> '{calls}'\n" +
             "case \"$1\" in\n" +
             $"  --list-devices) printf '{SuselDevices.Replace("\n", "\\n")}' ;;\n" +
-            "  --help) echo '-fit,  --fit [on|off]                   whether to adjust unset arguments' ;;\n" +
+            "  --help) printf '%s\\n' '-fit,  --fit [on|off]                   whether to adjust unset arguments' " +
+            "'-fitt, --fit-target MiB0,MiB1,MiB2,...' ;;\n" +
             "esac\n");
         File.SetUnixFileMode(exe, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
 
@@ -400,13 +478,23 @@ public static class MemoryFitChecks
         Check.True(probe.Cached(exe, "gpu") is null, "a build that was never asked has nothing cached");
 
         var features = probe.ProbeAsync(exe, "gpu", CancellationToken.None).GetAwaiter().GetResult();
-        Check.True(features is { SupportsFit: true, Devices: [{ TotalBytes: 19062 * MiB }] },
-            "the stand-in's devices and --fit are read");
+        Check.True(features is { SupportsFit: true, SupportsFitTarget: true, Devices: [{ TotalBytes: 19062 * MiB }] },
+            "the stand-in's devices, --fit and --fit-target are read");
         Check.True(File.Exists(cache), "and kept in the data folder");
-        Check.True(new LlamaProbe(cache).Cached(exe, "gpu") is { SupportsFit: true, Devices.Count: 1 },
+        Check.True(new LlamaProbe(cache).Cached(exe, "gpu") is { SupportsFit: true, SupportsFitTarget: true, Devices.Count: 1 },
             "where the next start finds them without running anything");
         probe.ProbeAsync(exe, "gpu", CancellationToken.None).GetAwaiter().GetResult();
         Check.Equal(2, File.ReadAllLines(calls).Length, "asking again runs nothing more");
+
+        // What a version before issue #71 kept: the same entry, with no answer for --fit-target.
+        File.WriteAllText(cache, Regex.Replace(File.ReadAllText(cache), @",\s*""supportsFitTarget"":\s*true", ""));
+        Check.True(!File.ReadAllText(cache).Contains("supportsFitTarget", StringComparison.Ordinal) && probe.Cached(exe, "gpu") is null,
+            "an answer kept before the app asked about --fit-target counts as not asked (issue #71)");
+        Check.True(probe.ProbeAsync(exe, "gpu", CancellationToken.None).GetAwaiter().GetResult() is { SupportsFitTarget: true } &&
+                   File.ReadAllLines(calls).Length == 4,
+            "so that build is asked once more, and says it has the option");
+        Check.True(probe.Cached(exe, "gpu") is { SupportsFitTarget: true }, "which is kept for the next start");
+
         Check.True(probe.Cached(exe, "another gpu") is null, "a different GPU asks again");
 
         File.AppendAllText(exe, "# a new build\n");
