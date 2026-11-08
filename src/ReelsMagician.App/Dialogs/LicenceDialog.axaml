@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:ReelsMagician.App"
         xmlns:about="using:ReelsMagician.Core.About"
         x:Class="ReelsMagician.App.Dialogs.LicenceDialog"
         Width="820" Height="640" MinWidth="480" MinHeight="320"
@@ -12,7 +13,10 @@
 
     <Border Background="{DynamicResource Panel}" BorderBrush="{DynamicResource BorderBrush2}"
             BorderThickness="1" CornerRadius="8">
-      <ScrollViewer x:Name="Scroller" Padding="14,12">
+      <!-- The edges fade where there is more text, as every scrolling area does (ScrollShadow.cs),
+           from the panel the text sits on. -->
+      <ScrollViewer Padding="14,12" local:ScrollShadow.IsEnabled="True"
+                    local:ScrollShadow.Surface="{DynamicResource Panel}">
         <!-- The texts as the build carries them: each under its path, selectable, in a fixed-width
              font, since licence files are laid out for one. -->
         <ItemsControl x:Name="Files">

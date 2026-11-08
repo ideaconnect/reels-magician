@@ -63,5 +63,6 @@ static void RunLogicChecks()
     AppearanceChecks.Run();
     ThemeChecks.Run();
     AppIconChecks.Run();
+    ScrollShadowChecks.Run();
     LicenceChecks.Run();
 }

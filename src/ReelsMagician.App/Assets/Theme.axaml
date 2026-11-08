@@ -39,6 +39,9 @@
           <SolidColorBrush x:Key="CardHover" Color="#161616" />
           <SolidColorBrush x:Key="CardSelected" Color="#1A1A1A" />
           <SolidColorBrush x:Key="RowSelected" Color="#262626" />
+          <!-- Laid over the surface at a scroll shadow's edge (ScrollShadow.cs). The dark theme's
+               fade to black needs no tint. -->
+          <SolidColorBrush x:Key="ScrollShadowTint" Color="#000000" Opacity="0" />
           <!-- Accent text and outlines: a lighter shade of the accent, which reads on black. -->
           <SolidColorBrush x:Key="Accent" Color="{DynamicResource SystemAccentColorLight2}" />
 
@@ -71,6 +74,8 @@
           <SolidColorBrush x:Key="CardHover" Color="#F7F7F7" />
           <SolidColorBrush x:Key="CardSelected" Color="#F0F0F0" />
           <SolidColorBrush x:Key="RowSelected" Color="#EBEBEB" />
+          <!-- A slight dark tint, so the fade reads as a shadow over white cards. -->
+          <SolidColorBrush x:Key="ScrollShadowTint" Color="#000000" Opacity="0.06" />
           <!-- On light backgrounds, a darker shade of the accent. -->
           <SolidColorBrush x:Key="Accent" Color="{DynamicResource SystemAccentColorDark1}" />
 
@@ -493,6 +498,30 @@
   <Style Selector="ListBox.log > ListBoxItem">
     <Setter Property="Padding" Value="4,1" />
     <Setter Property="MinHeight" Value="0" />
+  </Style>
+
+  <!-- Scroll shadows (ScrollShadow.cs): a 20 px strip over the top or bottom edge of a scrolling
+       area while there is more to scroll to on that side, fading from the surface the content
+       sits on, the window's background unless the area names another. Each strip fades in and
+       out with the scrolling, and a page that fits shows none. -->
+  <Style Selector="local|ScrollShadowOverlay">
+    <Setter Property="StripHeight" Value="20" />
+    <Setter Property="Surface" Value="{DynamicResource Bg}" />
+    <Setter Property="Tint" Value="{DynamicResource ScrollShadowTint}" />
+  </Style>
+  <Style Selector="local|ScrollShadowOverlay > Border">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="local|ScrollShadowOverlay:scroll-up > Border.top">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+  <Style Selector="local|ScrollShadowOverlay:scroll-down > Border.bottom">
+    <Setter Property="Opacity" Value="1" />
   </Style>
 
   <!-- The support bar: each button in its service's own colours, Buy Me a Coffee's yellow in both

@@ -149,7 +149,10 @@
 
       <!-- ══ Setup ══ -->
       <TabItem Header="{Binding SetupStep}" AutomationProperties.Name="{Binding SetupStep.AccessibleName}">
-        <ScrollViewer Padding="0,12,8,0">
+        <!-- Every scrolling area fades its edges where there is more to scroll to (ScrollShadow.cs).
+             On the pages, 8 px of bottom padding and the last card's 12 px margin leave the last
+             card a strip's height clear of the bottom edge at the end of the page. -->
+        <ScrollViewer Padding="0,12,8,8" local:ScrollShadow.IsEnabled="True">
           <StackPanel>
             <Border Classes="card">
               <StackPanel>
@@ -222,7 +225,7 @@
 
       <!-- ══ Source ══ -->
       <TabItem Header="{Binding SourceStep}" AutomationProperties.Name="{Binding SourceStep.AccessibleName}">
-        <ScrollViewer Padding="0,12,8,0">
+        <ScrollViewer Padding="0,12,8,8" local:ScrollShadow.IsEnabled="True">
           <StackPanel>
             <Border Classes="card">
               <StackPanel>
@@ -313,7 +316,8 @@
           <!-- A plain list of editable rows, virtualised, rather than a data grid (docs/adr/0001). -->
           <ListBox x:Name="SubtitleList" Grid.Row="3" Classes="cues" CornerRadius="0,0,6,6"
                    ItemsSource="{Binding Subtitles}" SelectedItem="{Binding SelectedSubtitle}"
-                   ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                   local:ScrollShadow.IsEnabled="True" local:ScrollShadow.Surface="{DynamicResource InputBg}">
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="vm:SubtitleRowViewModel">
                 <Grid ColumnDefinitions="118,118,64,54,*,60">
@@ -346,7 +350,7 @@
 
           <ListBox Grid.Row="1" Classes="cards" ItemsSource="{Binding Candidates}"
                    SelectedItem="{Binding SelectedCandidate}"
-                   ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" local:ScrollShadow.IsEnabled="True">
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="vm:CandidateViewModel">
                 <StackPanel>
@@ -367,7 +371,7 @@
               <TextBlock DockPanel.Dock="Top" Text="Subject tracking" Classes="h2" />
               <TextBlock DockPanel.Dock="Top" Classes="hint" Margin="0,0,0,10"
                          Text="Each clip is sampled frame by frame. A face in the foreground wins; failing that a body; failing that the most visually dominant region — so a product or a landscape stays centred too." />
-              <ScrollViewer>
+              <ScrollViewer local:ScrollShadow.IsEnabled="True" local:ScrollShadow.Surface="{DynamicResource Panel}">
                 <ItemsControl ItemsSource="{Binding ClipFramings}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:ClipFramingViewModel">
@@ -408,7 +412,7 @@
       <TabItem Header="{Binding CaptionsStep}" AutomationProperties.Name="{Binding CaptionsStep.AccessibleName}">
         <Grid Margin="0,12,0,0" ColumnDefinitions="*,16,380">
 
-          <ScrollViewer Padding="0,0,8,0">
+          <ScrollViewer Padding="0,0,8,8" local:ScrollShadow.IsEnabled="True">
             <StackPanel>
               <Border Classes="card">
                 <StackPanel>
@@ -637,7 +641,7 @@
 
       <!-- ══ Render ══ -->
       <TabItem Header="{Binding RenderStep}" AutomationProperties.Name="{Binding RenderStep.AccessibleName}">
-        <ScrollViewer Padding="0,12,8,0">
+        <ScrollViewer Padding="0,12,8,8" local:ScrollShadow.IsEnabled="True">
           <StackPanel>
             <Border Classes="card">
               <StackPanel>
@@ -659,8 +663,10 @@
             <Border Classes="card">
               <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="Activity" Classes="h2" />
+                <!-- Scrolls inside the scrolling page: its strips stay inside its own border. -->
                 <ListBox Classes="log" ItemsSource="{Binding Log}" Height="360"
-                         ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                         local:ScrollShadow.IsEnabled="True" local:ScrollShadow.Surface="{DynamicResource InputBg}">
                   <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="x:String">
                       <TextBlock Text="{Binding}" Classes="mono" Foreground="{DynamicResource Muted}" />
@@ -675,7 +681,7 @@
 
       <!-- ══ Cleanup: not a step, so it sits on the right of the strip, outlined and unnumbered ══ -->
       <TabItem Header="Cleanup" Classes="aside" DockPanel.Dock="Right" AutomationProperties.Name="Cleanup">
-        <ScrollViewer Padding="0,12,8,0">
+        <ScrollViewer Padding="0,12,8,8" local:ScrollShadow.IsEnabled="True">
           <StackPanel>
             <Border Classes="card">
               <StackPanel>
@@ -716,7 +722,7 @@
 
       <!-- ══ About: not a step either, so it sits beside Cleanup, outlined and unnumbered ══ -->
       <TabItem Header="About" Classes="aside" DockPanel.Dock="Right" AutomationProperties.Name="About">
-        <ScrollViewer Padding="0,12,8,0" DataContext="{Binding About}" x:DataType="vm:AboutViewModel">
+        <ScrollViewer Padding="0,12,8,8" local:ScrollShadow.IsEnabled="True" DataContext="{Binding About}" x:DataType="vm:AboutViewModel">
           <StackPanel>
             <Grid ColumnDefinitions="*,12,*">
               <!-- The app: its icon, version, the system it runs on and its data folder. -->
