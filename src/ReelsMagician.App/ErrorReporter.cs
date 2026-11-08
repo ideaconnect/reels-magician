@@ -1,4 +1,5 @@
 using System.Text;
+using ReelsMagician.App.Localization;
 using ReelsMagician.Core.Toolchain;
 
 namespace ReelsMagician.App;
@@ -24,9 +25,11 @@ public static class ErrorReporter
     /// <summary>Shows a failure (title, message) to the user. Set by the main window once it exists.</summary>
     public static Func<string, string, Task>? Presenter { get; set; }
 
-    public static void Report(Exception ex, string title, bool showDialog = true)
+    /// <param name="title">The dialog's title, in the interface's language.</param>
+    /// <param name="context">What the log calls it, in English; the title when null.</param>
+    public static void Report(Exception ex, string title, string? context = null, bool showDialog = true)
     {
-        Write(ex, title);
+        Write(ex, context ?? title);
         if (!showDialog || Presenter is not { } present) return;
 
         lock (Gate)
@@ -42,7 +45,7 @@ public static class ErrorReporter
             _dialogOpen = true;
         }
 
-        _ = ShowAsync(present, title, $"{ex.Message}\n\nDetails were written to:\n{LogPath}");
+        _ = ShowAsync(present, title, Localizer.Instance.Format(nameof(Strings.Error_Details), ex.Message, LogPath));
     }
 
     private static async Task ShowAsync(Func<string, string, Task> present, string title, string message)

@@ -1,3 +1,5 @@
+using ReelsMagician.Core.Localization;
+
 namespace ReelsMagician.Core.Analysis;
 
 /// <summary>One continuous stretch of the source that will become a clip in the reel.</summary>
@@ -21,8 +23,12 @@ public sealed class ReelCandidate
     public double TotalDuration => Clips.Sum(c => c.Duration);
     public string Transcript => string.Join(" ", Clips.Select(c => c.Text));
 
-    public string Summary =>
-        $"{TotalDuration:0.0}s · {Clips.Count} clip{(Clips.Count == 1 ? "" : "s")} · score {Score:0.0}";
+    /// <summary>The proposal's length, clips and score, in the interface's language.</summary>
+    public string Summary => SummaryIn(Lang.Ui);
+
+    /// <summary>The same in a language of its own, such as the log's.</summary>
+    public string SummaryIn(Lang lang) =>
+        lang.Format(nameof(Strings.Candidate_Summary), TotalDuration, lang.Plural("Count_Clips", Clips.Count), Score);
 }
 
 public sealed class ReelPlan

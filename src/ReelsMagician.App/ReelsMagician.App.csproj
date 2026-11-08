@@ -25,6 +25,17 @@
   <ItemGroup>
     <ProjectReference Include="..\ReelsMagician.Core\ReelsMagician.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- The interface's texts, in English, with Strings.pl.resx beside it. {l:Tr Key} reads them
+         in XAML; the build generates the Strings class for code, so the compiler checks its keys. -->
+    <EmbeddedResource Update="Localization\Strings.resx">
+      <StronglyTypedFileName>$(IntermediateOutputPath)Strings.Designer.cs</StronglyTypedFileName>
+      <StronglyTypedLanguage>CSharp</StronglyTypedLanguage>
+      <StronglyTypedNamespace>ReelsMagician.App.Localization</StronglyTypedNamespace>
+      <StronglyTypedClassName>Strings</StronglyTypedClassName>
+      <PublicClass>true</PublicClass>
+    </EmbeddedResource>
+  </ItemGroup>
 
   <!--
     A published build carries the licences of everything it bundles (THIRD-PARTY-NOTICES.md):

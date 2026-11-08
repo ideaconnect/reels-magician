@@ -1,3 +1,4 @@
+using ReelsMagician.Core.Localization;
 using ReelsMagician.Core.Toolchain;
 
 namespace ReelsMagician.Core.About;
@@ -204,20 +205,36 @@ public static class Licences
             "https://github.com/denoland/deno", LicenceGroup.DownloadedIfAgreed, [], [], DownloadedTool.JsRuntime),
     ];
 
-    /// <summary>The heading and the line under it the About tab gives each group.</summary>
-    public static (string Title, string Description) Describe(LicenceGroup group) => group switch
-    {
-        LicenceGroup.EveryBuild => ("In every build",
-            "Part of the app itself: copied into its source, or restored by NuGet when it is built."),
-        LicenceGroup.ReleasePackage => ("Added by the package",
-            "The release packages add what the app needs to start, so nothing else has to be installed."),
-        LicenceGroup.DownloadedByApp => ("Downloaded by the app",
-            "Install everything missing fetches these from their publishers into the data folder. " +
-            "A tool already on your system is used instead, under its own terms."),
-        LicenceGroup.DownloadedIfAgreed => ("Downloaded only if you agree",
-            "Only needed for video links. The app asks before downloading them."),
-        _ => (group.ToString(), ""),
-    };
+    /// <summary>The heading and the line under it the About tab gives each group, in the interface's language.</summary>
+    public static (string Title, string Description) Describe(LicenceGroup group) =>
+        (Lang.Ui[$"LicenceGroup_{group}_Title"], Lang.Ui[$"LicenceGroup_{group}_Description"]);
+
+    /// <summary>
+    /// What a component is for, as the About tab shows it in the interface's language. The English
+    /// resource holds the row's own <see cref="LicensedComponent.Purpose"/>, which the logic checks
+    /// keep equal; THIRD-PARTY-NOTICES.md and the checks go by the row.
+    /// </summary>
+    public static string UiPurpose(LicensedComponent component) => Lang.Ui[PurposeKey(component)];
+
+    /// <summary>
+    /// A component's licence as the About tab shows it. Only a licence that says more than an
+    /// identifier, such as "MIT; Skia itself is BSD-3-Clause…", has a translation; "MIT" stays itself.
+    /// </summary>
+    public static string UiLicence(LicensedComponent component) =>
+        Strings.ResourceManager.GetString(LicenceKey(component), Lang.Ui.Texts) ?? component.Licence;
+
+    /// <summary>
+    /// A component's name as the About tab shows it. A name that describes, such as "Whisper model",
+    /// has a translation; a product's own name, such as "SharpCompress", stays itself.
+    /// </summary>
+    public static string UiName(LicensedComponent component) =>
+        Strings.ResourceManager.GetString(NameKey(component), Lang.Ui.Texts) ?? component.Name;
+
+    public static string NameKey(LicensedComponent component) => $"Licence_{Lang.Slug(component.Name)}_Name";
+
+    public static string PurposeKey(LicensedComponent component) => $"Licence_{Lang.Slug(component.Name)}_Purpose";
+
+    public static string LicenceKey(LicensedComponent component) => $"Licence_{Lang.Slug(component.Name)}_Licence";
 
     /// <summary>The rows this system's About tab shows, in their groups' order.</summary>
     public static IEnumerable<IGrouping<LicenceGroup, LicensedComponent>> For(TargetOs os) =>

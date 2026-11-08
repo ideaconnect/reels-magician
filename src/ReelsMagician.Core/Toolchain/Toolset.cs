@@ -1,3 +1,5 @@
+using ReelsMagician.Core.Localization;
+
 namespace ReelsMagician.Core.Toolchain;
 
 /// <summary>Resolved locations of every external binary and model the pipeline needs.</summary>
@@ -15,14 +17,27 @@ public sealed class Toolset
     public string? LlmModelPath { get; set; }
     public string? FaceModelPath { get; set; }
 
-    public string WhisperBackend { get; set; } = "not installed";
-    public string LlamaBackend { get; set; } = "not installed";
+    /// <summary>The whisper.cpp build found, which <see cref="WhisperBackend"/> names.</summary>
+    public Backend WhisperBackendInfo { get; set; } = Backend.None;
+
+    /// <summary>The llama.cpp build found, which <see cref="LlamaBackend"/> names.</summary>
+    public Backend LlamaBackendInfo { get; set; } = Backend.None;
+
+    /// <summary>The whisper.cpp build, in the interface's language: "Vulkan (GPU) — whisper-cli".</summary>
+    public string WhisperBackend => WhisperBackendInfo.Describe(Lang.Ui);
+
+    public string LlamaBackend => LlamaBackendInfo.Describe(Lang.Ui);
 
     /// <summary>Set when whisper.cpp is a Fallback build: a lesser build than this machine supports.</summary>
-    public string? WhisperWarning { get; set; }
+    public FallbackBuild? WhisperFallback { get; set; }
 
     /// <summary>Set when llama.cpp is a Fallback build: a lesser build than this machine supports.</summary>
-    public string? LlamaWarning { get; set; }
+    public FallbackBuild? LlamaFallback { get; set; }
+
+    /// <summary>What the Setup tab says under whisper.cpp when it is a Fallback build.</summary>
+    public string? WhisperWarning => WhisperFallback?.Warning(Lang.Ui);
+
+    public string? LlamaWarning => LlamaFallback?.Warning(Lang.Ui);
 
     /// <summary>The kind of whisper.cpp build the app installed, as its marker names it; null for any other.</summary>
     public BuildKind? WhisperBuild { get; set; }
@@ -51,22 +66,54 @@ public sealed class Toolset
     /// <summary>Everything needed to run the full pipeline end to end.</summary>
     public bool IsComplete => HasFfmpeg && HasWhisper && HasLlm && HasFaceModel;
 
-    public string Ffmpeg => FfmpegPath ?? throw new InvalidOperationException("ffmpeg is not installed.");
-    public string Ffprobe => FfprobePath ?? throw new InvalidOperationException("ffprobe is not installed.");
-    public string YtDlp => YtDlpPath ?? throw new InvalidOperationException("yt-dlp is not installed.");
-    public string WhisperCli => WhisperCliPath ?? throw new InvalidOperationException("whisper.cpp is not installed.");
-    public string LlamaServer => LlamaServerPath ?? throw new InvalidOperationException("llama.cpp is not installed.");
+    public string Ffmpeg => FfmpegPath ?? throw NotInstalled("ffmpeg");
+    public string Ffprobe => FfprobePath ?? throw NotInstalled("ffprobe");
+    public string YtDlp => YtDlpPath ?? throw NotInstalled("yt-dlp");
+    public string WhisperCli => WhisperCliPath ?? throw NotInstalled("whisper.cpp");
+    public string LlamaServer => LlamaServerPath ?? throw NotInstalled("llama.cpp");
 
-    /// <summary>The required components still absent. The optional link tools are not listed.</summary>
-    public IEnumerable<string> MissingComponents()
+    private static InvalidOperationException NotInstalled(string tool) =>
+        new(Lang.Ui.Format(nameof(Strings.Tool_NotInstalled), tool));
+
+    /// <summary>The required components still absent, in the interface's language. The optional link tools are not listed.</summary>
+    public IEnumerable<string> MissingComponents() => MissingComponents(Lang.Ui);
+
+    /// <summary>The same in a language of its own, such as the log's.</summary>
+    public IEnumerable<string> MissingComponents(Lang lang)
     {
         if (!HasFfmpeg) yield return "ffmpeg / ffprobe";
         if (WhisperCliPath is null) yield return "whisper.cpp";
-        if (WhisperModelPath is null) yield return "Whisper model";
+        if (WhisperModelPath is null) yield return lang[nameof(Strings.Missing_WhisperModel)];
         if (LlamaServerPath is null) yield return "llama.cpp";
-        if (LlmModelPath is null) yield return "Qwen model";
-        if (!HasFaceModel) yield return "face detector model";
+        if (LlmModelPath is null) yield return lang[nameof(Strings.Missing_QwenModel)];
+        if (!HasFaceModel) yield return lang[nameof(Strings.Missing_FaceModel)];
     }
+}
+
+/// <summary>
+/// A whisper.cpp or llama.cpp build as it was found: its program's file name, the kind of build
+/// its marker names, or whether it has Vulkan's library beside it when there is no marker.
+/// </summary>
+public sealed record Backend(string? ExeName, BuildKind? Kind = null, bool HasVulkanRuntime = false)
+{
+    public static Backend None { get; } = new((string?)null);
+
+    /// <summary>"Vulkan (GPU) — whisper-cli", "custom build — llama-server" or "not installed".</summary>
+    public string Describe(Lang lang)
+    {
+        if (ExeName is null) return lang[nameof(Strings.Backend_NotInstalled)];
+        var kind = Kind is { } k ? ToolBuilds.Label(k)
+            : HasVulkanRuntime ? ToolBuilds.Label(BuildKind.Vulkan)
+            : lang[nameof(Strings.Backend_Custom)];
+        return $"{kind} — {ExeName}";
+    }
+}
+
+/// <summary>A Fallback build: one below the best this machine supports, as it was installed.</summary>
+public sealed record FallbackBuild(string Tool, BuildKind Installed, BuildKind Expected)
+{
+    public string Warning(Lang lang) => lang.Format(nameof(Strings.Fallback_Warning), Tool,
+        ToolBuilds.Label(Installed), ToolBuilds.Label(Expected));
 }
 
 public enum ComponentState

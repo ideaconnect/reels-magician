@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
+using ReelsMagician.App.Localization;
 using ReelsMagician.Core.Analysis;
 using ReelsMagician.Core.Diagnostics;
 using ReelsMagician.Core.Framing;
@@ -40,6 +41,9 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         _shell = shell;
         _paths.EnsureCreated();
         _settings = AppSettings.Load(_paths);
+        // Before any text is built, so the window opens in the language it will keep.
+        Localizer.Instance.Apply(_settings.Language);
+        Localizer.Instance.LanguageChanged += OnLanguageChanged;
         // Before anything can start a model: a record left by one means the app went down with it.
         _leftoverRun = ModelRunMarker.TakeLeftover(_paths.ModelRunMarkerFile);
         // Before the window first shows, so it opens in the theme it will keep.
@@ -47,7 +51,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         _toolchain = new ToolchainManager(_paths, this);
         _linkConsent = new LinkToolsConsent(shell, _toolchain);
         // Before RefreshTools below, which shows the downloaded tools' state on it too.
-        About = new AboutViewModel(shell, link => OpenLinkAsync(link, $"Opening {link} in your browser."), _paths.Root);
+        About = new AboutViewModel(shell, link => OpenLinkAsync(link, () => L.Format(nameof(Strings.Link_Opening), link)), _paths.Root);
 
         StyleEditor = new StyleEditorViewModel(_project.Style);
         StyleEditor.Changed += (_, _) => OnStyleChanged();
@@ -116,10 +120,10 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     /// <summary>The drop-downs' items: each model, marked when it probably won't fit (issue #54).</summary>
     public IReadOnlyList<ModelOptionViewModel> WhisperOptions { get; } =
-        [.. ModelCatalog.WhisperModels.Select(m => new ModelOptionViewModel(m.Id, m.DisplayName))];
+        [.. ModelCatalog.WhisperModels.Select(m => new ModelOptionViewModel(m.Id, () => m.UiName))];
 
     public IReadOnlyList<ModelOptionViewModel> LlmOptions { get; } =
-        [.. ModelCatalog.LlmModels.Select(m => new ModelOptionViewModel(m.Id, m.DisplayName))];
+        [.. ModelCatalog.LlmModels.Select(m => new ModelOptionViewModel(m.Id, () => m.UiName))];
 
     public ModelOptionViewModel SelectedWhisperOption
     {
@@ -150,13 +154,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     public string? LlmFitWarning { get => _llmFitWarning; private set => Set(ref _llmFitWarning, value); }
 
     /// <summary>Which builds each model runs on, which differs between the two systems.</summary>
-    public string ModelsHint { get; } = OperatingSystem.IsWindows()
-        ? "Qwen runs on llama.cpp's CUDA build on an NVIDIA card and its Vulkan build on AMD and Intel, so it uses " +
-          "the GPU either way. whisper.cpp publishes no Vulkan build for Windows, so it uses CUDA on an NVIDIA card " +
-          "and the fastest CPU build otherwise; point ReelsMagician at your own build in settings.json if you have one."
-        : "Qwen runs on llama.cpp's Vulkan build on any graphics card with a Vulkan driver, and on the processor " +
-          "otherwise. whisper.cpp publishes only a processor build for Linux; point ReelsMagician at your own build " +
-          "in settings.json if you have one.";
+    public string ModelsHint => OperatingSystem.IsWindows() ? Strings.Setup_ModelsHint_Windows : Strings.Setup_ModelsHint_Linux;
 
     private WhisperModelSpec _selectedWhisperModel = ModelCatalog.DefaultWhisper;
     public WhisperModelSpec SelectedWhisperModel
@@ -210,11 +208,11 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         }
 
         var whisper = MemoryFit.AssessWhisper(SelectedWhisperModel, whisperBudget);
-        WhisperModelNotes = $"{SelectedWhisperModel.Notes} {whisper.NeedText}";
+        WhisperModelNotes = $"{SelectedWhisperModel.UiNotes} {whisper.NeedText}";
         WhisperFitWarning = whisper.Warning;
 
         var llm = MemoryFit.AssessLlm(SelectedLlmModel, _settings.LlamaContextSize, llmBudget);
-        LlmModelNotes = $"{SelectedLlmModel.Notes} {llm.NeedText}";
+        LlmModelNotes = $"{SelectedLlmModel.UiNotes} {llm.NeedText}";
         LlmFitWarning = llm.Warning;
     }
 
@@ -254,14 +252,17 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     /// with No as the default. A yes is remembered for that model, so it is asked once; its
     /// warning stays on the Setup tab.
     /// </summary>
-    private async Task<bool> ConfirmFitAsync(FitAssessment fit, string modelId, string verb)
+    private async Task<bool> ConfirmFitAsync(FitAssessment fit, string modelId, ModelStage stage)
     {
         if (fit.Risk is not { } risk || _settings.AcceptedMemoryRisks.Contains(modelId)) return true;
 
-        var question = $"{risk}\n\n{verb} with it anyway? You won't be asked again for this model.";
-        if (!await _shell.AskAsync("This model may not fit", question, $"{verb} anyway", "Cancel").ConfigureAwait(true))
+        var transcribe = stage == ModelStage.Transcription;
+        var question = L.Format(transcribe ? nameof(Strings.Fit_Ask_Transcribe) : nameof(Strings.Fit_Ask_Analyse), risk);
+        var confirm = transcribe ? Strings.Fit_Transcribe : Strings.Fit_Analyse;
+        if (!await _shell.AskAsync(Strings.Fit_Title, question, confirm, Strings.Common_Cancel).ConfigureAwait(true))
         {
-            Status = $"{fit.Model} was not started. A smaller model can be chosen on the Setup tab.";
+            var model = fit.UiModel ?? fit.Model;
+            ShowStatus(() => L.Format(nameof(Strings.Fit_NotStarted), model));
             return false;
         }
 
@@ -285,14 +286,18 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         if (_settings.AcceptedMemoryRisks.Remove(run.ModelId))
         {
             _settings.Save(_paths);
-            message += "\n\nReelsMagician will ask again before that model runs.";
+            message += "\n\n" + Strings.Fit_AskAgain;
         }
         this.Warn("setup", $"{run.Model} was running when ReelsMagician last closed unexpectedly.");
         await _shell.TellAsync(run.Title, message).ConfigureAwait(true);
     }
 
     /// <summary>The window closed normally, so a model it ran was not what took the app down.</summary>
-    public void OnClosed() => ModelRunMarker.End(_paths.ModelRunMarkerFile);
+    public void OnClosed()
+    {
+        ModelRunMarker.End(_paths.ModelRunMarkerFile);
+        Localizer.Instance.LanguageChanged -= OnLanguageChanged;
+    }
 
     // ── Appearance ───────────────────────────────────────────────────────────────────────
 
@@ -336,12 +341,62 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         set { if (value) Appearance = Appearance.Dark; }
     }
 
+    // ── Language ─────────────────────────────────────────────────────────────────────────
+
+    private static Localizer L => Localizer.Instance;
+
+    public IReadOnlyList<UiLanguage> Languages { get; } = [UiLanguage.System, UiLanguage.English, UiLanguage.Polish];
+
+    /// <summary>
+    /// The interface's language: the system's, English or Polish. Switching applies at once, with
+    /// no restart, and is saved. Log files, settings.json and the Activity list stay in English.
+    /// </summary>
+    public UiLanguage Language
+    {
+        get => _settings.Language;
+        set
+        {
+            if (_settings.Language == value) return;
+            _settings.Language = value;
+            _settings.Save(_paths);
+            Localizer.Instance.Apply(value);
+            Raise();
+        }
+    }
+
+    /// <summary>
+    /// Rebuilds every text a view model made in code, after a switch of language. XAML's own texts
+    /// follow through {l:Tr} by themselves.
+    /// </summary>
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        foreach (var step in Steps) step.RefreshTexts();
+        foreach (var option in WhisperOptions.Concat(LlmOptions)) option.RefreshTexts();
+        // The component rows, the GPU line and the model notes are built from what was detected.
+        ShowTools(_tools);
+        RefreshCleanup(keepSelection: true);
+        ShowSource();
+        ShowTranscriptSummary();
+        ShowPlanSummary();
+        foreach (var row in Subtitles) row.RefreshTexts();
+        foreach (var candidate in Candidates) candidate.RefreshTexts();
+        foreach (var clip in ClipFramings) clip.RefreshTexts();
+        About.RefreshTexts();
+        Raise(nameof(Status));
+        Raise(nameof(PreviewStatus));
+        Raise(nameof(ModelsHint));
+        Raise(nameof(DataFolderText));
+        Raise(nameof(CleanupButtonText));
+        Raise(nameof(CrossfadeHint));
+        Raise(nameof(CrossfadeNote));
+    }
+
     // ── Freeing up space ─────────────────────────────────────────────────────────────────
 
     public ObservableCollection<CleanupRowViewModel> CleanupItems { get; } = [];
 
-    private string _dataFolderText = "";
-    public string DataFolderText { get => _dataFolderText; private set => Set(ref _dataFolderText, value); }
+    private long _dataFolderBytes;
+    public string DataFolderText => L.Format(nameof(Strings.Cleanup_Total), _paths.Root, AssetDownloader.Humanize(_dataFolderBytes));
 
     private long _selectedCleanupBytes;
     public long SelectedCleanupBytes
@@ -356,19 +411,30 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     }
 
     public string CleanupButtonText => SelectedCleanupBytes > 0
-        ? $"Delete {AssetDownloader.Humanize(SelectedCleanupBytes)}…"
-        : "Nothing selected";
+        ? L.Format(nameof(Strings.Cleanup_DeleteSize), AssetDownloader.Humanize(SelectedCleanupBytes))
+        : Strings.Cleanup_NothingSelected;
 
-    /// <summary>Re-measures the data folder. Sizes are read from disk, never guessed.</summary>
-    private void RefreshCleanup()
+    private void RefreshCleanup() => RefreshCleanup(keepSelection: false);
+
+    /// <summary>
+    /// Re-measures the data folder. Sizes are read from disk, never guessed. A switch of language
+    /// rebuilds the rows in it and keeps what was ticked.
+    /// </summary>
+    private void RefreshCleanup(bool keepSelection)
     {
         var cleaner = new DataFolderCleaner(_paths, this);
+        var ticked = keepSelection ? CleanupItems.Where(i => i.IsSelected).Select(i => i.Key).ToHashSet() : null;
 
         CleanupItems.Clear();
         foreach (var item in cleaner.Survey())
-            CleanupItems.Add(new CleanupRowViewModel(item, RecountCleanupSelection));
+        {
+            var row = new CleanupRowViewModel(item, RecountCleanupSelection);
+            if (ticked is not null) row.IsSelected = ticked.Contains(item.Key);
+            CleanupItems.Add(row);
+        }
 
-        DataFolderText = $"{_paths.Root} — {AssetDownloader.Humanize(cleaner.TotalBytes())} in total";
+        _dataFolderBytes = cleaner.TotalBytes();
+        Raise(nameof(DataFolderText));
         RecountCleanupSelection();
     }
 
@@ -389,17 +455,14 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         var redownloads = chosen.Any(i => i.Key is DataFolderCleaner.ModelsKey or DataFolderCleaner.ToolsKey);
 
         var question =
-            $"Delete the following from {_paths.Root}?\n\n{summary}\n\n" +
-            $"That frees {AssetDownloader.Humanize(SelectedCleanupBytes)}." +
-            (redownloads
-                ? "\n\nThe models and tools will have to be downloaded again before the next reel."
-                : "") +
-            "\n\nThis cannot be undone.";
+            L.Format(nameof(Strings.Cleanup_Ask), _paths.Root, summary, AssetDownloader.Humanize(SelectedCleanupBytes)) +
+            (redownloads ? "\n\n" + Strings.Cleanup_Ask_Redownload : "") +
+            "\n\n" + Strings.Cleanup_Ask_Final;
 
-        if (!await _shell.AskAsync("Free up space", question, "Delete", "Cancel").ConfigureAwait(true))
+        if (!await _shell.AskAsync(Strings.Cleanup_Title, question, Strings.Common_Delete, Strings.Common_Cancel).ConfigureAwait(true))
             return;
 
-        await RunStageAsync("Freeing up space", async ct =>
+        await RunStageAsync(Stage.Cleanup, async ct =>
         {
             var cleaner = new DataFolderCleaner(_paths, this);
             var keys = chosen.Select(i => i.Key).ToList();
@@ -412,10 +475,10 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             if (!result.Complete)
                 this.Warn("cleanup", "Close anything using these files and try again.");
 
+            var failures = string.Join("; ", result.Failures.Take(3));
             return result.Complete
-                ? $"Freed {AssetDownloader.Humanize(result.BytesFreed)}."
-                : $"Freed {AssetDownloader.Humanize(result.BytesFreed)}, but some files are still in use: " +
-                  string.Join("; ", result.Failures.Take(3));
+                ? () => L.Format(nameof(Strings.Cleanup_Freed), AssetDownloader.Humanize(result.BytesFreed))
+                : () => L.Format(nameof(Strings.Cleanup_FreedInUse), AssetDownloader.Humanize(result.BytesFreed), failures);
         }).ConfigureAwait(true);
     }
 
@@ -446,11 +509,28 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     private bool _useProvidedSubtitles = true;
     public bool UseProvidedSubtitles { get => _useProvidedSubtitles; set => Set(ref _useProvidedSubtitles, value); }
 
-    private string _sourceSummary = "No source loaded.";
+    private string _sourceSummary = Strings.Source_None;
     public string SourceSummary { get => _sourceSummary; private set => Set(ref _sourceSummary, value); }
 
     private string _sourceWarning = "";
     public string SourceWarning { get => _sourceWarning; private set => Set(ref _sourceWarning, value); }
+
+    /// <summary>What the Source tab says about the loaded video, and its warning below 4K.</summary>
+    private void ShowSource()
+    {
+        if (_project.Source is not { } source)
+        {
+            SourceSummary = Strings.Source_None;
+            SourceWarning = "";
+            return;
+        }
+
+        SourceSummary = $"{source.Title}\n{source.Info.Describe()}";
+        SourceWarning = source.Info.Is4K
+            ? ""
+            : L.Format(source.Info.IsAtLeast1080p ? nameof(Strings.Source_Upscaled) : nameof(Strings.Source_BelowMinimum),
+                source.Info.QualityLabel);
+    }
 
     private string _topic = "";
     public string Topic
@@ -470,9 +550,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         set { if (Set(ref _selectedSubtitle, value)) RefreshCommands(); }
     }
 
-    private const string NoTranscriptText = "No transcript yet.";
-
-    private string _transcriptSummary = NoTranscriptText;
+    private string _transcriptSummary = Strings.Transcript_None;
     public string TranscriptSummary { get => _transcriptSummary; private set => Set(ref _transcriptSummary, value); }
 
     // ── Reel plan ────────────────────────────────────────────────────────────────────────
@@ -496,9 +574,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     public ObservableCollection<ClipFramingViewModel> ClipFramings { get; } = [];
 
-    private const string NoPlanText = "No reel planned yet.";
-
-    private string _planSummary = NoPlanText;
+    private string _planSummary = Strings.Plan_None;
     public string PlanSummary { get => _planSummary; private set => Set(ref _planSummary, value); }
 
     // ── Captions ─────────────────────────────────────────────────────────────────────────
@@ -531,10 +607,15 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         }
     }
 
-    private const string NoPreviewText = "Render a preview once a reel has been planned.";
+    // The preview's status holds how to build its text, so a switch of language rebuilds it.
+    private Func<string> _previewStatus = () => Strings.Preview_None;
+    public string PreviewStatus => _previewStatus();
 
-    private string _previewStatus = NoPreviewText;
-    public string PreviewStatus { get => _previewStatus; private set => Set(ref _previewStatus, value); }
+    private void ShowPreviewStatus(Func<string> text)
+    {
+        _previewStatus = text;
+        Raise(nameof(PreviewStatus));
+    }
 
     private double _crossfadeMs = 100;
     public double CrossfadeMs
@@ -544,13 +625,16 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         {
             // Kept short by design: the audio crossfade matches it, and anything long enough to
             // hear would blur the words either side of the cut.
-            if (Set(ref _crossfadeMs, Math.Clamp(value, 20, 350))) Raise(nameof(CrossfadeHint));
+            if (!Set(ref _crossfadeMs, Math.Clamp(value, 20, 350))) return;
+            Raise(nameof(CrossfadeHint));
+            Raise(nameof(CrossfadeNote));
         }
     }
 
-    public string CrossfadeHint => CrossfadeMs <= 150
-        ? "Inaudible in the audio crossfade."
-        : "Long enough to soften speech at the cut.";
+    public string CrossfadeHint => CrossfadeMs <= 150 ? Strings.Crossfade_Inaudible : Strings.Crossfade_Softens;
+
+    /// <summary>The note under the slider: what this length does, then what it applies to.</summary>
+    public string CrossfadeNote => CrossfadeHint + "\n" + Strings.Crossfade_Audio;
 
     // ── Output and progress ──────────────────────────────────────────────────────────────
 
@@ -575,8 +659,20 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     public ObservableCollection<string> Log { get; } = [];
 
-    private string _status = "Ready.";
-    public string Status { get => _status; private set => Set(ref _status, value); }
+    // The status holds how to build its text, so a switch of language rebuilds it. A text that
+    // came from Core's progress, in the language it was reported in, is kept as it is.
+    private Func<string> _status = () => Strings.Status_Ready;
+    public string Status
+    {
+        get => _status();
+        private set => ShowStatus(() => value);
+    }
+
+    private void ShowStatus(Func<string> text)
+    {
+        _status = text;
+        Raise(nameof(Status));
+    }
 
     private double _progress;
     public double Progress { get => _progress; private set => Set(ref _progress, value); }
@@ -608,12 +704,14 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     // ── Step strip ───────────────────────────────────────────────────────────────────────
 
-    public StepViewModel SetupStep { get; } = new(1, "Setup");
-    public StepViewModel SourceStep { get; } = new(2, "Source");
-    public StepViewModel SubtitlesStep { get; } = new(3, "Subtitles");
-    public StepViewModel ReelStep { get; } = new(4, "Reel");
-    public StepViewModel CaptionsStep { get; } = new(5, "Captions");
-    public StepViewModel RenderStep { get; } = new(6, "Render");
+    public StepViewModel SetupStep { get; } = new(1, nameof(Strings.Step_Setup));
+    public StepViewModel SourceStep { get; } = new(2, nameof(Strings.Step_Source));
+    public StepViewModel SubtitlesStep { get; } = new(3, nameof(Strings.Step_Subtitles));
+    public StepViewModel ReelStep { get; } = new(4, nameof(Strings.Step_Reel));
+    public StepViewModel CaptionsStep { get; } = new(5, nameof(Strings.Step_Captions));
+    public StepViewModel RenderStep { get; } = new(6, nameof(Strings.Step_Render));
+
+    private IEnumerable<StepViewModel> Steps => [SetupStep, SourceStep, SubtitlesStep, ReelStep, CaptionsStep, RenderStep];
 
     /// <summary>Shows on each step's chip whether its output exists yet.</summary>
     private void RefreshSteps()
@@ -656,24 +754,24 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     public const string SponsorsLink = "https://github.com/sponsors/ideaconnect?frequency=one-time";
 
     private Task OpenSupportLinkAsync(string link) =>
-        OpenLinkAsync(link, $"Opening {link} in your browser. Thank you for supporting ReelsMagician!");
+        OpenLinkAsync(link, () => L.Format(nameof(Strings.Link_OpeningSupport), link));
 
     /// <summary>
     /// Opens a page in the system's browser. The status bar spells the address out too, because
     /// on Linux nothing reports whether a browser actually opened, and a minimal desktop may have
     /// none.
     /// </summary>
-    private async Task OpenLinkAsync(string link, string opening)
+    private async Task OpenLinkAsync(string link, Func<string> opening)
     {
-        Status = opening;
+        ShowStatus(opening);
         try
         {
             if (!await _shell.OpenLinkAsync(new Uri(link)).ConfigureAwait(true))
-                Status = $"No browser could be opened. The page is at {link}";
+                ShowStatus(() => L.Format(nameof(Strings.Link_NoBrowser), link));
         }
         catch (Exception ex)
         {
-            Status = $"No browser could be opened. The page is at {link}";
+            ShowStatus(() => L.Format(nameof(Strings.Link_NoBrowser), link));
             this.Warn("links", $"Could not open {link}: {ex.Message}");
         }
     }
@@ -696,12 +794,12 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         ShowRows(LinkComponents, _toolchain.DescribeLinkTools(_tools));
         About.ShowTools(_tools);
 
-        GpuText = _tools.Gpu?.Describe() ?? "GPU unknown";
-        BackendText = $"Whisper: {_tools.WhisperBackend}    ·    Qwen: {_tools.LlamaBackend}";
+        GpuText = _tools.Gpu?.Describe() ?? Strings.Setup_GpuUnknown;
+        BackendText = L.Format(nameof(Strings.Setup_Backends), _tools.WhisperBackend, _tools.LlamaBackend);
         ToolsReady = _tools.IsComplete;
         MissingText = _tools.IsComplete
-            ? "Everything is installed."
-            : "Missing: " + string.Join(", ", _tools.MissingComponents());
+            ? Strings.Setup_AllInstalled
+            : L.Format(nameof(Strings.Setup_Missing), string.Join(", ", _tools.MissingComponents()));
 
         RefreshFit();
         // A llama-server not asked before: its own figures replace the system's once it answers.
@@ -716,13 +814,13 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     }
 
     private Task InstallAsync() =>
-        RunStageAsync("Installing tools", ct => InstallThenRefreshAsync(c => _toolchain.EnsureAsync(_settings, c), ct));
+        RunStageAsync(Stage.Install, ct => InstallThenRefreshAsync(c => _toolchain.EnsureAsync(_settings, c), ct));
 
     private async Task InstallLinkToolsAsync()
     {
         if (!await _linkConsent.AskAsync(_tools).ConfigureAwait(true)) return;
 
-        await RunStageAsync("Downloading link tools",
+        await RunStageAsync(Stage.LinkTools,
             ct => InstallThenRefreshAsync(c => _toolchain.InstallLinkToolsAsync(_settings, c), ct)).ConfigureAwait(true);
     }
 
@@ -758,14 +856,14 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         if (isLink && !_tools.HasFfmpeg)
         {
             // yt-dlp cannot join the video and audio without it, and would only fail after the download.
-            Status = "Links need ffmpeg. Install the required tools on the Setup tab first.";
+            ShowStatus(() => Strings.Source_LinksNeedFfmpeg);
             ActiveTab = SetupTab;
             return;
         }
 
         if (needsLinkTools && !await _linkConsent.AskAsync(_tools).ConfigureAwait(true))
         {
-            Status = "yt-dlp was not downloaded, so the link was not loaded. Local video files work without it.";
+            ShowStatus(() => Strings.Source_LinkToolsDeclined);
             return;
         }
 
@@ -777,7 +875,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             Style = StyleEditor.Style,
         };
 
-        await RunStageAsync("Loading source", async ct =>
+        await RunStageAsync(Stage.Source, async ct =>
         {
             if (needsLinkTools)
                 await InstallThenRefreshAsync(c => _toolchain.InstallLinkToolsAsync(_settings, c), ct).ConfigureAwait(true);
@@ -790,12 +888,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
             var source = project.Source!;
             Topic = source.Title;
-            SourceSummary = $"{source.Title}\n{source.Info.Describe()}";
-            SourceWarning = source.Info.Is4K
-                ? ""
-                : source.Info.IsAtLeast1080p
-                    ? $"Source is {source.Info.QualityLabel}. The 1080×1920 crop will be upscaled — a 4K source looks sharper."
-                    : $"Source is only {source.Info.QualityLabel}, below the 1080p minimum. Expect a soft reel.";
+            ShowSource();
 
             _settings.RememberSource(input);
             _settings.Save(_paths);
@@ -818,18 +911,18 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         SelectedCandidate = null;
         ClipFramings.Clear();
         PreviewImage = null;
-        TranscriptSummary = NoTranscriptText;
-        PlanSummary = NoPlanText;
-        PreviewStatus = NoPreviewText;
+        TranscriptSummary = Strings.Transcript_None;
+        PlanSummary = Strings.Plan_None;
+        ShowPreviewStatus(() => Strings.Preview_None);
     }
 
     private async Task TranscribeAsync()
     {
         if (ReelPipeline.WillRunWhisper(_project, UseProvidedSubtitles) &&
-            !await ConfirmFitAsync(MemoryFit.ForWhisper(_tools, _settings), SelectedWhisperModel.Id, "Transcribe").ConfigureAwait(true))
+            !await ConfirmFitAsync(MemoryFit.ForWhisper(_tools, _settings), SelectedWhisperModel.Id, ModelStage.Transcription).ConfigureAwait(true))
             return;
 
-        await RunStageAsync("Transcribing", async ct =>
+        await RunStageAsync(Stage.Transcribe, async ct =>
         {
             var pipeline = new ReelPipeline(_tools, _settings, _paths, this);
             await pipeline.TranscribeAsync(_project, UseProvidedSubtitles, ct).ConfigureAwait(true);
@@ -842,10 +935,10 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     {
         // The estimate uses llama.cpp's own devices, so a build not asked yet is asked first.
         await _toolchain.ProbeLlamaAsync(_tools, CancellationToken.None).ConfigureAwait(true);
-        if (!await ConfirmFitAsync(MemoryFit.ForLlm(_tools, _settings), SelectedLlmModel.Id, "Analyse").ConfigureAwait(true))
+        if (!await ConfirmFitAsync(MemoryFit.ForLlm(_tools, _settings), SelectedLlmModel.Id, ModelStage.Analysis).ConfigureAwait(true))
             return;
 
-        await RunStageAsync("Analysing", async ct =>
+        await RunStageAsync(Stage.Analyse, async ct =>
         {
             CommitSubtitleEdits();
             _project.Topic = Topic;
@@ -859,16 +952,15 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
                 Candidates.Add(new CandidateViewModel(candidate));
 
             SelectedCandidate = Candidates.FirstOrDefault();
-            PlanSummary = _project.Plan.UsedFallback
-                ? $"{Candidates.Count} option(s) — assembled from paragraph scores. {_project.Plan.Notes}"
-                : $"{Candidates.Count} option(s) proposed for a {TargetSeconds:0}s reel.";
+            _plannedSeconds = TargetSeconds;
+            ShowPlanSummary();
             ActiveTab = ReelTab;
         }).ConfigureAwait(true);
     }
 
     private async Task PlanFramingAsync()
     {
-        await RunStageAsync("Planning framing", async ct =>
+        await RunStageAsync(Stage.Framing, async ct =>
         {
             var pipeline = new ReelPipeline(_tools, _settings, _paths, this);
             await pipeline.PlanFramingAsync(_project, ct).ConfigureAwait(true);
@@ -885,7 +977,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     private async Task RenderAsync()
     {
-        await RunStageAsync("Rendering", async ct =>
+        await RunStageAsync(Stage.Render, async ct =>
         {
             _project.RenderOptions = _project.RenderOptions with { CrossfadeSeconds = CrossfadeMs / 1000.0 };
 
@@ -898,7 +990,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             var result = await pipeline.RenderAsync(_project, output, ct).ConfigureAwait(true);
 
             RefreshCommands();
-            return $"Reel written to {result.OutputPath}";
+            return () => L.Format(nameof(Strings.Render_Written), result.OutputPath);
         }).ConfigureAwait(true);
     }
 
@@ -913,13 +1005,42 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         foreach (var segment in transcript.Segments)
             Subtitles.Add(new SubtitleRowViewModel(segment));
 
-        var origin = transcript.Origin == TranscriptOrigin.ProvidedSubtitles
-            ? "supplied subtitles"
-            : $"Whisper ({transcript.Language})";
-        TranscriptSummary =
-            $"{Subtitles.Count} cues · {transcript.WordCount} words · from {origin}. " +
-            "Fix anything wrong before analysing — the analysis and the burned-in captions both use this text.";
+        ShowTranscriptSummary();
         RefreshCommands();
+    }
+
+    /// <summary>How many cues and words the transcript has, and where they came from.</summary>
+    private void ShowTranscriptSummary()
+    {
+        if (_project.Transcript is not { } transcript || Subtitles.Count == 0)
+        {
+            TranscriptSummary = Strings.Transcript_None;
+            return;
+        }
+
+        var origin = transcript.Origin == TranscriptOrigin.ProvidedSubtitles
+            ? Strings.Transcript_FromSupplied
+            : L.Format(nameof(Strings.Transcript_FromWhisper), transcript.Language);
+        TranscriptSummary = L.Format(nameof(Strings.Transcript_Summary),
+            L.Plural("Transcript_Cues", Subtitles.Count), L.Plural("Transcript_Words", transcript.WordCount), origin);
+    }
+
+    // The reel length the plan was made for, which its summary names.
+    private double _plannedSeconds;
+
+    /// <summary>How many reels the analysis proposed, and how it got them.</summary>
+    private void ShowPlanSummary()
+    {
+        if (_project.Plan is not { } plan || Candidates.Count == 0)
+        {
+            PlanSummary = Strings.Plan_None;
+            return;
+        }
+
+        var options = L.Plural("Plan_Options", Candidates.Count);
+        PlanSummary = plan.UsedFallback
+            ? L.Format(nameof(Strings.Plan_Fallback), options, plan.Notes)
+            : L.Format(nameof(Strings.Plan_Proposed), options, _plannedSeconds);
     }
 
     /// <summary>Writes the edited rows back into the transcript in timeline order.</summary>
@@ -946,6 +1067,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         if (words is null or { Count: < 2 })
         {
             this.Warn("transcribe", "This cue has too few words to split.");
+            ShowStatus(() => Strings.Cue_TooFewWords);
             return;
         }
 
@@ -975,6 +1097,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         if (index < 0 || index + 1 >= Subtitles.Count)
         {
             this.Warn("transcribe", "There is no following cue to merge with.");
+            ShowStatus(() => Strings.Cue_NothingToMerge);
             return;
         }
 
@@ -1015,8 +1138,8 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     private async Task ImportSubtitlesAsync()
     {
-        var file = await _shell.PickFileAsync("Import subtitles",
-            [new FileFilter("Subtitles", "*.srt", "*.vtt"), new FileFilter("All files", "*")]).ConfigureAwait(true);
+        var file = await _shell.PickFileAsync(Strings.Subtitles_ImportTitle,
+            [new FileFilter(Strings.Subtitles_Filter, "*.srt", "*.vtt"), new FileFilter(Strings.Common_AllFiles, "*")]).ConfigureAwait(true);
         if (file is null) return;
 
         try
@@ -1026,17 +1149,20 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             _project.Transcript = transcript;
             PopulateSubtitles();
             this.Info("transcribe", $"Imported {transcript.Segments.Count} cues from {Path.GetFileName(file)}.");
+            var count = transcript.Segments.Count;
+            ShowStatus(() => L.Plural("Subtitles_Imported", count, Path.GetFileName(file)));
         }
         catch (Exception ex)
         {
             this.Error("transcribe", $"Import failed: {ex.Message}");
+            ShowStatus(() => L.Format(nameof(Strings.Subtitles_ImportFailed), ex.Message));
         }
     }
 
     private async Task ExportSubtitlesAsync()
     {
         CommitSubtitleEdits();
-        var file = await _shell.PickSaveFileAsync("Export subtitles", UserPaths.FileNameFromTitle(Topic) + ".srt",
+        var file = await _shell.PickSaveFileAsync(Strings.Subtitles_ExportTitle, UserPaths.FileNameFromTitle(Topic) + ".srt",
             Directory.Exists(OutputFolderPath) ? OutputFolderPath : null, new FileFilter("SubRip", "*.srt")).ConfigureAwait(true);
         if (file is null) return;
 
@@ -1044,10 +1170,12 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         {
             File.WriteAllText(file, _project.Transcript?.ToSrt() ?? "");
             this.Info("transcribe", $"Exported to {file}.");
+            ShowStatus(() => L.Format(nameof(Strings.Subtitles_Exported), file));
         }
         catch (Exception ex)
         {
             this.Error("transcribe", $"Export failed: {ex.Message}");
+            ShowStatus(() => L.Format(nameof(Strings.Subtitles_ExportFailed), ex.Message));
         }
     }
 
@@ -1059,13 +1187,13 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         StyleEditor.LoadFrom(SelectedPreset);
     }
 
-    private void OnStyleChanged() => PreviewStatus = "Style changed — refresh the preview to see it.";
+    private void OnStyleChanged() => ShowPreviewStatus(() => Strings.Preview_StyleChanged);
 
     private async Task RefreshPreviewAsync()
     {
         if (!_tools.HasFfmpeg)
         {
-            PreviewStatus = "ffmpeg is required for previews. Install it on the Setup tab.";
+            ShowPreviewStatus(() => Strings.Preview_NeedsFfmpeg);
             return;
         }
 
@@ -1078,7 +1206,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             var captions = ReelPipeline.BuildCaptions(project);
             if (captions.Count == 0)
             {
-                PreviewStatus = "No captions to preview yet — plan a reel first.";
+                ShowPreviewStatus(() => Strings.Preview_NoCaptions);
                 return;
             }
 
@@ -1096,12 +1224,13 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
             if (!ReferenceEquals(project, _project)) return;
             PreviewImage = LoadBitmap(png);
-            PreviewStatus = $"Preview at {TimeSpan.FromSeconds(reelTime):mm\\:ss\\.ff} of the reel · {StyleEditor.Summary}";
+            var at = TimeSpan.FromSeconds(reelTime).ToString(@"mm\:ss\.ff", L.Formats);
+            ShowPreviewStatus(() => L.Format(nameof(Strings.Preview_At), at, StyleEditor.Summary));
         }
         catch (Exception ex)
         {
             if (!ReferenceEquals(project, _project)) return;
-            PreviewStatus = $"Preview failed: {ex.Message}";
+            ShowPreviewStatus(() => L.Format(nameof(Strings.Preview_Failed), ex.Message));
             this.Warn("preview", ex.Message);
         }
     }
@@ -1117,17 +1246,17 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     private async Task BrowseSourceAsync()
     {
-        var file = await _shell.PickFileAsync("Choose a video",
+        var file = await _shell.PickFileAsync(Strings.Source_PickTitle,
         [
-            new FileFilter("Video", "*.mp4", "*.mov", "*.mkv", "*.webm", "*.avi"),
-            new FileFilter("All files", "*"),
+            new FileFilter(Strings.Source_PickFilter, "*.mp4", "*.mov", "*.mkv", "*.webm", "*.avi"),
+            new FileFilter(Strings.Common_AllFiles, "*"),
         ]).ConfigureAwait(true);
         if (file is not null) SourceInput = file;
     }
 
     private async Task BrowseOutputAsync()
     {
-        var folder = await _shell.PickFolderAsync("Choose where reels are saved",
+        var folder = await _shell.PickFolderAsync(Strings.Render_PickFolderTitle,
             Directory.Exists(OutputFolderPath) ? OutputFolderPath : null).ConfigureAwait(true);
         if (folder is not null) OutputFolder = folder;
     }
@@ -1135,22 +1264,40 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     private void Cancel()
     {
         _cts?.Cancel();
-        Status = "Cancelling…";
+        ShowStatus(() => Strings.Status_Cancelling);
     }
 
-    /// <summary>Runs one pipeline stage that ends with "<paramref name="label"/> complete."</summary>
-    private Task RunStageAsync(string label, Func<CancellationToken, Task> work) =>
-        RunStageAsync(label, async ct =>
+    /// <summary>
+    /// A pipeline stage: its name in the log, in English, and the key of its name on screen. The
+    /// log's lines are the ones this app always wrote, so a bug report reads the same in any language.
+    /// </summary>
+    private sealed record Stage(string LogName, string Key)
+    {
+        public static readonly Stage Install = new("Installing tools", nameof(Strings.Stage_Install));
+        public static readonly Stage LinkTools = new("Downloading link tools", nameof(Strings.Stage_LinkTools));
+        public static readonly Stage Source = new("Loading source", nameof(Strings.Stage_Source));
+        public static readonly Stage Transcribe = new("Transcribing", nameof(Strings.Stage_Transcribe));
+        public static readonly Stage Analyse = new("Analysing", nameof(Strings.Stage_Analyse));
+        public static readonly Stage Framing = new("Planning framing", nameof(Strings.Stage_Framing));
+        public static readonly Stage Render = new("Rendering", nameof(Strings.Stage_Render));
+        public static readonly Stage Cleanup = new("Freeing up space", nameof(Strings.Stage_Cleanup));
+
+        public string Label => Localizer.Instance[Key];
+    }
+
+    /// <summary>Runs one pipeline stage that ends with "<c>stage</c> complete."</summary>
+    private Task RunStageAsync(Stage stage, Func<CancellationToken, Task> work) =>
+        RunStageAsync(stage, async ct =>
         {
             await work(ct).ConfigureAwait(true);
-            return (string?)null;
+            return (Func<string>?)null;
         });
 
     /// <summary>
     /// Runs one pipeline stage with shared busy state, cancellation and error reporting. The work
-    /// returns the status to finish with, or null for "<paramref name="label"/> complete.".
+    /// returns how to build the status to finish with, or null for "<c>stage</c> complete.".
     /// </summary>
-    private async Task RunStageAsync(string label, Func<CancellationToken, Task<string?>> work)
+    private async Task RunStageAsync(Stage stage, Func<CancellationToken, Task<Func<string>?>> work)
     {
         if (IsBusy) return;
 
@@ -1160,24 +1307,26 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         Indeterminate = true;
         Progress = 0;
         Volatile.Write(ref _runningStage, ++_stagesStarted);
-        Status = label + "…";
-        this.Info(label.ToLowerInvariant(), label + " started.");
+        var log = stage.LogName.ToLowerInvariant();
+        ShowStatus(() => L.Format(nameof(Strings.Stage_Running), stage.Label));
+        this.Info(log, stage.LogName + " started.");
 
-        string finalStatus;
+        Func<string> finalStatus;
         try
         {
-            finalStatus = await work(cts.Token).ConfigureAwait(true) ?? label + " complete.";
+            finalStatus = await work(cts.Token).ConfigureAwait(true)
+                          ?? (() => L.Format(nameof(Strings.Stage_Complete), stage.Label));
         }
         catch (OperationCanceledException)
         {
-            finalStatus = label + " cancelled.";
-            this.Warn(label.ToLowerInvariant(), "Cancelled by the user.");
+            finalStatus = () => L.Format(nameof(Strings.Stage_Cancelled), stage.Label);
+            this.Warn(log, "Cancelled by the user.");
         }
         catch (Exception ex)
         {
-            finalStatus = $"{label} failed: {ex.Message}";
-            this.Error(label.ToLowerInvariant(), ex.Message);
-            ErrorReporter.Report(ex, $"{label} failed");
+            finalStatus = () => L.Format(nameof(Strings.Stage_Failed), stage.Label, ex.Message);
+            this.Error(log, ex.Message);
+            ErrorReporter.Report(ex, L.Format(nameof(Strings.Stage_Failed_Title), stage.Label), $"{stage.LogName} failed");
         }
         finally
         {
@@ -1189,7 +1338,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             Progress = 0;
             RefreshCommands();
         }
-        Status = finalStatus;
+        ShowStatus(finalStatus);
     }
 
     private void RefreshCommands()

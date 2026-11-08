@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using ReelsMagician.Core.Diagnostics;
+using ReelsMagician.Core.Localization;
 
 namespace ReelsMagician.Core.Media;
 
@@ -68,7 +69,7 @@ public static class ProcessRunner
         };
 
         if (!proc.Start())
-            throw new InvalidOperationException($"Failed to start process: {exePath}");
+            throw new InvalidOperationException(Lang.Ui.Format(nameof(Strings.Process_NotStarted), exePath));
 
         proc.BeginOutputReadLine();
         proc.BeginErrorReadLine();
@@ -114,8 +115,9 @@ public static class ProcessRunner
     private static string Quote(string s) => s.Contains(' ') ? $"\"{s}\"" : s;
 }
 
+/// <summary>A tool that exited with an error: what the user reads first, then the tool's own last lines.</summary>
 public sealed class ToolFailedException(string tool, int exitCode, string output)
-    : Exception($"{tool} exited with code {exitCode}.\n{output}")
+    : Exception(Lang.Ui.Format(nameof(Strings.Tool_Failed), tool, exitCode) + "\n" + output)
 {
     public string Tool { get; } = tool;
     public int ExitCode { get; } = exitCode;

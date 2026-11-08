@@ -18,7 +18,7 @@ public partial class App : Application
         // must go through ErrorReporter, which refuses to open a second dialog while one is up.
         Dispatcher.UIThread.UnhandledException += (_, args) =>
         {
-            ErrorReporter.Report(args.Exception, "Something went wrong");
+            ErrorReporter.Report(args.Exception, Localization.Strings.Error_SomethingWentWrong, "Something went wrong");
             args.Handled = true;
         };
 

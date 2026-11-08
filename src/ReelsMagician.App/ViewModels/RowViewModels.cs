@@ -1,4 +1,5 @@
 using System.Globalization;
+using ReelsMagician.App.Localization;
 using ReelsMagician.Core.Analysis;
 using ReelsMagician.Core.Framing;
 using ReelsMagician.Core.Toolchain;
@@ -55,8 +56,11 @@ public sealed class SubtitleRowViewModel(TranscriptSegment segment) : ViewModelB
         }
     }
 
-    public string DurationText => $"{Segment.Duration:0.0}s";
+    public string DurationText => Localizer.Instance.Format(nameof(Strings.Format_Seconds1), Segment.Duration);
     public int WordCount => Segment.Words.Count;
+
+    /// <summary>After a switch of language: the length is written the interface's way.</summary>
+    public void RefreshTexts() => Raise(nameof(DurationText));
 
     /// <summary>Flags a cue that Whisper was unsure about, so review effort can be aimed at it.</summary>
     public bool LowConfidence =>
@@ -123,10 +127,10 @@ public sealed class ComponentRowViewModel(ComponentStatus status) : ViewModelBas
     public string Detail => status.Detail;
     public string StateText => status.State switch
     {
-        ComponentState.Installed => "Installed",
-        ComponentState.System => "Found on system",
-        ComponentState.OptionalMissing => "Not installed",
-        ComponentState.RequiredMissing => "Will download",
+        ComponentState.Installed => Strings.Component_Installed,
+        ComponentState.System => Strings.Component_System,
+        ComponentState.OptionalMissing => Strings.Component_NotInstalled,
+        ComponentState.RequiredMissing => Strings.Component_WillDownload,
         _ => throw new ArgumentOutOfRangeException(nameof(status), status.State, null),
     };
     public bool IsReady => !status.NeedsDownload;
@@ -145,10 +149,11 @@ public sealed class ComponentRowViewModel(ComponentStatus status) : ViewModelBas
 /// won't fit this computer's memory (issue #54). The warning itself shows under the drop-down
 /// for the chosen model.
 /// </summary>
-public sealed class ModelOptionViewModel(string id, string displayName) : ViewModelBase
+/// <param name="displayName">The model's name in the interface's language, read again after a switch.</param>
+public sealed class ModelOptionViewModel(string id, Func<string> displayName) : ViewModelBase
 {
     public string Id { get; } = id;
-    public string DisplayName { get; } = displayName;
+    public string DisplayName => displayName();
 
     private string? _warning;
 
@@ -167,7 +172,16 @@ public sealed class ModelOptionViewModel(string id, string displayName) : ViewMo
     public bool MayNotFit => Warning is not null;
 
     /// <summary>The triangle is decoration, so a screen reader hears what it means.</summary>
-    public string AccessibleName => MayNotFit ? $"{DisplayName}, may not fit this computer's memory" : DisplayName;
+    public string AccessibleName => MayNotFit
+        ? Localizer.Instance.Format(nameof(Strings.Model_MayNotFit_Name), DisplayName)
+        : DisplayName;
+
+    /// <summary>After a switch of language: the name, and what a screen reader says.</summary>
+    public void RefreshTexts()
+    {
+        Raise(nameof(DisplayName));
+        Raise(nameof(AccessibleName));
+    }
 
     public override string ToString() => DisplayName;
 }
@@ -185,21 +199,34 @@ public sealed class CandidateViewModel(ReelCandidate candidate) : ViewModelBase
     public string ClipList => string.Join("   ", Candidate.Clips.Select(c => c.TimeLabel));
     public string Preview =>
         Candidate.Transcript.Length <= 320 ? Candidate.Transcript : Candidate.Transcript[..320] + "…";
+
+    /// <summary>After a switch of language: the summary. The title, hook and reason are Qwen's own words.</summary>
+    public void RefreshTexts() => Raise(nameof(Summary));
 }
 
 /// <summary>The framing decision made for one clip, shown as read-only feedback.</summary>
 public sealed class ClipFramingViewModel(int index, ClipRange range, CropPath crop) : ViewModelBase
 {
-    public string Label => $"Clip {index + 1}";
+    public string Label => Localizer.Instance.Format(nameof(Strings.Reel_Clip), index + 1);
     public string TimeLabel => range.TimeLabel;
-    public string DurationText => $"{range.Duration:0.0}s";
+    public string DurationText => Localizer.Instance.Format(nameof(Strings.Format_Seconds1), range.Duration);
     public string CropText => $"{crop.CropWidth}×{crop.CropHeight}";
+
+    /// <summary>The crop and the clip's length: "Crop 1080×1920  ·  12.4s".</summary>
+    public string CropLine => Localizer.Instance.Format(nameof(Strings.Reel_CropLine), CropText, DurationText);
     public string TrackingText => crop.Describe();
     public string SubjectText => crop.DominantSubject switch
     {
-        SubjectKind.Face => "Speaker",
-        SubjectKind.Person => "Person",
-        SubjectKind.Salient => "Visual subject",
-        _ => "Centred",
+        SubjectKind.Face => Strings.Reel_Subject_Face,
+        SubjectKind.Person => Strings.Reel_Subject_Person,
+        SubjectKind.Salient => Strings.Reel_Subject_Salient,
+        _ => Strings.Reel_Subject_Centre,
     };
+
+    /// <summary>After a switch of language: every text of the card.</summary>
+    public void RefreshTexts()
+    {
+        foreach (var name in new[] { nameof(Label), nameof(DurationText), nameof(CropLine), nameof(TrackingText), nameof(SubjectText) })
+            Raise(name);
+    }
 }

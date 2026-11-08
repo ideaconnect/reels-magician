@@ -1,3 +1,5 @@
+using ReelsMagician.Core.Localization;
+
 namespace ReelsMagician.Core.Toolchain;
 
 /// <param name="RuntimeBytes">
@@ -9,6 +11,15 @@ public sealed record WhisperModelSpec(
 {
     /// <summary>The name without the remark after the dash, for sentences: "Whisper large-v3-turbo (f16)".</summary>
     public string ShortName => ModelCatalog.ShortNameOf(DisplayName);
+
+    /// <summary>The name as the interface shows it, in its language. <see cref="DisplayName"/> is the log's.</summary>
+    public string UiName => ModelCatalog.UiText(Id, "Name");
+
+    /// <summary>The note under the drop-down, in the interface's language.</summary>
+    public string UiNotes => ModelCatalog.UiText(Id, "Notes");
+
+    /// <summary>The short name in the interface's language, for sentences on screen.</summary>
+    public string UiShortName => ModelCatalog.ShortNameOf(UiName);
 
     public override string ToString() => DisplayName;
 }
@@ -23,6 +34,15 @@ public sealed record LlmModelSpec(
 {
     /// <summary>The name without "Instruct" and the remark after the dash: "Qwen3 8B (Q6_K)".</summary>
     public string ShortName => ModelCatalog.ShortNameOf(DisplayName);
+
+    /// <summary>The name as the interface shows it, in its language. <see cref="DisplayName"/> is the log's.</summary>
+    public string UiName => ModelCatalog.UiText(Id, "Name");
+
+    /// <summary>The note under the drop-down, in the interface's language.</summary>
+    public string UiNotes => ModelCatalog.UiText(Id, "Notes");
+
+    /// <summary>The short name in the interface's language, for sentences on screen.</summary>
+    public string UiShortName => ModelCatalog.ShortNameOf(UiName);
 
     public override string ToString() => DisplayName;
 }
@@ -94,6 +114,15 @@ public static class ModelCatalog
     /// OpenCV 5 cannot read, so installing YuNet deletes it.
     /// </summary>
     public static readonly string[] RetiredFaceModelFileNames = ["face_detector.prototxt", "face_detector_res10.caffemodel"];
+
+    /// <summary>
+    /// A model's name or note in the interface's language, from the resource <c>Model_{id}_{part}</c>.
+    /// The English resources hold the same words as the specs' DisplayName and Notes, which stay
+    /// the log's; the logic checks keep the two equal.
+    /// </summary>
+    public static string UiText(string id, string part) => Lang.Ui[ResourceKey(id, part)];
+
+    public static string ResourceKey(string id, string part) => $"Model_{id}_{part}";
 
     public static WhisperModelSpec DefaultWhisper => WhisperModels[2];
     public static LlmModelSpec DefaultLlm => LlmModels[1];

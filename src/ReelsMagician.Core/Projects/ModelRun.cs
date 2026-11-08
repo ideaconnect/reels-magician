@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using ReelsMagician.Core.Localization;
 using System.Text.Json.Serialization;
 using ReelsMagician.Core.Toolchain;
 
@@ -22,32 +23,38 @@ public sealed record ModelRun(
     public bool WasTooBig => AvailableBytes is { } total &&
                              NeedBytes > new MemoryBudget(Kind, total).Usable;
 
-    public string Title => Stage == ModelStage.Transcription
-        ? "ReelsMagician closed while transcribing"
-        : "ReelsMagician closed while analysing";
+    public string Title => Lang.Ui[Stage == ModelStage.Transcription
+        ? nameof(Strings.Crash_Title_Transcription)
+        : nameof(Strings.Crash_Title_Analysis)];
 
     /// <summary>What was running when the app went down, and what to do about it.</summary>
-    public string Explanation
-    {
-        get
-        {
-            var local = StartedUtc.ToLocalTime();
-            var when = local.ToString("d MMMM 'at' HH:mm", CultureInfo.InvariantCulture);
-            var doing = Stage == ModelStage.Transcription ? "transcribing the speech" : "analysing the transcript";
-            var kind = Kind == MemoryKind.Graphics ? "graphics memory" : "memory";
-            var context = Context is null ? "" : " at that context";
-            var has = AvailableBytes is { } total
-                ? $", and this computer has {MemoryFit.Format(total)}{(Device is { Length: > 0 } d && Kind == MemoryKind.Graphics ? $" on {d}" : "")}"
-                : "";
+    public string Explanation => ExplanationIn(Lang.Ui);
 
-            return $"The last time, ReelsMagician closed while {Model} was {doing}, on {when}. " +
-                   $"It needs about {MemoryFit.Format(NeedBytes)} of {kind}{context}{has}.\n\n" +
-                   (WasTooBig
-                       ? "The model was probably too big for this computer, which can take the app or the whole system " +
-                         "down. Choose a smaller model on the Setup tab."
-                       : "If the app or the computer went down then, the model may have been too much for it: " +
-                         "a smaller model on the Setup tab needs less memory.");
-        }
+    /// <summary>The same in a language of its own; the date is written the way that language writes it.</summary>
+    public string ExplanationIn(Lang lang)
+    {
+        var local = StartedUtc.ToLocalTime();
+        var when = local.ToString(lang[nameof(Strings.Crash_DateFormat)], lang.Formats);
+        var happened = lang.Format(Stage == ModelStage.Transcription
+            ? nameof(Strings.Crash_Happened_Transcription)
+            : nameof(Strings.Crash_Happened_Analysis), Model, when);
+
+        var need = MemoryFit.Format(NeedBytes, lang);
+        var graphics = Kind == MemoryKind.Graphics;
+        var needs = lang.Format((graphics, Context is null) switch
+        {
+            (true, true) => nameof(Strings.Crash_Needs_Graphics),
+            (true, false) => nameof(Strings.Crash_Needs_Graphics_Context),
+            (false, true) => nameof(Strings.Crash_Needs_System),
+            _ => nameof(Strings.Crash_Needs_System_Context),
+        }, need);
+        var has = AvailableBytes is not { } total ? ""
+            : Device is { Length: > 0 } d && graphics
+                ? lang.Format(nameof(Strings.Crash_Has_Device), MemoryFit.Format(total, lang), d)
+                : lang.Format(nameof(Strings.Crash_Has), MemoryFit.Format(total, lang));
+
+        return $"{happened} {needs}{has}.\n\n" +
+               lang[WasTooBig ? nameof(Strings.Crash_TooBig) : nameof(Strings.Crash_MayHaveBeen)];
     }
 }
 

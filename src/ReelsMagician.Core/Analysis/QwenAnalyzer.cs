@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using ReelsMagician.Core.Diagnostics;
+using ReelsMagician.Core.Localization;
 
 namespace ReelsMagician.Core.Analysis;
 
@@ -27,7 +28,7 @@ public sealed partial class QwenAnalyzer(LlamaServerSession server, IProgressSin
         var plan = new ReelPlan { Topic = topic };
         if (paragraphs.Count == 0)
         {
-            plan.Notes = "The transcript is empty, so there is nothing to analyse.";
+            plan.Notes = Lang.Ui[nameof(Strings.Plan_EmptyTranscript)];
             return plan;
         }
 
@@ -39,7 +40,7 @@ public sealed partial class QwenAnalyzer(LlamaServerSession server, IProgressSin
             sink.Warn("analyze", "The model returned no usable reel, falling back to the best-scoring run.");
             candidates = [BuildFallback(paragraphs, scores, options)];
             plan.UsedFallback = true;
-            plan.Notes = "Assembled from the highest-scoring paragraphs without the model's help.";
+            plan.Notes = Lang.Ui[nameof(Strings.Plan_Fallback)];
         }
 
         plan.Candidates = [.. candidates.OrderByDescending(c => c.Score)];
@@ -60,7 +61,7 @@ public sealed partial class QwenAnalyzer(LlamaServerSession server, IProgressSin
             var slice = paragraphs.Skip(from).Take(to - from).ToList();
 
             sink.Report("analyze",
-                $"Scoring paragraphs {from + 1}–{to} of {paragraphs.Count}…",
+                Lang.Ui.Format(nameof(Strings.Analysis_Scoring), from + 1, to, paragraphs.Count),
                 (double)w / windows.Count);
 
             try
@@ -83,7 +84,7 @@ public sealed partial class QwenAnalyzer(LlamaServerSession server, IProgressSin
         foreach (var p in paragraphs)
             scores.TryAdd(p.Index, ParagraphScore.Neutral(p.Index));
 
-        sink.Report("analyze", "Paragraph scoring complete", 1);
+        sink.Report("analyze", Lang.Ui[nameof(Strings.Analysis_Scored)], 1);
         return scores;
     }
 
@@ -169,7 +170,7 @@ public sealed partial class QwenAnalyzer(LlamaServerSession server, IProgressSin
         ReelPlanOptions options,
         CancellationToken ct)
     {
-        sink.Report("analyze", "Assembling reel candidates…", null);
+        sink.Report("analyze", Lang.Ui[nameof(Strings.Analysis_Assembling)], null);
 
         // Feed the model the strongest paragraphs plus their immediate neighbours, so it can
         // still build a run that flows rather than a list of disconnected highlights.

@@ -4,6 +4,7 @@ using ReelsMagician.Core.Analysis;
 using ReelsMagician.Core.Diagnostics;
 using ReelsMagician.Core.Framing;
 using ReelsMagician.Core.Media;
+using ReelsMagician.Core.Localization;
 
 namespace ReelsMagician.Core.Rendering;
 
@@ -53,7 +54,7 @@ public sealed class ReelRenderer(FFmpegTool ffmpeg, IProgressSink sink)
         CancellationToken ct)
     {
         if (clips.Count == 0)
-            throw new InvalidOperationException("There are no clips to render.");
+            throw new InvalidOperationException(Lang.Ui[nameof(Strings.Render_NoClips)]);
 
         Directory.CreateDirectory(workDir);
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
@@ -68,7 +69,7 @@ public sealed class ReelRenderer(FFmpegTool ffmpeg, IProgressSink sink)
         {
             ct.ThrowIfCancellationRequested();
             var file = Path.Combine(workDir, $"clip_{i:00}.mp4");
-            sink.Report("render", $"Rendering clip {i + 1} of {clips.Count}…", (double)i / (clips.Count + 1));
+            sink.Report("render", Lang.Ui.Format(nameof(Strings.Render_Clip), i + 1, clips.Count), (double)i / (clips.Count + 1));
             await RenderClipAsync(sourcePath, sourceInfo, clips[i], file, options, hasAudio, ct).ConfigureAwait(false);
             clipFiles.Add(file);
         }
@@ -79,15 +80,15 @@ public sealed class ReelRenderer(FFmpegTool ffmpeg, IProgressSink sink)
             AssBuilder.Build(captions, style), new UTF8Encoding(false), ct).ConfigureAwait(false);
 
         var total = clips.Sum(c => c.Range.Duration) - fade * (clips.Count - 1);
-        sink.Report("render", "Joining clips and burning captions…", (double)clips.Count / (clips.Count + 1));
+        sink.Report("render", Lang.Ui[nameof(Strings.Render_Joining)], (double)clips.Count / (clips.Count + 1));
 
         await JoinAsync(clipFiles, subtitlePath, outputPath, options, fade, total, hasAudio, workDir, ct)
             .ConfigureAwait(false);
 
         if (!File.Exists(outputPath))
-            throw new InvalidOperationException("ffmpeg finished but produced no output file.");
+            throw new InvalidOperationException(Lang.Ui[nameof(Strings.Render_NoOutput)]);
 
-        sink.Report("render", "Reel complete", 1);
+        sink.Report("render", Lang.Ui[nameof(Strings.Render_Complete)], 1);
         sink.Info("render", $"Wrote {outputPath} ({AssetSize(outputPath)}, {total:0.0}s)");
         return new RenderResult(outputPath, total, subtitlePath);
     }
@@ -130,7 +131,7 @@ public sealed class ReelRenderer(FFmpegTool ffmpeg, IProgressSink sink)
 
         args.AddRange(["-movflags", "+faststart", outputPath]);
         await ffmpeg.RunAsync(args, clip.Range.Duration, "render",
-            $"Clip {Path.GetFileNameWithoutExtension(outputPath)}", ct).ConfigureAwait(false);
+            Lang.Ui.Format(nameof(Strings.Render_ClipLabel), Path.GetFileNameWithoutExtension(outputPath)), ct).ConfigureAwait(false);
     }
 
     /// <summary>Chains the clips with matched video and audio crossfades, then burns the captions.</summary>
@@ -239,7 +240,7 @@ public sealed class ReelRenderer(FFmpegTool ffmpeg, IProgressSink sink)
 
         args.AddRange(["-movflags", "+faststart", "-shortest", outputPath]);
 
-        await ffmpeg.RunAsync(args, expectedDuration, "render", "Final encode", ct, workingDirectory: workDir)
+        await ffmpeg.RunAsync(args, expectedDuration, "render", Lang.Ui[nameof(Strings.Render_FinalEncode)], ct, workingDirectory: workDir)
             .ConfigureAwait(false);
     }
 
@@ -277,7 +278,7 @@ public sealed class ReelRenderer(FFmpegTool ffmpeg, IProgressSink sink)
                 sink.Debug("render", $"Could not probe {Path.GetFileName(path)}: {ex.Message}");
             }
         }
-        throw new InvalidOperationException($"Could not determine the duration of {Path.GetFileName(path)}.");
+        throw new InvalidOperationException(Lang.Ui.Format(nameof(Strings.Render_NoDuration), Path.GetFileName(path)));
     }
 
     private static string AssetSize(string path) =>

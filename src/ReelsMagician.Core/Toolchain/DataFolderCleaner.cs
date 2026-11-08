@@ -1,4 +1,5 @@
 using ReelsMagician.Core.Diagnostics;
+using ReelsMagician.Core.Localization;
 
 namespace ReelsMagician.Core.Toolchain;
 
@@ -39,24 +40,23 @@ public sealed class DataFolderCleaner(ToolPaths paths, IProgressSink sink)
     /// <summary>What is on disk right now, largest first among the optional entries.</summary>
     public IReadOnlyList<DataFolderItem> Survey() =>
     [
-        Describe(ModelsKey, "Downloaded models",
-            "Whisper, Qwen and the face detector. The big one — several gigabytes.",
+        Describe(ModelsKey, Ui[nameof(Strings.Cleanup_Models)], Ui[nameof(Strings.Cleanup_Models_Detail)],
             paths.Models, selectedByDefault: false),
 
-        Describe(ToolsKey, "Downloaded tools", ToolsDetail(), paths.Tools, selectedByDefault: false),
+        Describe(ToolsKey, Ui[nameof(Strings.Cleanup_Tools)], ToolsDetail(), paths.Tools, selectedByDefault: false),
 
-        Describe(WorkingKey, "Working files",
-            "Extracted audio, sampled frames, clip intermediates and half-finished downloads. " +
-            "Safe to clear at any time; the app recreates them.",
+        Describe(WorkingKey, Ui[nameof(Strings.Cleanup_Working)], Ui[nameof(Strings.Cleanup_Working_Detail)],
             paths.Cache, extraPaths: [paths.Downloads, paths.Projects], selectedByDefault: true),
 
-        Describe(LogsKey, "Logs", "Error logs written when something went wrong.",
+        Describe(LogsKey, Ui[nameof(Strings.Cleanup_Logs)], Ui[nameof(Strings.Cleanup_Logs_Detail)],
             paths.Logs, selectedByDefault: false),
 
-        Describe(SettingsKey, "Settings",
-            "Your model choices, output folder and recent sources. Removing this resets the app.",
+        Describe(SettingsKey, Ui[nameof(Strings.Cleanup_Settings)], Ui[nameof(Strings.Cleanup_Settings_Detail)],
             paths.SettingsFile, selectedByDefault: false),
     ];
+
+    // The rows are read on screen, in the interface's language.
+    private static Lang Ui => Lang.Ui;
 
     /// <summary>
     /// Names the tools actually on disk. yt-dlp and its runtime are downloaded only if the user
@@ -67,7 +67,7 @@ public sealed class DataFolderCleaner(ToolPaths paths, IProgressSink sink)
         var present = new (string Dir, string Name)[]
             {
                 (paths.FfmpegDir, "ffmpeg"), (paths.WhisperDir, "whisper.cpp"), (paths.LlamaDir, "llama.cpp"),
-                (paths.YtDlpDir, "yt-dlp"), (paths.JsRuntimeDir, "the JavaScript runtime"),
+                (paths.YtDlpDir, "yt-dlp"), (paths.JsRuntimeDir, Ui[nameof(Strings.Cleanup_Tools_JsRuntime)]),
             }
             .Where(t => HasContent(t.Dir))
             .Select(t => t.Name)
@@ -75,9 +75,9 @@ public sealed class DataFolderCleaner(ToolPaths paths, IProgressSink sink)
 
         return present.Count switch
         {
-            0 => "ffmpeg, whisper.cpp and llama.cpp, once they are downloaded.",
+            0 => Ui[nameof(Strings.Cleanup_Tools_None)],
             1 => present[0] + ".",
-            _ => string.Join(", ", present[..^1]) + " and " + present[^1] + ".",
+            _ => Ui.Format(nameof(Strings.Cleanup_Tools_List), string.Join(", ", present[..^1]), present[^1]),
         };
     }
 
@@ -165,7 +165,7 @@ public sealed class DataFolderCleaner(ToolPaths paths, IProgressSink sink)
         paths.EnsureCreated();
 
         sink.Info("cleanup",
-            $"Freed {AssetDownloader.Humanize(freed)} from the data folder" +
+            $"Freed {AssetDownloader.Humanize(freed, Lang.Log)} from the data folder" +
             (failures.Count == 0 ? "." : $"; {failures.Count} item(s) were in use."));
 
         return new CleanupResult(freed, removed, failures);
@@ -176,7 +176,7 @@ public sealed class DataFolderCleaner(ToolPaths paths, IProgressSink sink)
         if (!IsInsideDataFolder(path))
         {
             // Refuse rather than delete something outside the folder this button is meant to clear.
-            failures.Add($"{path} is outside the data folder and was left alone.");
+            failures.Add(Ui.Format(nameof(Strings.Cleanup_OutsideFolder), path));
             sink.Warn("cleanup", $"Refused to delete {path}: outside {paths.Root}.");
             return false;
         }

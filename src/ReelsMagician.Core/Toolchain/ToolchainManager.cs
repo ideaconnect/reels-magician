@@ -1,4 +1,5 @@
 using ReelsMagician.Core.Diagnostics;
+using ReelsMagician.Core.Localization;
 using ReelsMagician.Core.Projects;
 
 namespace ReelsMagician.Core.Toolchain;
@@ -88,20 +89,20 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
 
         var whisperDir = Directory.Exists(settings.CustomWhisperDir ?? "") ? settings.CustomWhisperDir! : paths.WhisperDir;
         ts.WhisperCliPath = Find(whisperDir, ToolPaths.ExeName("whisper-cli"), ToolPaths.ExeName("main"));
-        ts.WhisperBackend = DescribeBackend(whisperDir, ts.WhisperCliPath);
+        ts.WhisperBackendInfo = FindBackend(whisperDir, ts.WhisperCliPath);
         if (ts.WhisperCliPath is not null && InstalledAsset(whisperDir) is { } whisperAsset)
         {
             ts.WhisperBuild = ToolBuilds.KindOf(whisperAsset);
-            ts.WhisperWarning = ToolBuilds.FallbackWarning("whisper.cpp", whisperAsset, ToolBuilds.ExpectedWhisper(ts.Gpu, os));
+            ts.WhisperFallback = ToolBuilds.Fallback("whisper.cpp", whisperAsset, ToolBuilds.ExpectedWhisper(ts.Gpu, os));
         }
 
         var llamaDir = Directory.Exists(settings.CustomLlamaDir ?? "") ? settings.CustomLlamaDir! : paths.LlamaDir;
         ts.LlamaServerPath = Find(llamaDir, ToolPaths.ExeName("llama-server"));
-        ts.LlamaBackend = DescribeBackend(llamaDir, ts.LlamaServerPath);
+        ts.LlamaBackendInfo = FindBackend(llamaDir, ts.LlamaServerPath);
         if (ts.LlamaServerPath is not null && InstalledAsset(llamaDir) is { } llamaAsset)
         {
             ts.LlamaBuild = ToolBuilds.KindOf(llamaAsset);
-            ts.LlamaWarning = ToolBuilds.FallbackWarning("llama.cpp", llamaAsset, ToolBuilds.ExpectedLlama(ts.Gpu, os));
+            ts.LlamaFallback = ToolBuilds.Fallback("llama.cpp", llamaAsset, ToolBuilds.ExpectedLlama(ts.Gpu, os));
         }
         // Only what was asked before: running llama-server here would hold up the UI thread.
         if (ts.LlamaServerPath is not null) ts.LlamaFeatures = _llamaProbe.Cached(ts.LlamaServerPath, LlamaProbe.GpuKey(ts.Gpu));
@@ -120,9 +121,10 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         return ts;
     }
 
-    /// <summary>The required components, for the setup screen.</summary>
+    /// <summary>The required components, for the setup screen, in the interface's language.</summary>
     public IReadOnlyList<ComponentStatus> Describe(AppSettings settings, Toolset ts)
     {
+        var ui = Lang.Ui;
         var whisperModel = ModelCatalog.ResolveWhisper(settings.WhisperModelId);
         var llm = ModelCatalog.ResolveLlm(settings.LlmModelId);
         var systemFfmpeg = ts.FfmpegPath is not null &&
@@ -133,46 +135,46 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         [
             new("ffmpeg", "ffmpeg + ffprobe",
                 ts.HasFfmpeg ? (systemFfmpeg ? ComponentState.System : ComponentState.Installed) : ComponentState.RequiredMissing,
-                ts.FfmpegPath ?? "will download the BtbN GPL build", 95_000_000),
+                ts.FfmpegPath ?? ui[nameof(Strings.Component_Ffmpeg_Download)], 95_000_000),
 
             new("whisper", "whisper.cpp",
                 ts.WhisperCliPath is not null ? ComponentState.Installed : ComponentState.RequiredMissing,
-                ts.WhisperCliPath is null ? "auto-selects the best build for this machine" : ts.WhisperBackend, 30_000_000,
+                ts.WhisperCliPath is null ? ui[nameof(Strings.Component_Whisper_Download)] : ts.WhisperBackend, 30_000_000,
                 ts.WhisperWarning),
 
             // The CUDA build brings its own cudart and cuBLAS, which is most of its size.
             new("llama", "llama.cpp",
                 ts.LlamaServerPath is not null ? ComponentState.Installed : ComponentState.RequiredMissing,
                 ts.LlamaServerPath is null
-                    ? (cuda ? "CUDA build for your NVIDIA card" : "Vulkan build when a driver is present")
+                    ? ui[cuda ? nameof(Strings.Component_Llama_Cuda) : nameof(Strings.Component_Llama_Vulkan)]
                     : ts.LlamaBackend,
                 cuda ? 600_000_000 : 130_000_000,
                 ts.LlamaWarning),
 
-            new("whisper-model", whisperModel.DisplayName,
+            new("whisper-model", whisperModel.UiName,
                 ts.WhisperModelPath is not null ? ComponentState.Installed : ComponentState.RequiredMissing,
-                whisperModel.Notes, whisperModel.ApproxBytes),
+                whisperModel.UiNotes, whisperModel.ApproxBytes),
 
-            new("llm-model", llm.DisplayName,
+            new("llm-model", llm.UiName,
                 ts.LlmModelPath is not null ? ComponentState.Installed : ComponentState.RequiredMissing,
-                llm.Notes, llm.ApproxBytes),
+                llm.UiNotes, llm.ApproxBytes),
 
-            new("face-model", "Face detector (YuNet)",
+            new("face-model", ui[nameof(Strings.Component_FaceModel)],
                 ts.HasFaceModel ? ComponentState.Installed : ComponentState.RequiredMissing,
-                "Keeps a speaker centred in the vertical crop", ModelCatalog.FaceModelApproxBytes),
+                ui[nameof(Strings.Component_FaceModel_Detail)], ModelCatalog.FaceModelApproxBytes),
         ];
     }
 
-    /// <summary>The optional components that loading a video from a link needs.</summary>
+    /// <summary>The optional components that loading a video from a link needs, in the interface's language.</summary>
     public IReadOnlyList<ComponentStatus> DescribeLinkTools(Toolset ts) =>
     [
         new(YtDlpKey, "yt-dlp",
             ts.HasYtDlp ? ComponentState.Installed : ComponentState.OptionalMissing,
-            ts.YtDlpPath ?? "downloads a video from a link", 23_600_000),
+            ts.YtDlpPath ?? Lang.Ui[nameof(Strings.Component_YtDlp_Detail)], 23_600_000),
 
-        new(JsRuntimeKey, "JavaScript runtime (Deno)",
+        new(JsRuntimeKey, Lang.Ui[nameof(Strings.Component_JsRuntime)],
             ts.HasJsRuntime ? ComponentState.Installed : ComponentState.OptionalMissing,
-            ts.JsRuntimePath ?? "without it yt-dlp drops formats and may miss 4K", 42_900_000),
+            ts.JsRuntimePath ?? Lang.Ui[nameof(Strings.Component_JsRuntime_Detail)], 42_900_000),
     ];
 
     /// <summary>
@@ -184,7 +186,7 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         var final = await InstallAsync(settings, async (ts, dl) =>
         {
             var gpu = ts.Gpu ?? GpuProbe.Detect();
-            sink.Info("install", $"GPU: {gpu.Describe()}");
+            sink.Info("install", $"GPU: {gpu.Describe(Lang.Log)}");
 
             if (!ts.HasFfmpeg) await InstallFfmpegAsync(dl, ct).ConfigureAwait(false);
             if (ts.WhisperCliPath is null) await InstallWhisperAsync(dl, gpu, ct).ConfigureAwait(false);
@@ -193,29 +195,30 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
             if (ts.WhisperModelPath is null)
             {
                 var m = ModelCatalog.ResolveWhisper(settings.WhisperModelId);
-                await dl.DownloadAsync(m.Url, Path.Combine(paths.Models, m.FileName), m.DisplayName, ct).ConfigureAwait(false);
+                await dl.DownloadAsync(m.Url, Path.Combine(paths.Models, m.FileName), m.DisplayName, ct, m.UiName).ConfigureAwait(false);
             }
             if (ts.LlmModelPath is null)
             {
                 var m = ModelCatalog.ResolveLlm(settings.LlmModelId);
-                await dl.DownloadAsync(m.Url, Path.Combine(paths.Models, m.FileName), m.DisplayName, ct).ConfigureAwait(false);
+                await dl.DownloadAsync(m.Url, Path.Combine(paths.Models, m.FileName), m.DisplayName, ct, m.UiName).ConfigureAwait(false);
             }
             if (!ts.HasFaceModel)
             {
                 await dl.DownloadAsync(ModelCatalog.FaceModelUrl,
-                    Path.Combine(paths.Models, ModelCatalog.FaceModelFileName), "face detector", ct).ConfigureAwait(false);
+                    Path.Combine(paths.Models, ModelCatalog.FaceModelFileName), "face detector", ct,
+                    Lang.Ui[nameof(Strings.Download_FaceModel)]).ConfigureAwait(false);
                 foreach (var retired in ModelCatalog.RetiredFaceModelFileNames)
                     TryDelete(Path.Combine(paths.Models, retired));
             }
         }).ConfigureAwait(false);
 
-        sink.Report("install", "Toolchain ready", 1.0);
-        sink.Info("install", $"Whisper backend: {final.WhisperBackend}");
-        sink.Info("install", $"llama.cpp backend: {final.LlamaBackend}");
-        if (final.WhisperWarning is { } whisperWarning) sink.Warn("install", whisperWarning);
-        if (final.LlamaWarning is { } llamaWarning) sink.Warn("install", llamaWarning);
+        sink.Report("install", Lang.Ui[nameof(Strings.Install_Ready)], 1.0);
+        sink.Info("install", $"Whisper backend: {final.WhisperBackendInfo.Describe(Lang.Log)}");
+        sink.Info("install", $"llama.cpp backend: {final.LlamaBackendInfo.Describe(Lang.Log)}");
+        if (final.WhisperFallback is { } whisperFallback) sink.Warn("install", whisperFallback.Warning(Lang.Log));
+        if (final.LlamaFallback is { } llamaFallback) sink.Warn("install", llamaFallback.Warning(Lang.Log));
         if (!final.IsComplete)
-            sink.Warn("install", "Still missing: " + string.Join(", ", final.MissingComponents()));
+            sink.Warn("install", "Still missing: " + string.Join(", ", final.MissingComponents(Lang.Log)));
         return final;
     }
 
@@ -270,7 +273,7 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         {
             var url = ToolBuilds.DenoUrl(ToolBuilds.Current);
             var zip = Path.Combine(paths.Downloads, Path.GetFileName(url));
-            await dl.DownloadAsync(url, zip, "JavaScript runtime (Deno)", ct).ConfigureAwait(false);
+            await dl.DownloadAsync(url, zip, "JavaScript runtime (Deno)", ct, Lang.Ui[nameof(Strings.Component_JsRuntime)]).ConfigureAwait(false);
             ArchiveExtractor.Extract(zip, paths.JsRuntimeDir, sink, "Deno");
             if (ToolPaths.FindExe(paths.JsRuntimeDir, ToolPaths.ExeName("deno")) is { } deno) ToolPaths.MakeExecutable(deno);
             TryDelete(zip);
@@ -324,7 +327,7 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
             runtimeZip = Path.Combine(paths.Downloads, runtime);
             await dl.DownloadAsync(
                 $"https://github.com/{ToolBuilds.LlamaRepo}/releases/download/{picked.Tag}/{runtime}",
-                runtimeZip, $"CUDA {cuda} runtime", ct).ConfigureAwait(false);
+                runtimeZip, $"CUDA {cuda} runtime", ct, Lang.Ui.Format(nameof(Strings.Download_CudaRuntime), cuda)).ConfigureAwait(false);
         }
 
         ArchiveExtractor.Extract(archive, paths.LlamaDir, sink, "llama.cpp");
@@ -365,13 +368,12 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         catch (IOException) { return null; }
     }
 
-    private static string DescribeBackend(string dir, string? exePath)
+    private static Backend FindBackend(string dir, string? exePath)
     {
-        if (exePath is null) return "not installed";
-        var kind = InstalledAsset(dir) is { } asset
-            ? ToolBuilds.Label(ToolBuilds.KindOf(asset))
-            : HasVulkanRuntime(dir) ? "Vulkan (GPU)" : "custom build";
-        return $"{kind} — {Path.GetFileName(exePath)}";
+        if (exePath is null) return Backend.None;
+        return InstalledAsset(dir) is { } asset
+            ? new Backend(Path.GetFileName(exePath), ToolBuilds.KindOf(asset))
+            : new Backend(Path.GetFileName(exePath), HasVulkanRuntime: HasVulkanRuntime(dir));
     }
 
     private static bool HasVulkanRuntime(string dir)

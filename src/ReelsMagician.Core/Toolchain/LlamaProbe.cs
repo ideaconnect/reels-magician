@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using ReelsMagician.Core.Localization;
 using ReelsMagician.Core.Media;
 
 namespace ReelsMagician.Core.Toolchain;
@@ -72,7 +73,7 @@ public sealed partial class LlamaProbe(string cacheFile)
     public static bool HelpListsFit(string help) => FitOption().IsMatch(help);
 
     /// <summary>The GPUs the system reports, so a new card or driver asks llama-server again.</summary>
-    public static string GpuKey(GpuCapabilities? gpu) => gpu?.Describe() ?? "";
+    public static string GpuKey(GpuCapabilities? gpu) => gpu?.Describe(Lang.Log) ?? "";
 
     private static long Mib(string digits) =>
         long.Parse(digits, NumberStyles.None, CultureInfo.InvariantCulture) * (1L << 20);

@@ -3,6 +3,7 @@ using Avalonia.Automation;
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Data;
+using ReelsMagician.App.Localization;
 using ReelsMagician.Core.Projects;
 
 namespace ReelsMagician.App;
@@ -68,6 +69,22 @@ public sealed class InfoBox : ContentControl
         PseudoClasses.Set(":error", Kind == NoteKind.Error);
         SetValue(AutomationProperties.NameProperty, Notes.AccessibleName(Kind, Text), BindingPriority.Style);
     }
+
+    // The kind is named in the interface's language, so a switch renames a note whose text stays.
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        Localizer.Instance.LanguageChanged += OnLanguageChanged;
+        ShowKind();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        Localizer.Instance.LanguageChanged -= OnLanguageChanged;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e) => ShowKind();
 
     protected override AutomationPeer OnCreateAutomationPeer() => new InfoBoxAutomationPeer(this);
 

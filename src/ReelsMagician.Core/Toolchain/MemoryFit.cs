@@ -1,4 +1,5 @@
 using System.Globalization;
+using ReelsMagician.Core.Localization;
 using ReelsMagician.Core.Projects;
 
 namespace ReelsMagician.Core.Toolchain;
@@ -21,32 +22,45 @@ public sealed record MemoryBudget(MemoryKind Kind, long? Bytes, string? Device =
 }
 
 /// <summary>A model's estimated need, held against the memory it would run in.</summary>
-/// <param name="Model">The model's short name, as sentences use it: "Qwen3 8B (Q6_K)".</param>
+/// <param name="Model">The model's short name, as sentences use it: "Qwen3 8B (Q6_K)". The log's, in English.</param>
 /// <param name="Context">The context the LLM runs with; null for Whisper, which has none to set.</param>
-public sealed record FitAssessment(string Model, long NeedBytes, MemoryBudget Budget, int? Context = null)
+/// <param name="UiModel">The short name in the interface's language, for the texts on screen.</param>
+public sealed record FitAssessment(string Model, long NeedBytes, MemoryBudget Budget, int? Context = null,
+    string? UiModel = null)
 {
     /// <summary>True when the estimate is more than the memory there is. Unknown memory never warns.</summary>
     public bool MayNotFit => Budget.Usable is { } usable && NeedBytes > usable;
 
     /// <summary>What the model needs, for the line under its drop-down: "Needs about 9.7 GB of graphics memory at a 32k context."</summary>
-    public string NeedText =>
-        $"Needs about {MemoryFit.Format(NeedBytes)} of {KindText}" +
-        (Context is { } context ? $" at a {MemoryFit.FormatContext(context)} context." : ".");
+    public string NeedText => Need(Lang.Ui);
+
+    /// <summary>The same in a language of its own, such as the log's.</summary>
+    public string Need(Lang lang) => Context is { } context
+        ? lang.Format(Budget.Kind == MemoryKind.Graphics ? nameof(Strings.Fit_Need_Graphics_Context) : nameof(Strings.Fit_Need_System_Context),
+            MemoryFit.Format(NeedBytes, lang), MemoryFit.FormatContext(context))
+        : lang.Format(Budget.Kind == MemoryKind.Graphics ? nameof(Strings.Fit_Need_Graphics) : nameof(Strings.Fit_Need_System),
+            MemoryFit.Format(NeedBytes, lang));
 
     /// <summary>Why it may not fit, what that risks, and that it can still be tried; null when it fits.</summary>
-    public string? Warning => Risk is { } risk ? risk + " You can still try it." : null;
+    public string? Warning => Risk is { } risk ? risk + " " + Lang.Ui[nameof(Strings.Fit_CanStillTry)] : null;
 
     /// <summary>The warning without its last sentence, for the question asked before a run.</summary>
-    public string? Risk => MayNotFit && Budget.Bytes is { } total
-        ? $"{Model} needs about {MemoryFit.Format(NeedBytes)} of {KindText}{(Context is null ? "" : " at this context")}, " +
-          $"and this computer has {MemoryFit.Format(total)}" +
-          (Budget.Kind == MemoryKind.System
-              ? $", about {MemoryFit.Format(MemoryFit.SystemReserveBytes)} of which the system needs for itself. "
-              : ". ") +
-          "It may run slowly or fail, and in rare cases it can freeze the system."
-        : null;
+    public string? Risk => RiskIn(Lang.Ui, UiModel ?? Model);
 
-    private string KindText => Budget.Kind == MemoryKind.Graphics ? "graphics memory" : "memory";
+    /// <summary>The risk in a language of its own, with the model named as that language names it.</summary>
+    public string? RiskIn(Lang lang, string model)
+    {
+        if (!MayNotFit || Budget.Bytes is not { } total) return null;
+        var key = (Budget.Kind, Context is null) switch
+        {
+            (MemoryKind.Graphics, true) => nameof(Strings.Fit_Risk_Graphics),
+            (MemoryKind.Graphics, false) => nameof(Strings.Fit_Risk_Graphics_Context),
+            (_, true) => nameof(Strings.Fit_Risk_System),
+            _ => nameof(Strings.Fit_Risk_System_Context),
+        };
+        return lang.Format(key, model, MemoryFit.Format(NeedBytes, lang), MemoryFit.Format(total, lang),
+            MemoryFit.Format(MemoryFit.SystemReserveBytes, lang));
+    }
 }
 
 /// <summary>
@@ -75,10 +89,10 @@ public static class MemoryFit
         model.ApproxBytes + Math.Max(0, context) * model.KvBytesPerToken + LlamaBufferBytes;
 
     public static FitAssessment AssessLlm(LlmModelSpec model, int context, MemoryBudget budget) =>
-        new(model.ShortName, LlmNeed(model, context), budget, context);
+        new(model.ShortName, LlmNeed(model, context), budget, context, model.UiShortName);
 
     public static FitAssessment AssessWhisper(WhisperModelSpec model, MemoryBudget budget) =>
-        new(model.ShortName, model.RuntimeBytes, budget);
+        new(model.ShortName, model.RuntimeBytes, budget, UiModel: model.UiShortName);
 
     /// <summary>
     /// The memory Qwen runs in. llama.cpp's own list of devices wins: it is the build the analysis
@@ -170,12 +184,15 @@ public static class MemoryFit
     /// A size as a person reads it, in the binary units graphics cards are sold in, so an 8 GiB
     /// card is "8 GB": one decimal below 10 GB, whole numbers above.
     /// </summary>
-    public static string Format(long bytes)
+    public static string Format(long bytes) => Format(bytes, Lang.Ui);
+
+    /// <summary>The same, with the decimal separator of a language: "9,7 GB" in Polish, and the log's "9.7 GB".</summary>
+    public static string Format(long bytes, Lang lang)
     {
         var gib = bytes / (double)(1L << 30);
-        if (gib >= 9.95) return string.Create(CultureInfo.InvariantCulture, $"{gib:0} GB");
-        if (gib >= 1) return string.Create(CultureInfo.InvariantCulture, $"{gib:0.#} GB");
-        return string.Create(CultureInfo.InvariantCulture, $"{Math.Max(1, bytes / (double)(1L << 20)):0} MB");
+        if (gib >= 9.95) return string.Create(lang.Formats, $"{gib:0} GB");
+        if (gib >= 1) return string.Create(lang.Formats, $"{gib:0.#} GB");
+        return string.Create(lang.Formats, $"{Math.Max(1, bytes / (double)(1L << 20)):0} MB");
     }
 
     /// <summary>A context size the way llama.cpp's users name it: 16384 tokens is "16k".</summary>
