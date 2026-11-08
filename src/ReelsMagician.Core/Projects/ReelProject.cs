@@ -32,10 +32,20 @@ public sealed class ReelProject
     public SubtitleStyle Style { get; set; } = SubtitleStyle.Presets()[1];
 
     public string? OutputPath { get; set; }
+
+    /// <summary>The clips the reel at <see cref="OutputPath"/> was rendered from.</summary>
+    public List<RenderClip> RenderedClips { get; set; } = [];
+
     public string WorkDir { get; set; } = "";
 
     public bool HasSource => Source is not null;
     public bool HasTranscript => Transcript is { Segments.Count: > 0 };
     public bool HasPlan => Plan is { Candidates.Count: > 0 };
     public bool HasFraming => RenderClips.Count > 0;
+
+    /// <summary>
+    /// A reel has been rendered from the current framing. Picking another reel or framing this
+    /// one again leaves <see cref="OutputPath"/> naming the reel written before, which is not it.
+    /// </summary>
+    public bool HasRender => OutputPath is not null && HasFraming && RenderedClips.SequenceEqual(RenderClips);
 }

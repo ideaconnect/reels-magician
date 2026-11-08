@@ -2,6 +2,12 @@
 
 Changes to ReelsMagician, newest first.
 
+## Unreleased
+
+### Changed
+
+- **Step strip:** the row of steps at the top of the window now looks like the app's menu. It is a bar of its own, with the page it opens framed under it, and each step is a rounded chip: the open one in the accent colour, the rest muted. The chips show your progress too. A step's number turns into a check once its output exists, the step to do next has its number ringed, and the steps after it are dimmed, though you can still open them. **Cleanup** stays on the right, outlined and unnumbered, so it does not read as a seventh step. Screen readers hear each chip as, for example, "Step 3 of 6, Subtitles, done".
+
 ## 0.2.0 (2026-11-08)
 
 The first release that runs on Linux as well as Windows, and the first with ready-to-run packages: a zip for Windows and an AppImage for Linux. Still an early preview.

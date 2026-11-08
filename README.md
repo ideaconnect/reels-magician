@@ -237,6 +237,11 @@ interrupted, so a dropped connection is not a restart.
 
 ## Using it
 
+The strip at the top of the window is the app's menu, one chip per step. It also shows how far
+you have got: a step's number turns into a check once its output exists, the step to do next has
+its number ringed, and the steps after it are dimmed. Every step stays open to you, and says what
+it needs.
+
 **2 · Source** — paste a link or browse to a file, set the reel length, press **Load source**.
 The first time you load a link, the app asks before downloading yt-dlp. The topic box is prefilled from the title or filename; correct it if it is wrong, because the
 analysis is anchored to it. Then **Transcribe**.
@@ -267,8 +272,8 @@ burned in. Transition length lives here too.
 paste into an upload page's file dialog, a file manager or a terminal. The activity log shows every
 step.
 
-**Cleanup** — on the right of the tab strip, apart from the steps: frees up space in the app's
-data folder (see [Freeing up space](#freeing-up-space)).
+**Cleanup** — on the right of the strip, apart from the steps and without a number: frees up space
+in the app's data folder (see [Freeing up space](#freeing-up-space)).
 
 File pickers and confirmations are drawn by the app itself, the same on both systems. A question
 always defaults to the answer that changes nothing.
