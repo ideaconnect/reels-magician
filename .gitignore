@@ -24,7 +24,15 @@ ggml-*.bin
 *.safetensors
 cudart-*.zip
 yt-dlp*.exe
+yt-dlp
+yt-dlp_linux
 deno*.exe
+deno
+
+# Release packages, built by the Release workflow
+out/
+*.AppImage
+ReelsMagician-win-x64.zip
 
 # Media: test inputs and rendered reels
 *.mp4

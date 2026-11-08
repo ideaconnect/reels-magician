@@ -41,7 +41,7 @@ yt-dlp already on the user's PATH is used without asking.
 
 | Component | Licence | Source |
 |---|---|---|
-| yt-dlp | Unlicense | https://github.com/yt-dlp/yt-dlp |
+| yt-dlp (its standalone `yt-dlp.exe` and `yt-dlp_linux` builds) | yt-dlp's own code is Unlicense, but these PyInstaller builds include GPLv3+ code, so each build as a whole is GPLv3+; its `THIRD_PARTY_LICENSES.txt` lists the rest | https://github.com/yt-dlp/yt-dlp |
 | Deno | MIT | https://github.com/denoland/deno |
 
 ReelsMagician runs ffmpeg, yt-dlp, whisper.cpp and llama.cpp as separate processes; it does not
