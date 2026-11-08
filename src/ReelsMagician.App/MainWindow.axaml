@@ -12,8 +12,6 @@
         WindowStartupLocation="CenterScreen">
 
   <Window.Resources>
-    <local:ConfidenceToBrushConverter x:Key="ConfidenceBrush" />
-
     <!-- The status icon carries the state on its own, by shape as well as colour (Theme.axaml),
          and names it for screen readers; the state text beside it stays. -->
     <DataTemplate x:Key="ComponentRow" x:DataType="vm:ComponentRowViewModel">
@@ -76,6 +74,25 @@
       </StackPanel>
       <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
         <TextBlock Text="{Binding GpuText}" Classes="hint" VerticalAlignment="Center" MaxWidth="460" />
+        <!-- The theme: follow the system, light or dark, applied at once and remembered. -->
+        <Border Background="{DynamicResource Panel}" BorderBrush="{DynamicResource BorderBrush2}"
+                BorderThickness="1" CornerRadius="8" Padding="2" VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal" Spacing="2">
+            <RadioButton Theme="{StaticResource Segment}" GroupName="Appearance" IsChecked="{Binding FollowsSystemTheme}"
+                         ToolTip.Tip="Follow the system's light or dark setting"
+                         AutomationProperties.Name="Theme: follow the system">
+              <local:FaIcon Data="{StaticResource fa-desktop}" />
+            </RadioButton>
+            <RadioButton Theme="{StaticResource Segment}" GroupName="Appearance" IsChecked="{Binding UsesLightTheme}"
+                         ToolTip.Tip="Light theme" AutomationProperties.Name="Theme: light">
+              <local:FaIcon Data="{StaticResource fa-sun}" />
+            </RadioButton>
+            <RadioButton Theme="{StaticResource Segment}" GroupName="Appearance" IsChecked="{Binding UsesDarkTheme}"
+                         ToolTip.Tip="Dark theme" AutomationProperties.Name="Theme: dark">
+              <local:FaIcon Data="{StaticResource fa-moon}" />
+            </RadioButton>
+          </StackPanel>
+        </Border>
       </StackPanel>
     </Grid>
 
@@ -242,7 +259,7 @@
           </StackPanel>
 
           <!-- Column headings for the cue rows below; the widths must match the row template. -->
-          <Border Grid.Row="2" Background="{StaticResource PanelAlt}" CornerRadius="6,6,0,0" Padding="12,7">
+          <Border Grid.Row="2" Background="{DynamicResource PanelAlt}" CornerRadius="6,6,0,0" Padding="12,7">
             <Grid ColumnDefinitions="118,118,64,54,*,60">
               <TextBlock Text="Start" Classes="label" Margin="0" />
               <TextBlock Grid.Column="1" Text="End" Classes="label" Margin="0" />
@@ -265,8 +282,7 @@
                   <TextBlock Grid.Column="2" Text="{Binding DurationText}" Classes="hint" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="3" Text="{Binding WordCount}" Classes="hint" VerticalAlignment="Center" />
                   <TextBox Grid.Column="4" Text="{Binding Text, UpdateSourceTrigger=LostFocus}" TextWrapping="Wrap"
-                           AcceptsReturn="False"
-                           Foreground="{Binding LowConfidence, Converter={StaticResource ConfidenceBrush}}" />
+                           AcceptsReturn="False" Classes.low="{Binding LowConfidence}" />
                   <TextBlock Grid.Column="5" Text="edited" Classes="hint" VerticalAlignment="Center"
                              Margin="8,0,0,0" IsVisible="{Binding Edited}" />
                 </Grid>
@@ -315,10 +331,10 @@
                 <ItemsControl ItemsSource="{Binding ClipFramings}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:ClipFramingViewModel">
-                      <Border Background="{StaticResource PanelAlt}" CornerRadius="6" Padding="10" Margin="0,0,0,8">
+                      <Border Background="{DynamicResource PanelAlt}" CornerRadius="6" Padding="10" Margin="0,0,0,8">
                         <StackPanel>
                           <DockPanel>
-                            <TextBlock DockPanel.Dock="Right" Text="{Binding SubjectText}" Foreground="{StaticResource Accent}" />
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding SubjectText}" Foreground="{DynamicResource Accent}" />
                             <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
                           </DockPanel>
                           <TextBlock Text="{Binding TimeLabel}" Classes="hint" Margin="0,4,0,0" />
@@ -417,7 +433,7 @@
                       <Grid ColumnDefinitions="*,Auto">
                         <TextBox Text="{Binding StyleEditor.PrimaryColor, UpdateSourceTrigger=LostFocus}" />
                         <Border Grid.Column="1" Width="30" Margin="6,0,0,0" CornerRadius="4" BorderThickness="1"
-                                Background="{Binding StyleEditor.PrimaryBrush}" BorderBrush="{StaticResource BorderBrush2}" />
+                                Background="{Binding StyleEditor.PrimaryBrush}" BorderBrush="{DynamicResource BorderBrush2}" />
                       </Grid>
                     </StackPanel>
                     <StackPanel Grid.Column="2" IsEnabled="{Binding StyleEditor.IsHighlightMode}">
@@ -425,7 +441,7 @@
                       <Grid ColumnDefinitions="*,Auto">
                         <TextBox Text="{Binding StyleEditor.HighlightColor, UpdateSourceTrigger=LostFocus}" />
                         <Border Grid.Column="1" Width="30" Margin="6,0,0,0" CornerRadius="4" BorderThickness="1"
-                                Background="{Binding StyleEditor.HighlightBrush}" BorderBrush="{StaticResource BorderBrush2}" />
+                                Background="{Binding StyleEditor.HighlightBrush}" BorderBrush="{DynamicResource BorderBrush2}" />
                       </Grid>
                     </StackPanel>
                   </Grid>
@@ -436,7 +452,7 @@
                       <Grid ColumnDefinitions="*,Auto">
                         <TextBox Text="{Binding StyleEditor.OutlineColor, UpdateSourceTrigger=LostFocus}" />
                         <Border Grid.Column="1" Width="30" Margin="6,0,0,0" CornerRadius="4" BorderThickness="1"
-                                Background="{Binding StyleEditor.OutlineBrush}" BorderBrush="{StaticResource BorderBrush2}" />
+                                Background="{Binding StyleEditor.OutlineBrush}" BorderBrush="{DynamicResource BorderBrush2}" />
                       </Grid>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
@@ -486,7 +502,7 @@
                       <Grid ColumnDefinitions="*,Auto">
                         <TextBox Text="{Binding StyleEditor.BackgroundColor, UpdateSourceTrigger=LostFocus}" />
                         <Border Grid.Column="1" Width="30" Margin="6,0,0,0" CornerRadius="4" BorderThickness="1"
-                                Background="{Binding StyleEditor.BackgroundBrush}" BorderBrush="{StaticResource BorderBrush2}" />
+                                Background="{Binding StyleEditor.BackgroundBrush}" BorderBrush="{DynamicResource BorderBrush2}" />
                       </Grid>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
@@ -569,8 +585,9 @@
                       HorizontalAlignment="Right" />
               <TextBlock Text="{Binding PreviewStatus}" Classes="hint" Margin="0,8,0,0" />
             </StackPanel>
-            <Border Background="#0D0D14" CornerRadius="8" BorderThickness="1"
-                    BorderBrush="{StaticResource BorderBrush2}" Padding="8">
+            <!-- Black in both themes: it stands in for the video. -->
+            <Border Background="{DynamicResource VideoFrame}" CornerRadius="8" BorderThickness="1"
+                    BorderBrush="{DynamicResource BorderBrush2}" Padding="8">
               <Image Source="{Binding PreviewImage}" Stretch="Uniform"
                      RenderOptions.BitmapInterpolationMode="HighQuality" />
             </Border>
@@ -606,7 +623,7 @@
                          ScrollViewer.HorizontalScrollBarVisibility="Auto">
                   <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="x:String">
-                      <TextBlock Text="{Binding}" Classes="mono" Foreground="{StaticResource Muted}" />
+                      <TextBlock Text="{Binding}" Classes="mono" Foreground="{DynamicResource Muted}" />
                     </DataTemplate>
                   </ListBox.ItemTemplate>
                 </ListBox>
@@ -623,7 +640,7 @@
             <Border Classes="card">
               <StackPanel>
                 <TextBlock Text="Free up space" Classes="h2" />
-                <SelectableTextBlock Text="{Binding DataFolderText}" Foreground="{StaticResource Muted}"
+                <SelectableTextBlock Text="{Binding DataFolderText}" Foreground="{DynamicResource Muted}"
                                      FontSize="12" TextWrapping="Wrap" Margin="0,0,0,10" />
 
                 <ItemsControl ItemsSource="{Binding CleanupItems}">
@@ -689,7 +706,7 @@
         <Button Grid.Column="2" Classes="sponsor" Command="{Binding OpenSponsorsCommand}"
                 ToolTip.Tip="{x:Static vm:MainViewModel.SponsorsLink}">
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <local:FaIcon Data="{StaticResource fa-heart}" Foreground="#DB61A2" Width="18" Height="18" />
+            <local:FaIcon Data="{StaticResource fa-heart}" Foreground="{DynamicResource SponsorHeart}" Width="18" Height="18" />
             <TextBlock Text="Sponsor on GitHub" VerticalAlignment="Center" />
           </StackPanel>
         </Button>
