@@ -499,8 +499,10 @@ or llama.cpp was installed before the app picked CUDA. Update the driver, delete
 `%LOCALAPPDATA%\ReelsMagician\tools\llama`, and press **Install everything missing**.
 
 **Analysis is slow or runs out of memory** — pick Qwen3 4B on the Setup tab, or lower the context
-size in `settings.json`. A model too big for the graphics card runs with some of its layers on the
-processor, which is slower; the Setup tab warns about it beforehand.
+size, `llamaContextSize` in `settings.json`: the default Qwen3 8B needs about 9.7 GB at its 32768
+and 7.4 GB at 16384. Choosing a model on the Setup tab sets its own context again. A model too big
+for the graphics card runs with some of its layers on the processor, which is slower; the Setup tab
+warns about it beforehand.
 
 **The reel picked a dull stretch** — check the topic on the Source tab first; a wrong topic
 misdirects the scoring. Otherwise choose a different proposal on the Reel tab, or re-analyse.
