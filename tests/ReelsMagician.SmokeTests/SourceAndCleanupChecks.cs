@@ -59,6 +59,32 @@ public static class SourceAndCleanupChecks
         Check.Equal(Path.Join(home, "Videos"), Resolve("~/Videos/new/.."), "and comes back without .. in it");
         Check.True(Path.IsPathFullyQualified(UserPaths.ResolveOutputFolder("reels", "x")),
             "with the real home folder too, the result is a full path");
+
+        ReelFileNames();
+    }
+
+    private static void ReelFileNames()
+    {
+        Check.Section("A reel's file name is the same plain name on every system (issue #39)");
+
+        Check.Equal("Laptop_czy_tablet_Wszystko_w_jednym", UserPaths.FileNameFromTitle("Laptop czy tablet? Wszystko w jednym"),
+            "the title Qwen gave the Suseł reel loses its ? and spaces");
+        Check.Equal("Zazolc_gesla_jazn_LODZ", UserPaths.FileNameFromTitle("Zażółć gęślą jaźń — ŁÓDŹ"),
+            "Polish letters lose their accents, ł included");
+        Check.Equal("Strasse_AEble_oe_Kobenhavn", UserPaths.FileNameFromTitle("Straße, Æble & œ: København"),
+            "letters with no accent to drop are spelt out");
+        Check.Equal("10_rzeczy_ktorych_nie_wiesz", UserPaths.FileNameFromTitle("\"10 rzeczy\", których <nie> wiesz *|/\\"),
+            "every character Windows or exFAT refuses goes, and a run of them is one underscore");
+        Check.Equal("Hot_take", UserPaths.FileNameFromTitle("🔥 Hot take! 🔥"), "emoji go, and nothing is left at either end");
+        Check.Equal("fi_Ful", UserPaths.FileNameFromTitle("ﬁ Ｆｕｌ"), "ligatures and fullwidth letters become plain ones");
+        Check.Equal("reel", UserPaths.FileNameFromTitle("???"), "a title with nothing usable falls back to reel");
+        Check.Equal("reel", UserPaths.FileNameFromTitle(null), "and so does no title");
+
+        var long60 = UserPaths.FileNameFromTitle(string.Join(" ", Enumerable.Repeat("słowo", 20)));
+        Check.True(long60.Length <= 60 && !long60.EndsWith('_'), $"a long title is cut to 60 characters, not on an underscore ({long60.Length})");
+        Check.True(new[] { "Ćma? Tak: ŻUBR!", "a\tb\nc", "ÅÄÖ åäö", "x/../y" }.All(t =>
+                UserPaths.FileNameFromTitle(t).All(c => char.IsAsciiLetterOrDigit(c) || c == '_')),
+            "only ASCII letters, digits and underscores ever come out");
     }
 
     private static void CleanupDescription()
