@@ -51,4 +51,5 @@ static void RunLogicChecks()
     SourceAndCleanupChecks.Run();
     ToolBuildChecks.Run();
     LinkToolChecks.Run();
+    IconChecks.Run();
 }

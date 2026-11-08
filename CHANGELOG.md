@@ -2,6 +2,12 @@
 
 Changes to ReelsMagician, newest first.
 
+## Unreleased
+
+### Changed
+
+- **Icons:** the app now draws icons from Font Awesome Free. On the Setup tab each component starts with a green check when it is installed or found on the system, a red X when it still has to be downloaded, and a grey dash when it is optional and not installed, so the states no longer differ by colour alone. A component's warning, such as a Fallback build, gets an amber warning sign. The buttons show an icon before their text, and the support bar's cup and heart are Font Awesome's too. Font Awesome's licence is listed with the others and ships with the app.
+
 ## 0.2.0 (2026-11-08)
 
 The first release that runs on Linux as well as Windows, and the first with ready-to-run packages: a zip for Windows and an AppImage for Linux. Still an early preview.

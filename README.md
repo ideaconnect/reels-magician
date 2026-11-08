@@ -339,6 +339,7 @@ tests/ReelsMagician.SmokeTests/
 packaging/linux/               the AppImage: desktop entry, icons, licences, build and check scripts
 docs/                          system requirements and architecture decisions
 tools/make-speech-video.ps1 generates a narrated 4K test video (Windows: it uses the Windows speech engine)
+tools/update-icons.cs       copies the Font Awesome icons the app draws: dotnet run tools/update-icons.cs
 ```
 
 ## Tests
@@ -418,6 +419,7 @@ ReelsMagician is released under the [BSD 3-Clause License](LICENSE).
 The repository contains no third-party binaries and no model weights. The app downloads ffmpeg
 (GPL build), whisper.cpp, llama.cpp, and model weights from Whisper, Qwen and OpenCV from their
 original publishers on first run. It downloads yt-dlp and Deno only if you agree to it. Each stays
-under its own licence.
+under its own licence. The app's icons are [Font Awesome Free](https://fontawesome.com) icons,
+under CC BY 4.0.
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) lists every component, its licence and its
 source; read it before redistributing a build.
