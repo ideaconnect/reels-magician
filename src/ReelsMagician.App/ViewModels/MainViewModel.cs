@@ -475,8 +475,21 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     /// Runs an install, then shows what is on disk afterwards. Every install already ends by
     /// detecting the tools afresh, so its result is shown as it is rather than detected again.
     /// </summary>
-    private async Task InstallThenRefreshAsync(Func<CancellationToken, Task<Toolset>> install, CancellationToken ct) =>
-        ShowTools(await install(ct).ConfigureAwait(true));
+    private async Task InstallThenRefreshAsync(Func<CancellationToken, Task<Toolset>> install, CancellationToken ct)
+    {
+        Toolset installed;
+        try
+        {
+            installed = await install(ct).ConfigureAwait(true);
+        }
+        catch
+        {
+            // A failed or cancelled install may have put some of the tools in place already.
+            RefreshTools();
+            throw;
+        }
+        ShowTools(installed);
+    }
 
     // ── Pipeline stages ──────────────────────────────────────────────────────────────────
 
