@@ -46,7 +46,9 @@
           <SolidColorBrush x:Key="Accent" Color="{DynamicResource SystemAccentColorLight2}" />
 
           <!-- What a status means: success, error, warning and info, for text and icons, and a
-               tinted background for a notice of each kind. -->
+               tinted background for a notice of each kind: the colour at 14 % over a card here
+               and at 8 % in the light theme, so a note's box still shows on true black. A
+               note's border (InfoBox) is its colour at half opacity. -->
           <SolidColorBrush x:Key="SuccessBrush" Color="#3BD68A" />
           <SolidColorBrush x:Key="ErrorBrush" Color="#F85149" />
           <SolidColorBrush x:Key="WarningBrush" Color="#F5B94A" />
@@ -55,6 +57,9 @@
           <SolidColorBrush x:Key="ErrorBg" Color="#301817" />
           <SolidColorBrush x:Key="WarningBg" Color="#2F2717" />
           <SolidColorBrush x:Key="InfoBg" Color="#162130" />
+          <SolidColorBrush x:Key="ErrorBorder" Color="#F85149" Opacity="0.5" />
+          <SolidColorBrush x:Key="WarningBorder" Color="#F5B94A" Opacity="0.5" />
+          <SolidColorBrush x:Key="InfoBorder" Color="#4493F8" Opacity="0.5" />
 
           <!-- GitHub's dark button, for the Sponsors link. -->
           <SolidColorBrush x:Key="SponsorBackground" Color="#21262D" />
@@ -87,6 +92,9 @@
           <SolidColorBrush x:Key="ErrorBg" Color="#FBEDEE" />
           <SolidColorBrush x:Key="WarningBg" Color="#F6F2EB" />
           <SolidColorBrush x:Key="InfoBg" Color="#EBF3FC" />
+          <SolidColorBrush x:Key="ErrorBorder" Color="#CF222E" Opacity="0.5" />
+          <SolidColorBrush x:Key="WarningBorder" Color="#8A5C00" Opacity="0.5" />
+          <SolidColorBrush x:Key="InfoBorder" Color="#0969DA" Opacity="0.5" />
 
           <!-- GitHub's light button. -->
           <SolidColorBrush x:Key="SponsorBackground" Color="#F6F8FA" />
@@ -268,6 +276,69 @@
       </ControlTheme>
 
       <!--
+        A note on a page (InfoBox.cs): a box with a 1 px border in its kind's colour at half
+        opacity, a background tinted with that colour, and the kind's icon top-aligned with the
+        first line. The text is at the normal text colour, not muted, so it reads at full contrast.
+        Each kind is a pseudo-class the control sets. The compact class keeps the icon and the
+        text and drops the box, for a short note beside a field.
+      -->
+      <ControlTheme x:Key="{x:Type local:InfoBox}" TargetType="local:InfoBox">
+        <Setter Property="Background" Value="{DynamicResource InfoBg}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InfoBorder}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="10" />
+        <Setter Property="Template">
+          <ControlTemplate>
+            <Border Name="PART_Box" Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="{TemplateBinding CornerRadius}" Padding="{TemplateBinding Padding}">
+              <Grid ColumnDefinitions="Auto,*">
+                <local:FaIcon Name="PART_Icon" VerticalAlignment="Top" Margin="0,0,9,0" />
+                <StackPanel Grid.Column="1" VerticalAlignment="Top">
+                  <!-- Hidden from screen readers: the box's own name carries the text. -->
+                  <TextBlock Name="PART_Text" Text="{TemplateBinding Text}" TextWrapping="Wrap"
+                             IsVisible="{TemplateBinding Text, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                             AutomationProperties.AccessibilityView="Raw" />
+                  <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}"
+                                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                                    IsVisible="{TemplateBinding Content, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                </StackPanel>
+              </Grid>
+            </Border>
+          </ControlTemplate>
+        </Setter>
+
+        <Style Selector="^ /template/ local|FaIcon#PART_Icon">
+          <Setter Property="Data" Value="{StaticResource fa-circle-info}" />
+          <Setter Property="Foreground" Value="{DynamicResource InfoBrush}" />
+        </Style>
+        <Style Selector="^:warning">
+          <Setter Property="Background" Value="{DynamicResource WarningBg}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource WarningBorder}" />
+        </Style>
+        <Style Selector="^:warning /template/ local|FaIcon#PART_Icon">
+          <Setter Property="Data" Value="{StaticResource fa-triangle-exclamation}" />
+          <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+        </Style>
+        <Style Selector="^:error">
+          <Setter Property="Background" Value="{DynamicResource ErrorBg}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource ErrorBorder}" />
+        </Style>
+        <Style Selector="^:error /template/ local|FaIcon#PART_Icon">
+          <Setter Property="Data" Value="{StaticResource fa-circle-xmark}" />
+          <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}" />
+        </Style>
+
+        <Style Selector="^.compact">
+          <Setter Property="Background" Value="Transparent" />
+          <Setter Property="BorderThickness" Value="0" />
+          <Setter Property="Padding" Value="0" />
+        </Style>
+      </ControlTheme>
+
+      <!--
         A segment of the appearance switch in the header: one of a group of radio buttons drawn as
         a single control, an icon per segment, with the chosen one in the accent fill of the main
         buttons. The icon takes the segment's text colour.
@@ -331,6 +402,8 @@
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="Margin" Value="0,0,0,6" />
   </Style>
+  <!-- Data and states in small muted text: paths, sizes, summaries. Explanatory notes and
+       warnings are InfoBoxes instead, so they stand apart from the data. -->
   <Style Selector="TextBlock.hint">
     <Setter Property="Foreground" Value="{DynamicResource Muted}" />
     <Setter Property="FontSize" Value="12" />
@@ -340,11 +413,6 @@
     <Setter Property="Foreground" Value="{DynamicResource Muted}" />
     <Setter Property="FontSize" Value="12" />
     <Setter Property="Margin" Value="0,0,0,4" />
-  </Style>
-  <Style Selector="TextBlock.warn">
-    <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
-    <Setter Property="FontSize" Value="12" />
-    <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
   <Style Selector="TextBlock.mono, SelectableTextBlock.mono">
     <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, DejaVu Sans Mono, Liberation Mono, monospace" />
@@ -359,11 +427,6 @@
     <Setter Property="CornerRadius" Value="8" />
     <Setter Property="Padding" Value="14" />
     <Setter Property="Margin" Value="0,0,0,12" />
-  </Style>
-  <Style Selector="Border.notice">
-    <Setter Property="Background" Value="{DynamicResource WarningBg}" />
-    <Setter Property="CornerRadius" Value="6" />
-    <Setter Property="Padding" Value="10" />
   </Style>
   <Style Selector="Border.divider">
     <Setter Property="Width" Value="1" />
