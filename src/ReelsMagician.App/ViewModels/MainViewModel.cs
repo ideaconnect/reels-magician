@@ -433,9 +433,13 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     // ── Toolchain actions ────────────────────────────────────────────────────────────────
 
-    private void RefreshTools()
+    /// <summary>Looks for the tools on disk again, probing the GPU, and shows what it finds.</summary>
+    private void RefreshTools() => ShowTools(_toolchain.Detect(_settings));
+
+    /// <summary>Shows a toolset that has just been detected, such as the one an install ends with.</summary>
+    private void ShowTools(Toolset tools)
     {
-        _tools = _toolchain.Detect(_settings);
+        _tools = tools;
 
         ShowRows(Components, _toolchain.Describe(_settings, _tools));
         ShowRows(LinkComponents, _toolchain.DescribeLinkTools(_tools));
@@ -467,12 +471,12 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             ct => InstallThenRefreshAsync(c => _toolchain.InstallLinkToolsAsync(_settings, c), ct)).ConfigureAwait(true);
     }
 
-    /// <summary>Runs an install, then shows what is on disk afterwards; <see cref="RefreshTools"/> reads it back.</summary>
-    private async Task InstallThenRefreshAsync(Func<CancellationToken, Task<Toolset>> install, CancellationToken ct)
-    {
-        await install(ct).ConfigureAwait(true);
-        RefreshTools();
-    }
+    /// <summary>
+    /// Runs an install, then shows what is on disk afterwards. Every install already ends by
+    /// detecting the tools afresh, so its result is shown as it is rather than detected again.
+    /// </summary>
+    private async Task InstallThenRefreshAsync(Func<CancellationToken, Task<Toolset>> install, CancellationToken ct) =>
+        ShowTools(await install(ct).ConfigureAwait(true));
 
     // ── Pipeline stages ──────────────────────────────────────────────────────────────────
 
