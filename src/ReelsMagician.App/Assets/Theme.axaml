@@ -346,7 +346,7 @@
     <Setter Property="FontSize" Value="12" />
     <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
-  <Style Selector="TextBlock.mono">
+  <Style Selector="TextBlock.mono, SelectableTextBlock.mono">
     <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, DejaVu Sans Mono, Liberation Mono, monospace" />
     <Setter Property="FontSize" Value="12" />
   </Style>
