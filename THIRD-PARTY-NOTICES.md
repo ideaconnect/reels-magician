@@ -75,3 +75,9 @@ library on Linux) and, in the AppImage, for libfuse. If you bundle any of the ru
 above instead of letting the app download them, you take on
 their licence terms yourself: for the GPL ffmpeg build, that includes the obligation to provide
 its corresponding source.
+
+`dotnet publish` puts these notices next to the executable, so every release package carries
+them: `LICENSE`, this file, and a `licenses` folder. That folder holds the licence and notice
+files each bundled package and the .NET runtime ship, and, for the packages that ship none, the
+texts kept in this repository's `licenses` folder. The AppImage adds those in
+`packaging/linux/licenses` for its runtime. Keep all of them when you pass a build on.

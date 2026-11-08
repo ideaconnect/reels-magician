@@ -20,6 +20,9 @@ appdir="$work/ReelsMagician.AppDir"
 
 mkdir -p "$appdir/usr/bin" "$appdir/usr/share/applications"
 cp -a "$publish"/. "$appdir/usr/bin/"
+# The image adds the AppImage runtime, so the licences of what that links go in with the app's.
+mkdir -p "$appdir/usr/bin/licenses"
+cp -a "$here/licenses"/. "$appdir/usr/bin/licenses/"
 # A publish copied over from Windows arrives without execute bits.
 chmod +x "$appdir/usr/bin/ReelsMagician"
 

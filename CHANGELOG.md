@@ -10,7 +10,7 @@ Changes to ReelsMagician, newest first. Version numbers will be assigned once th
 - **Linux graphics:** on Linux the app finds the graphics card, and Vulkan support, from the system itself.
 - **Linux archives:** tool archives in the formats Linux builds use (`.tar.gz`, `.tar.xz`) unpack with their permissions and links intact.
 - **OpenCV:** face and people detection now use OpenCvSharp 4.13.
-- **Releases:** Windows gets a zip with everything included; Linux gets a single AppImage that needs only FUSE 3, which Ubuntu installs by default. The app has an icon of its own for the first time.
+- **Releases:** Windows gets a zip with everything included; Linux gets a single AppImage that needs only FUSE 3, which Ubuntu installs by default. The app has an icon of its own for the first time. Both carry the licences of everything they include, in a `licenses` folder next to the app.
 - **New interface toolkit:** the interface is rebuilt on Avalonia, so the same app runs on Windows and on Linux, where it runs natively on Wayland. The tabs, wording and colours stay as they were.
 - **The app's own dialogs:** the app now draws its own file pickers and confirmation dialogs instead of using the system's, so they look and behave the same on both systems. Questions still default to the answer that changes nothing.
 - **Copy path:** the output and data folders now have a **Copy path** button. **Open folder** appears wherever the system can show a folder.
