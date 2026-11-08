@@ -2,6 +2,7 @@ using System.Text;
 using ReelsMagician.Core.Diagnostics;
 using ReelsMagician.Core.Framing;
 using ReelsMagician.Core.Media;
+using ReelsMagician.Core.Localization;
 
 namespace ReelsMagician.Core.Rendering;
 
@@ -66,11 +67,11 @@ public sealed class PreviewRenderer(FFmpegTool ffmpeg, IProgressSink sink)
         filters.Add($"ass={Path.GetFileName(assPath)}");
         args.AddRange(["-vf", string.Join(',', filters), "-frames:v", "1", output]);
 
-        await ffmpeg.RunAsync(args, 0, "preview", "Rendering caption preview", ct, workingDirectory: workDir)
+        await ffmpeg.RunAsync(args, 0, "preview", Lang.Ui[nameof(Strings.Preview_Rendering)], ct, workingDirectory: workDir)
             .ConfigureAwait(false);
 
         if (!File.Exists(output))
-            throw new InvalidOperationException("The preview frame could not be rendered.");
+            throw new InvalidOperationException(Lang.Ui[nameof(Strings.Preview_NotRendered)]);
 
         sink.Debug("preview", $"Preview rendered at reel time {reelTime:0.##}s");
         return output;

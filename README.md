@@ -323,6 +323,16 @@ accent colour of the buttons and the selected step is your system's, where it ha
   `~/.config/gtk-4.0/settings.ini` and then `gtk-3.0/settings.ini`. With no answer from either, it
   is light. GTK's files are read at start and whenever you pick **follow the system** again.
 
+### Language
+
+The interface speaks English and Polish. The list beside the theme switch picks **System
+language** (the default: Polish when the system's interface is Polish, English otherwise),
+**English** or **Polski**. It applies at once, without a restart, and is remembered as `language`
+in settings.json (`system`, `en` or `pl`). Sizes, times and numbers on screen follow the language
+too, "22,5 MB" in Polish, and keep your system's regional settings when they are for the same
+language. The log, settings.json and every file the app writes for ffmpeg stay the same in either
+language, so a bug report reads the same whoever sends it.
+
 ### Caption presets
 
 | Preset | Look |
@@ -408,6 +418,10 @@ dotnet run --project tests/ReelsMagician.SmokeTests -c Release
 
 # Logic checks only, needing no tools; this is what CI runs on Windows and Ubuntu
 dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- logic
+
+# The same under Polish regional settings, as CI runs them too: a number written for ffmpeg or a
+# caption file without the invariant culture fails here. The output stays English.
+dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- logic pl-PL
 
 # The About tab's licence table against a self-contained publish: every package has a row and
 # every licence file is there. CI runs it after publishing on each system.

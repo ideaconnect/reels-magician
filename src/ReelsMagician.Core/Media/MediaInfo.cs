@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using ReelsMagician.Core.Diagnostics;
+using ReelsMagician.Core.Localization;
 
 namespace ReelsMagician.Core.Media;
 
@@ -53,11 +54,15 @@ public sealed record MediaInfo(
         var s => $"{s}p",
     };
 
-    public string Describe() =>
-        $"{DisplayWidth}×{DisplayHeight} ({QualityLabel}) · {FrameRate:0.##} fps · " +
+    /// <summary>The source's facts as the Source tab shows them, in the interface's language.</summary>
+    public string Describe() => Describe(Lang.Ui);
+
+    /// <summary>The same in a language of its own, such as the log's.</summary>
+    public string Describe(Lang lang) =>
+        string.Create(lang.Formats, $"{DisplayWidth}×{DisplayHeight} ({QualityLabel}) · {FrameRate:0.##} fps · ") +
         $"{TimeSpan.FromSeconds(DurationSeconds):hh\\:mm\\:ss} · {VideoCodec}" +
-        (HasAudio ? $" + {AudioCodec}" : " · no audio") +
-        (HasSquarePixels ? "" : $" · anamorphic {SarNum}:{SarDen}");
+        (HasAudio ? $" + {AudioCodec}" : lang[nameof(Strings.Media_NoAudioTrack)]) +
+        (HasSquarePixels ? "" : lang.Format(nameof(Strings.Media_Anamorphic), SarNum, SarDen));
 }
 
 /// <summary>Thin ffprobe wrapper returning the stream facts the pipeline depends on.</summary>
@@ -66,7 +71,7 @@ public sealed class FFprobe(string ffprobePath, IProgressSink sink)
     public async Task<MediaInfo> ProbeAsync(string mediaPath, CancellationToken ct)
     {
         if (!File.Exists(mediaPath))
-            throw new FileNotFoundException("Media file not found.", mediaPath);
+            throw new FileNotFoundException(Lang.Ui[nameof(Strings.Media_FileNotFound)], mediaPath);
 
         var result = await ProcessRunner.RunCheckedAsync(ffprobePath,
         [
@@ -91,7 +96,7 @@ public sealed class FFprobe(string ffprobePath, IProgressSink sink)
             }
         }
         if (video is null)
-            throw new InvalidOperationException($"No video stream found in {Path.GetFileName(mediaPath)}.");
+            throw new InvalidOperationException(Lang.Ui.Format(nameof(Strings.Media_NoVideoStream), Path.GetFileName(mediaPath)));
 
         var v = video.Value;
         var width = GetInt(v, "width");

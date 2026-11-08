@@ -1,0 +1,771 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Model_small-q5_Name" xml:space="preserve">
+    <value>Whisper small (quantised) — fastest</value>
+    <comment>The model's name in its drop-down; the English equals ModelCatalog's DisplayName.</comment>
+  </data>
+  <data name="Model_small-q5_Notes" xml:space="preserve">
+    <value>Good for clean speech. Multilingual.</value>
+  </data>
+  <data name="Model_medium-q5_Name" xml:space="preserve">
+    <value>Whisper medium (quantised) — balanced</value>
+    <comment>The model's name in its drop-down; the English equals ModelCatalog's DisplayName.</comment>
+  </data>
+  <data name="Model_medium-q5_Notes" xml:space="preserve">
+    <value>Noticeably better punctuation than small.</value>
+  </data>
+  <data name="Model_large-v3-turbo-q5_Name" xml:space="preserve">
+    <value>Whisper large-v3-turbo (quantised) — recommended</value>
+    <comment>The model's name in its drop-down; the English equals ModelCatalog's DisplayName.</comment>
+  </data>
+  <data name="Model_large-v3-turbo-q5_Notes" xml:space="preserve">
+    <value>Near large-v3 accuracy at a fraction of the cost. Best default.</value>
+  </data>
+  <data name="Model_large-v3-turbo_Name" xml:space="preserve">
+    <value>Whisper large-v3-turbo (f16) — most accurate</value>
+    <comment>The model's name in its drop-down; the English equals ModelCatalog's DisplayName.</comment>
+  </data>
+  <data name="Model_large-v3-turbo_Notes" xml:space="preserve">
+    <value>Full precision turbo. Slower, best word timings.</value>
+  </data>
+  <data name="Model_qwen3-4b-q4_Name" xml:space="preserve">
+    <value>Qwen3 4B Instruct (Q4_K_M) — light</value>
+    <comment>The model's name in its drop-down; the English equals ModelCatalog's DisplayName.</comment>
+  </data>
+  <data name="Model_qwen3-4b-q4_Notes" xml:space="preserve">
+    <value>The lightest choice, for smaller graphics cards.</value>
+  </data>
+  <data name="Model_qwen3-8b-q4_Name" xml:space="preserve">
+    <value>Qwen3 8B Instruct (Q4_K_M) — recommended</value>
+    <comment>The model's name in its drop-down; the English equals ModelCatalog's DisplayName.</comment>
+  </data>
+  <data name="Model_qwen3-8b-q4_Notes" xml:space="preserve">
+    <value>Best segment picks.</value>
+  </data>
+  <data name="Model_qwen3-8b-q6_Name" xml:space="preserve">
+    <value>Qwen3 8B Instruct (Q6_K) — highest quality</value>
+    <comment>The model's name in its drop-down; the English equals ModelCatalog's DisplayName.</comment>
+  </data>
+  <data name="Model_qwen3-8b-q6_Notes" xml:space="preserve">
+    <value>Marginal gain over Q4_K_M.</value>
+  </data>
+  <data name="Fit_Need_Graphics_Context" xml:space="preserve">
+    <value>Needs about {0} of graphics memory at a {1} context.</value>
+    <comment>{0} the size, {1} the context, such as 32k.</comment>
+  </data>
+  <data name="Fit_Need_System_Context" xml:space="preserve">
+    <value>Needs about {0} of memory at a {1} context.</value>
+  </data>
+  <data name="Fit_Need_Graphics" xml:space="preserve">
+    <value>Needs about {0} of graphics memory.</value>
+  </data>
+  <data name="Fit_Need_System" xml:space="preserve">
+    <value>Needs about {0} of memory.</value>
+  </data>
+  <data name="Fit_Risk_Graphics" xml:space="preserve">
+    <value>{0} needs about {1} of graphics memory, and this computer has {2}. It may run slowly or fail, and in rare cases it can freeze the system.</value>
+    <comment>{0} the model, {1} its need, {2} the memory there is, {3} what the system keeps.</comment>
+  </data>
+  <data name="Fit_Risk_Graphics_Context" xml:space="preserve">
+    <value>{0} needs about {1} of graphics memory at this context, and this computer has {2}. It may run slowly or fail, and in rare cases it can freeze the system.</value>
+  </data>
+  <data name="Fit_Risk_System" xml:space="preserve">
+    <value>{0} needs about {1} of memory, and this computer has {2}, about {3} of which the system needs for itself. It may run slowly or fail, and in rare cases it can freeze the system.</value>
+  </data>
+  <data name="Fit_Risk_System_Context" xml:space="preserve">
+    <value>{0} needs about {1} of memory at this context, and this computer has {2}, about {3} of which the system needs for itself. It may run slowly or fail, and in rare cases it can freeze the system.</value>
+  </data>
+  <data name="Fit_CanStillTry" xml:space="preserve">
+    <value>You can still try it.</value>
+  </data>
+  <data name="Fit_DidNotFit_Graphics" xml:space="preserve">
+    <value>The model didn't fit in the graphics memory. Choose a smaller model.</value>
+  </data>
+  <data name="Fit_DidNotFit_System" xml:space="preserve">
+    <value>The model didn't fit in this computer's memory. Choose a smaller model.</value>
+  </data>
+  <data name="Crash_Title_Transcription" xml:space="preserve">
+    <value>ReelsMagician closed while transcribing</value>
+  </data>
+  <data name="Crash_Title_Analysis" xml:space="preserve">
+    <value>ReelsMagician closed while analysing</value>
+  </data>
+  <data name="Crash_DateFormat" xml:space="preserve">
+    <value>d MMMM 'at' HH:mm</value>
+    <comment>A .NET date format; the quoted word is text.</comment>
+  </data>
+  <data name="Crash_Happened_Transcription" xml:space="preserve">
+    <value>The last time, ReelsMagician closed while {0} was transcribing the speech, on {1}.</value>
+    <comment>{0} the model, {1} the date.</comment>
+  </data>
+  <data name="Crash_Happened_Analysis" xml:space="preserve">
+    <value>The last time, ReelsMagician closed while {0} was analysing the transcript, on {1}.</value>
+  </data>
+  <data name="Crash_Needs_Graphics" xml:space="preserve">
+    <value>It needs about {0} of graphics memory</value>
+    <comment>Followed by Crash_Has and a full stop.</comment>
+  </data>
+  <data name="Crash_Needs_Graphics_Context" xml:space="preserve">
+    <value>It needs about {0} of graphics memory at that context</value>
+  </data>
+  <data name="Crash_Needs_System" xml:space="preserve">
+    <value>It needs about {0} of memory</value>
+  </data>
+  <data name="Crash_Needs_System_Context" xml:space="preserve">
+    <value>It needs about {0} of memory at that context</value>
+  </data>
+  <data name="Crash_Has" xml:space="preserve">
+    <value>, and this computer has {0}</value>
+  </data>
+  <data name="Crash_Has_Device" xml:space="preserve">
+    <value>, and this computer has {0} on {1}</value>
+    <comment>{1} the graphics card.</comment>
+  </data>
+  <data name="Crash_TooBig" xml:space="preserve">
+    <value>The model was probably too big for this computer, which can take the app or the whole system down. Choose a smaller model on the Setup tab.</value>
+  </data>
+  <data name="Crash_MayHaveBeen" xml:space="preserve">
+    <value>If the app or the computer went down then, the model may have been too much for it: a smaller model on the Setup tab needs less memory.</value>
+  </data>
+  <data name="Gpu_NoAdapter" xml:space="preserve">
+    <value>no adapter detected</value>
+  </data>
+  <data name="Gpu_VulkanReady_one" xml:space="preserve">
+    <value>Vulkan ready ({0} driver)</value>
+  </data>
+  <data name="Gpu_VulkanReady_other" xml:space="preserve">
+    <value>Vulkan ready ({0} drivers)</value>
+  </data>
+  <data name="Gpu_NoDriver_Windows" xml:space="preserve">
+    <value>Vulkan loader present but no driver found</value>
+  </data>
+  <data name="Gpu_NoDriver_Linux" xml:space="preserve">
+    <value>Vulkan loader present but no driver for this GPU — install mesa-vulkan-drivers, or the NVIDIA driver</value>
+  </data>
+  <data name="Gpu_NoLoader_Windows" xml:space="preserve">
+    <value>no Vulkan loader — update your graphics driver</value>
+  </data>
+  <data name="Gpu_NoLoader_Linux" xml:space="preserve">
+    <value>no Vulkan loader — install libvulkan1</value>
+  </data>
+  <data name="Gpu_Cuda" xml:space="preserve">
+    <value>, CUDA {0} (compute {1})</value>
+  </data>
+  <data name="Tool_NotInstalled" xml:space="preserve">
+    <value>{0} is not installed.</value>
+  </data>
+  <data name="Missing_WhisperModel" xml:space="preserve">
+    <value>Whisper model</value>
+    <comment>In the Setup tab's list of what is missing.</comment>
+  </data>
+  <data name="Missing_QwenModel" xml:space="preserve">
+    <value>Qwen model</value>
+  </data>
+  <data name="Missing_FaceModel" xml:space="preserve">
+    <value>face detector model</value>
+  </data>
+  <data name="Backend_NotInstalled" xml:space="preserve">
+    <value>not installed</value>
+  </data>
+  <data name="Backend_Custom" xml:space="preserve">
+    <value>custom build</value>
+  </data>
+  <data name="Fallback_Warning" xml:space="preserve">
+    <value>{0} is running as the {1} build, because the {2} build this machine supports was not available when it was installed. Remove it under Free up space and install it again to retry.</value>
+    <comment>{0} the tool, {1} and {2} build kinds such as Vulkan (GPU).</comment>
+  </data>
+  <data name="Component_Ffmpeg_Download" xml:space="preserve">
+    <value>will download the BtbN GPL build</value>
+  </data>
+  <data name="Component_Whisper_Download" xml:space="preserve">
+    <value>auto-selects the best build for this machine</value>
+  </data>
+  <data name="Component_Llama_Cuda" xml:space="preserve">
+    <value>CUDA build for your NVIDIA card</value>
+  </data>
+  <data name="Component_Llama_Vulkan" xml:space="preserve">
+    <value>Vulkan build when a driver is present</value>
+  </data>
+  <data name="Component_FaceModel" xml:space="preserve">
+    <value>Face detector (YuNet)</value>
+  </data>
+  <data name="Component_FaceModel_Detail" xml:space="preserve">
+    <value>Keeps a speaker centred in the vertical crop</value>
+  </data>
+  <data name="Component_YtDlp_Detail" xml:space="preserve">
+    <value>downloads a video from a link</value>
+  </data>
+  <data name="Component_JsRuntime" xml:space="preserve">
+    <value>JavaScript runtime (Deno)</value>
+  </data>
+  <data name="Component_JsRuntime_Detail" xml:space="preserve">
+    <value>without it yt-dlp drops formats and may miss 4K</value>
+  </data>
+  <data name="Download_FaceModel" xml:space="preserve">
+    <value>face detector</value>
+    <comment>What the status bar says is downloading.</comment>
+  </data>
+  <data name="Download_CudaRuntime" xml:space="preserve">
+    <value>CUDA {0} runtime</value>
+  </data>
+  <data name="Install_Ready" xml:space="preserve">
+    <value>Toolchain ready</value>
+  </data>
+  <data name="Install_Downloading" xml:space="preserve">
+    <value>Downloading {0} — {1}</value>
+    <comment>{0} what, {1} how much so far.</comment>
+  </data>
+  <data name="Install_Extracting" xml:space="preserve">
+    <value>Extracting {0}…</value>
+  </data>
+  <data name="Cleanup_Models" xml:space="preserve">
+    <value>Downloaded models</value>
+  </data>
+  <data name="Cleanup_Models_Detail" xml:space="preserve">
+    <value>Whisper, Qwen and the face detector. The big one — several gigabytes.</value>
+  </data>
+  <data name="Cleanup_Tools" xml:space="preserve">
+    <value>Downloaded tools</value>
+  </data>
+  <data name="Cleanup_Working" xml:space="preserve">
+    <value>Working files</value>
+  </data>
+  <data name="Cleanup_Working_Detail" xml:space="preserve">
+    <value>Extracted audio, sampled frames, clip intermediates and half-finished downloads. Safe to clear at any time; the app recreates them.</value>
+  </data>
+  <data name="Cleanup_Logs" xml:space="preserve">
+    <value>Logs</value>
+  </data>
+  <data name="Cleanup_Logs_Detail" xml:space="preserve">
+    <value>Error logs written when something went wrong.</value>
+  </data>
+  <data name="Cleanup_Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Cleanup_Settings_Detail" xml:space="preserve">
+    <value>Your model choices, output folder and recent sources. Removing this resets the app.</value>
+  </data>
+  <data name="Cleanup_Tools_JsRuntime" xml:space="preserve">
+    <value>the JavaScript runtime</value>
+  </data>
+  <data name="Cleanup_Tools_None" xml:space="preserve">
+    <value>ffmpeg, whisper.cpp and llama.cpp, once they are downloaded.</value>
+  </data>
+  <data name="Cleanup_Tools_List" xml:space="preserve">
+    <value>{0} and {1}.</value>
+    <comment>{0} the list so far, {1} the last tool.</comment>
+  </data>
+  <data name="Cleanup_OutsideFolder" xml:space="preserve">
+    <value>{0} is outside the data folder and was left alone.</value>
+  </data>
+  <data name="Media_ExtractingAudio_Running" xml:space="preserve">
+    <value>Extracting audio…</value>
+  </data>
+  <data name="Media_ExtractingAudio" xml:space="preserve">
+    <value>Extracting audio</value>
+    <comment>Before " — 00:01:02 / 00:42:17".</comment>
+  </data>
+  <data name="Media_SamplingFrames" xml:space="preserve">
+    <value>Sampling frames</value>
+  </data>
+  <data name="Media_ExtractingFrame" xml:space="preserve">
+    <value>Extracting frame</value>
+  </data>
+  <data name="Media_NoAudio" xml:space="preserve">
+    <value>Audio extraction produced no usable output — does the video have an audio track?</value>
+  </data>
+  <data name="Media_NoAudioTrack" xml:space="preserve">
+    <value> · no audio</value>
+    <comment>After the video codec.</comment>
+  </data>
+  <data name="Media_Anamorphic" xml:space="preserve">
+    <value> · anamorphic {0}:{1}</value>
+  </data>
+  <data name="Media_FileNotFound" xml:space="preserve">
+    <value>Media file not found.</value>
+  </data>
+  <data name="Media_NoVideoStream" xml:space="preserve">
+    <value>No video stream found in {0}.</value>
+  </data>
+  <data name="Source_NotFound" xml:space="preserve">
+    <value>Could not find '{0}'.</value>
+  </data>
+  <data name="Source_NeedsYtDlp" xml:space="preserve">
+    <value>yt-dlp is required for links. Install it on the Setup tab.</value>
+  </data>
+  <data name="Source_NoVideoFile" xml:space="preserve">
+    <value>yt-dlp finished but produced no video file.</value>
+  </data>
+  <data name="Source_NotMerged" xml:space="preserve">
+    <value>yt-dlp downloaded the video and audio separately and could not merge them ({0}). This means it could not run ffmpeg. Install ffmpeg on the Setup tab.</value>
+  </data>
+  <data name="Source_Downloading" xml:space="preserve">
+    <value>Downloading — {0:0.#}%</value>
+  </data>
+  <data name="Source_Downloading_Detail" xml:space="preserve">
+    <value>Downloading — {0:0.#}% {1}</value>
+    <comment>{1} yt-dlp's own words, such as its speed.</comment>
+  </data>
+  <data name="Source_Merging" xml:space="preserve">
+    <value>Merging video and audio…</value>
+  </data>
+  <data name="Source_FetchingSubtitles" xml:space="preserve">
+    <value>Fetching subtitles…</value>
+  </data>
+  <data name="Process_NotStarted" xml:space="preserve">
+    <value>Failed to start process: {0}</value>
+  </data>
+  <data name="Tool_Failed" xml:space="preserve">
+    <value>{0} exited with code {1}.</value>
+    <comment>The tool's own last lines follow.</comment>
+  </data>
+  <data name="Whisper_NotInstalled" xml:space="preserve">
+    <value>whisper.cpp or its model is not installed.</value>
+  </data>
+  <data name="Whisper_Running" xml:space="preserve">
+    <value>Transcribing with Whisper…</value>
+  </data>
+  <data name="Whisper_Progress" xml:space="preserve">
+    <value>Transcribing with Whisper — {0}%</value>
+  </data>
+  <data name="Whisper_NoTranscript" xml:space="preserve">
+    <value>Whisper finished but wrote no JSON transcript.</value>
+  </data>
+  <data name="Whisper_Done" xml:space="preserve">
+    <value>Transcribed {0}, {1}</value>
+    <comment>{0} the cues, {1} the words.</comment>
+  </data>
+  <data name="Count_Cues_one" xml:space="preserve">
+    <value>{0} cue</value>
+  </data>
+  <data name="Count_Cues_other" xml:space="preserve">
+    <value>{0} cues</value>
+  </data>
+  <data name="Count_Words_one" xml:space="preserve">
+    <value>{0} word</value>
+  </data>
+  <data name="Count_Words_other" xml:space="preserve">
+    <value>{0} words</value>
+  </data>
+  <data name="Count_Clips_one" xml:space="preserve">
+    <value>{0} clip</value>
+  </data>
+  <data name="Count_Clips_other" xml:space="preserve">
+    <value>{0} clips</value>
+  </data>
+  <data name="Count_WordsPerLine_one" xml:space="preserve">
+    <value>{0} word/line</value>
+  </data>
+  <data name="Count_WordsPerLine_other" xml:space="preserve">
+    <value>{0} words/line</value>
+  </data>
+  <data name="Pipeline_SuppliedLoaded_one" xml:space="preserve">
+    <value>Loaded {0} cue from the supplied subtitles</value>
+  </data>
+  <data name="Pipeline_SuppliedLoaded_other" xml:space="preserve">
+    <value>Loaded {0} cues from the supplied subtitles</value>
+  </data>
+  <data name="Plan_EmptyTranscript" xml:space="preserve">
+    <value>The transcript is empty, so there is nothing to analyse.</value>
+  </data>
+  <data name="Plan_Fallback" xml:space="preserve">
+    <value>Assembled from the highest-scoring paragraphs without the model's help.</value>
+  </data>
+  <data name="Analysis_Scoring" xml:space="preserve">
+    <value>Scoring paragraphs {0}–{1} of {2}…</value>
+  </data>
+  <data name="Analysis_Scored" xml:space="preserve">
+    <value>Paragraph scoring complete</value>
+  </data>
+  <data name="Analysis_Assembling" xml:space="preserve">
+    <value>Assembling reel candidates…</value>
+  </data>
+  <data name="Candidate_Summary" xml:space="preserve">
+    <value>{0:0.0}s · {1} · score {2:0.0}</value>
+    <comment>{0} the length, {1} the clips, {2} the score.</comment>
+  </data>
+  <data name="Llama_NotInstalled" xml:space="preserve">
+    <value>llama.cpp or the Qwen model is not installed.</value>
+  </data>
+  <data name="Llama_NotStarted" xml:space="preserve">
+    <value>Could not start llama-server.</value>
+  </data>
+  <data name="Llama_ExitedAtStart" xml:space="preserve">
+    <value>llama-server exited during startup (code {0}).</value>
+    <comment>Its log follows.</comment>
+  </data>
+  <data name="Llama_Loading" xml:space="preserve">
+    <value>Loading the Qwen model…</value>
+  </data>
+  <data name="Llama_Timeout" xml:space="preserve">
+    <value>llama-server did not become ready within six minutes.</value>
+  </data>
+  <data name="Llama_Http" xml:space="preserve">
+    <value>llama-server returned {0}: {1}</value>
+  </data>
+  <data name="Llama_NoChoices" xml:space="preserve">
+    <value>llama-server returned no choices: {0}</value>
+  </data>
+  <data name="Framing_OpenCvNotLoaded" xml:space="preserve">
+    <value>OpenCV, which follows the speaker, could not load: {0}</value>
+  </data>
+  <data name="Framing_Analysing" xml:space="preserve">
+    <value>Analysing framing for clip {0} of {1}…</value>
+  </data>
+  <data name="Framing_Tracking" xml:space="preserve">
+    <value>Tracking the subject in clip {0} of {1} — frame {2}/{3}</value>
+  </data>
+  <data name="Framing_Planned" xml:space="preserve">
+    <value>Framing planned</value>
+  </data>
+  <data name="Crop_Speaker" xml:space="preserve">
+    <value>speaker ({0:P0} of frames)</value>
+  </data>
+  <data name="Crop_Person" xml:space="preserve">
+    <value>person</value>
+  </data>
+  <data name="Crop_Salient" xml:space="preserve">
+    <value>main visual subject</value>
+  </data>
+  <data name="Crop_Centre" xml:space="preserve">
+    <value>centre</value>
+  </data>
+  <data name="Crop_Locked" xml:space="preserve">
+    <value>locked</value>
+  </data>
+  <data name="Crop_Tracking" xml:space="preserve">
+    <value>tracking across {0:0} px</value>
+  </data>
+  <data name="Render_NoClips" xml:space="preserve">
+    <value>There are no clips to render.</value>
+  </data>
+  <data name="Render_Clip" xml:space="preserve">
+    <value>Rendering clip {0} of {1}…</value>
+  </data>
+  <data name="Render_ClipLabel" xml:space="preserve">
+    <value>Clip {0}</value>
+  </data>
+  <data name="Render_Joining" xml:space="preserve">
+    <value>Joining clips and burning captions…</value>
+  </data>
+  <data name="Render_FinalEncode" xml:space="preserve">
+    <value>Final encode</value>
+  </data>
+  <data name="Render_NoOutput" xml:space="preserve">
+    <value>ffmpeg finished but produced no output file.</value>
+  </data>
+  <data name="Render_Complete" xml:space="preserve">
+    <value>Reel complete</value>
+  </data>
+  <data name="Render_NoDuration" xml:space="preserve">
+    <value>Could not determine the duration of {0}.</value>
+  </data>
+  <data name="Preview_Rendering" xml:space="preserve">
+    <value>Rendering caption preview</value>
+  </data>
+  <data name="Preview_NotRendered" xml:space="preserve">
+    <value>The preview frame could not be rendered.</value>
+  </data>
+  <data name="Style_Plain" xml:space="preserve">
+    <value>plain</value>
+  </data>
+  <data name="Style_Highlight" xml:space="preserve">
+    <value>word highlight</value>
+  </data>
+  <data name="Style_Grow" xml:space="preserve">
+    <value> · grow {0:0.00}×</value>
+  </data>
+  <data name="Style_ColourOnly" xml:space="preserve">
+    <value> · colour only</value>
+  </data>
+  <data name="Style_Animation_None" xml:space="preserve">
+    <value>no animation</value>
+  </data>
+  <data name="Style_Animation_FadeIn" xml:space="preserve">
+    <value>fadein</value>
+    <comment>The English is the enum value in lower case, as the summary always showed it.</comment>
+  </data>
+  <data name="Style_Animation_Pop" xml:space="preserve">
+    <value>pop</value>
+  </data>
+  <data name="Style_Animation_SlideUp" xml:space="preserve">
+    <value>slideup</value>
+  </data>
+  <data name="Style_Animation_Bounce" xml:space="preserve">
+    <value>bounce</value>
+  </data>
+  <data name="Style_Summary" xml:space="preserve">
+    <value>{0}{1} · {2} · {3} {4}px · {5}</value>
+    <comment>{0} the mode, {1} the emphasis, {2} the animation, {3} the font, {4} its size, {5} words per line.</comment>
+  </data>
+  <data name="Pipeline_NoSource" xml:space="preserve">
+    <value>Resolve the source first.</value>
+  </data>
+  <data name="Pipeline_NoTranscript" xml:space="preserve">
+    <value>Transcribe first.</value>
+  </data>
+  <data name="Pipeline_NoParagraphs" xml:space="preserve">
+    <value>The transcript produced no paragraphs to analyse.</value>
+  </data>
+  <data name="Pipeline_NoReel" xml:space="preserve">
+    <value>Pick a reel first.</value>
+  </data>
+  <data name="Pipeline_NoFraming" xml:space="preserve">
+    <value>Plan the framing first.</value>
+  </data>
+  <data name="Note_Info" xml:space="preserve">
+    <value>Information</value>
+    <comment>What a screen reader says before a note.</comment>
+  </data>
+  <data name="Note_Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="Note_Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Note_Named" xml:space="preserve">
+    <value>{0}: {1}</value>
+    <comment>{0} the kind, {1} the note.</comment>
+  </data>
+  <data name="Terms_Ffmpeg_Installed" xml:space="preserve">
+    <value>Installed: BtbN's GPL build, so GPL-3.0 applies</value>
+  </data>
+  <data name="Terms_Ffmpeg_System" xml:space="preserve">
+    <value>Not downloaded: the app uses the ffmpeg on your system, under that build's own terms</value>
+  </data>
+  <data name="Terms_Whisper_Cuda" xml:space="preserve">
+    <value>Installed: the CUDA build, so NVIDIA's CUDA EULA covers the CUDA libraries in it</value>
+  </data>
+  <data name="Terms_Llama_Cuda" xml:space="preserve">
+    <value>Installed: the CUDA build with NVIDIA's CUDA runtime, so NVIDIA's CUDA EULA covers those libraries</value>
+  </data>
+  <data name="Terms_YtDlp_Installed" xml:space="preserve">
+    <value>Installed: the standalone build, so GPLv3+ applies</value>
+  </data>
+  <data name="Terms_YtDlp_System" xml:space="preserve">
+    <value>Not downloaded: the app uses the yt-dlp on your PATH, under that copy's own terms</value>
+  </data>
+  <data name="Terms_Deno_System" xml:space="preserve">
+    <value>Not downloaded: the app uses the Deno on your PATH</value>
+  </data>
+  <data name="Terms_Installed" xml:space="preserve">
+    <value>Installed</value>
+  </data>
+  <data name="Terms_NotInstalled" xml:space="preserve">
+    <value>Not installed</value>
+  </data>
+  <data name="Terms_NotDownloaded" xml:space="preserve">
+    <value>Not downloaded</value>
+  </data>
+  <data name="Terms_OwnBuild" xml:space="preserve">
+    <value>Your own build, set in settings.json, under its own terms</value>
+  </data>
+  <data name="Terms_InstalledBuild" xml:space="preserve">
+    <value>Installed: the {0} build</value>
+  </data>
+  <data name="Terms_InstalledFile" xml:space="preserve">
+    <value>Installed: {0}</value>
+  </data>
+  <data name="LicenceGroup_EveryBuild_Title" xml:space="preserve">
+    <value>In every build</value>
+  </data>
+  <data name="LicenceGroup_EveryBuild_Description" xml:space="preserve">
+    <value>Part of the app itself: copied into its source, or restored by NuGet when it is built.</value>
+  </data>
+  <data name="LicenceGroup_ReleasePackage_Title" xml:space="preserve">
+    <value>Added by the package</value>
+  </data>
+  <data name="LicenceGroup_ReleasePackage_Description" xml:space="preserve">
+    <value>The release packages add what the app needs to start, so nothing else has to be installed. The Windows installer also adds what installs and removes the app.</value>
+  </data>
+  <data name="LicenceGroup_DownloadedByApp_Title" xml:space="preserve">
+    <value>Downloaded by the app</value>
+  </data>
+  <data name="LicenceGroup_DownloadedByApp_Description" xml:space="preserve">
+    <value>Install everything missing fetches these from their publishers into the data folder. A tool already on your system is used instead, under its own terms.</value>
+  </data>
+  <data name="LicenceGroup_DownloadedIfAgreed_Title" xml:space="preserve">
+    <value>Downloaded only if you agree</value>
+  </data>
+  <data name="LicenceGroup_DownloadedIfAgreed_Description" xml:space="preserve">
+    <value>Only needed for video links. The app asks before downloading them.</value>
+  </data>
+  <data name="Licence_ReelsMagician_Purpose" xml:space="preserve">
+    <value>This app</value>
+    <comment>The About tab's row; the English equals Licences.cs.</comment>
+  </data>
+  <data name="Licence_FontAwesomeFree731_Purpose" xml:space="preserve">
+    <value>The icons the app draws</value>
+  </data>
+  <data name="Licence_FontAwesomeFree731_Licence" xml:space="preserve">
+    <value>Icons: CC BY 4.0</value>
+  </data>
+  <data name="Licence_Avalonia_Purpose" xml:space="preserve">
+    <value>The user interface</value>
+  </data>
+  <data name="Licence_NWayland_Purpose" xml:space="preserve">
+    <value>Avalonia's Wayland bindings</value>
+  </data>
+  <data name="Licence_MicroComRuntime_Purpose" xml:space="preserve">
+    <value>Used by Avalonia</value>
+  </data>
+  <data name="Licence_TmdsDBusProtocol_Purpose" xml:space="preserve">
+    <value>Used by Avalonia on Linux</value>
+  </data>
+  <data name="Licence_SkiaSharpWithItsNativeSkiaLibrary_Name" xml:space="preserve">
+    <value>SkiaSharp, with its native Skia library</value>
+  </data>
+  <data name="Licence_SkiaSharpWithItsNativeSkiaLibrary_Purpose" xml:space="preserve">
+    <value>Draws the interface</value>
+  </data>
+  <data name="Licence_SkiaSharpWithItsNativeSkiaLibrary_Licence" xml:space="preserve">
+    <value>MIT; Skia itself is BSD-3-Clause, and the native library carries notices of its own</value>
+  </data>
+  <data name="Licence_HarfBuzzSharpWithItsNativeHarfBuzzLibrary_Name" xml:space="preserve">
+    <value>HarfBuzzSharp, with its native HarfBuzz library</value>
+  </data>
+  <data name="Licence_HarfBuzzSharpWithItsNativeHarfBuzzLibrary_Purpose" xml:space="preserve">
+    <value>Shapes text</value>
+  </data>
+  <data name="Licence_HarfBuzzSharpWithItsNativeHarfBuzzLibrary_Licence" xml:space="preserve">
+    <value>MIT; HarfBuzz itself is under the "Old MIT" licence</value>
+  </data>
+  <data name="Licence_ANGLEAvaloniaAngleWindowsNatives_Purpose" xml:space="preserve">
+    <value>Draws the interface through Direct3D on Windows</value>
+  </data>
+  <data name="Licence_OpenCvSharp5_Purpose" xml:space="preserve">
+    <value>Face and people detection: OpenCV 5.0 for .NET</value>
+  </data>
+  <data name="Licence_OpenCVForWindowsOpenCvSharp5RuntimeWin_Name" xml:space="preserve">
+    <value>OpenCV for Windows (OpenCvSharp5.runtime.win)</value>
+  </data>
+  <data name="Licence_OpenCVForWindowsOpenCvSharp5RuntimeWin_Purpose" xml:space="preserve">
+    <value>OpenCV's native library</value>
+  </data>
+  <data name="Licence_OpenCVForWindowsOpenCvSharp5RuntimeWin_Licence" xml:space="preserve">
+    <value>Apache-2.0; its opencv_videoio_ffmpeg DLL is OpenCV's LGPL-2.1 build of FFmpeg</value>
+  </data>
+  <data name="Licence_OpenCVForLinuxHeadlessOpenCvSharp5OfficialRuntimeLinuxX64Headless_Name" xml:space="preserve">
+    <value>OpenCV for Linux, headless (OpenCvSharp5.official.runtime.linux-x64.headless)</value>
+  </data>
+  <data name="Licence_OpenCVForLinuxHeadlessOpenCvSharp5OfficialRuntimeLinuxX64Headless_Purpose" xml:space="preserve">
+    <value>OpenCV's native library, without OpenCV's own windows</value>
+  </data>
+  <data name="Licence_OpenCVForLinuxHeadlessOpenCvSharp5OfficialRuntimeLinuxX64Headless_Licence" xml:space="preserve">
+    <value>Apache-2.0; it statically links FFmpeg (LGPL-2.1) and Tesseract (Apache-2.0)</value>
+  </data>
+  <data name="Licence_SharpCompress_Purpose" xml:space="preserve">
+    <value>Unpacks the .tar.xz archives Linux tools come in</value>
+  </data>
+  <data name="Licence_Velopack_Purpose" xml:space="preserve">
+    <value>Connects the app to its Windows installer</value>
+  </data>
+  <data name="Licence_NETRuntime_Name" xml:space="preserve">
+    <value>.NET runtime</value>
+  </data>
+  <data name="Licence_NETRuntime_Purpose" xml:space="preserve">
+    <value>Runs the app; the Windows installer and zip and the AppImage include it</value>
+  </data>
+  <data name="Licence_NETRuntime_Licence" xml:space="preserve">
+    <value>MIT, with notices of its own</value>
+  </data>
+  <data name="Licence_AppImageType2Runtime_Name" xml:space="preserve">
+    <value>AppImage type2 runtime</value>
+  </data>
+  <data name="Licence_AppImageType2Runtime_Purpose" xml:space="preserve">
+    <value>Mounts the AppImage and starts the app</value>
+  </data>
+  <data name="Licence_AppImageType2Runtime_Licence" xml:space="preserve">
+    <value>MIT; it statically links musl (MIT), libfuse (LGPL-2.1), squashfuse (BSD-2-Clause), zstd (BSD-3-Clause or GPL-2.0) and zlib (zlib licence)</value>
+  </data>
+  <data name="Licence_VelopackSSetupExeAndUpdateExe_Name" xml:space="preserve">
+    <value>Velopack's Setup.exe and Update.exe</value>
+  </data>
+  <data name="Licence_VelopackSSetupExeAndUpdateExe_Purpose" xml:space="preserve">
+    <value>Install the app for your account, and remove it again</value>
+  </data>
+  <data name="Licence_FfmpegFfprobe_Purpose" xml:space="preserve">
+    <value>Reads, cuts and encodes the video</value>
+  </data>
+  <data name="Licence_FfmpegFfprobe_Licence" xml:space="preserve">
+    <value>GPL-3.0: BtbN's GPL build includes GPL-only libraries such as libx264</value>
+  </data>
+  <data name="Licence_WhisperCpp_Purpose" xml:space="preserve">
+    <value>Speech recognition</value>
+  </data>
+  <data name="Licence_WhisperCpp_Licence" xml:space="preserve">
+    <value>MIT; a CUDA build includes NVIDIA's CUDA runtime libraries, under NVIDIA's CUDA EULA</value>
+  </data>
+  <data name="Licence_LlamaCpp_Purpose" xml:space="preserve">
+    <value>Runs Qwen, which picks the reel</value>
+  </data>
+  <data name="Licence_LlamaCpp_Licence" xml:space="preserve">
+    <value>MIT; with a CUDA build the app also downloads NVIDIA's CUDA runtime libraries, under NVIDIA's CUDA EULA</value>
+  </data>
+  <data name="Licence_WhisperModel_Name" xml:space="preserve">
+    <value>Whisper model</value>
+  </data>
+  <data name="Licence_WhisperModel_Purpose" xml:space="preserve">
+    <value>The speech recognition model, a ggml conversion</value>
+  </data>
+  <data name="Licence_Qwen3Model_Name" xml:space="preserve">
+    <value>Qwen3 model</value>
+  </data>
+  <data name="Licence_Qwen3Model_Purpose" xml:space="preserve">
+    <value>The language model, 4B or 8B, as GGUF</value>
+  </data>
+  <data name="Licence_YuNetFaceDetector_Name" xml:space="preserve">
+    <value>YuNet face detector</value>
+  </data>
+  <data name="Licence_YuNetFaceDetector_Purpose" xml:space="preserve">
+    <value>Finds faces to keep in the frame</value>
+  </data>
+  <data name="Licence_YtDlp_Purpose" xml:space="preserve">
+    <value>Downloads a video from a link</value>
+  </data>
+  <data name="Licence_YtDlp_Licence" xml:space="preserve">
+    <value>GPLv3+: the standalone builds include GPLv3+ code; yt-dlp's own code is Unlicense</value>
+  </data>
+  <data name="Licence_Deno_Purpose" xml:space="preserve">
+    <value>The JavaScript runtime yt-dlp uses to read a video's formats</value>
+  </data>
+</root>

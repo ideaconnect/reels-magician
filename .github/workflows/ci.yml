@@ -1,10 +1,12 @@
 name: CI
 
 # Builds the app and runs the logic checks on Windows and Ubuntu, so a change made on one
-# system cannot quietly break the other. The checks need no tools, GPU or network. Each job then
-# publishes the app as its release package does and holds the About tab's licence table to it,
-# so a new package cannot ship without a row there. On Windows the publish is also packed into
-# the installer, which is installed, started and uninstalled again on the runner.
+# system cannot quietly break the other. The checks need no tools, GPU or network. They run a
+# second time under pl-PL, so a number written for ffmpeg, an ASS file or settings.json without
+# the invariant culture fails the build. Each job then publishes the app as its release package
+# does and holds the About tab's licence table to it, so a new package cannot ship without a row
+# there. On Windows the publish is also packed into the installer, which is installed, started
+# and uninstalled again on the runner.
 
 on:
   push:
@@ -31,6 +33,8 @@ jobs:
         run: dotnet build ReelsMagician.slnx -c Release
       - name: Logic checks
         run: dotnet run --project tests/ReelsMagician.SmokeTests -c Release --no-build -- logic
+      - name: Logic checks under pl-PL
+        run: dotnet run --project tests/ReelsMagician.SmokeTests -c Release --no-build -- logic pl-PL
       - name: Publish
         run: dotnet publish src/ReelsMagician.App -c Release -r win-x64 --self-contained -o out/publish
       - name: Licences in the publish
@@ -54,6 +58,8 @@ jobs:
         run: dotnet build ReelsMagician.slnx -c Release
       - name: Logic checks
         run: dotnet run --project tests/ReelsMagician.SmokeTests -c Release --no-build -- logic
+      - name: Logic checks under pl-PL
+        run: dotnet run --project tests/ReelsMagician.SmokeTests -c Release --no-build -- logic pl-PL
       - name: Publish
         run: dotnet publish src/ReelsMagician.App -c Release -r linux-x64 --self-contained -o out/publish
       - name: Licences in the publish

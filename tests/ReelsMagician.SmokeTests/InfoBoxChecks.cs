@@ -30,8 +30,7 @@ public static class InfoBoxChecks
         ("Captions", "Plain text draws one static line per caption"),
         ("Captions", "Colour recolours the spoken word"),
         ("Captions", "A line that cannot get this much time"),
-        ("Captions", "<Binding Path=\"CrossfadeHint\" />"),
-        ("Captions", "The audio is crossfaded by the same amount"),
+        ("Captions", "{Binding CrossfadeNote}"),
         ("Render", "Renders 1080×1920 H.264 at 30 fps"),
         ("Cleanup", "Only this folder is touched"),
         ("About", "Each opens in your browser"),
@@ -67,7 +66,7 @@ public static class InfoBoxChecks
         if (root is null) return;
 
         var app = Path.Combine(root, "src", "ReelsMagician.App");
-        var window = StripComments(File.ReadAllText(Path.Combine(app, "MainWindow.axaml")));
+        var window = StripComments(AppXaml.Read(root, "MainWindow.axaml"));
         var boxes = Regex.Matches(window, @"<local:InfoBox\b(?:[^>]*?/>|.*?</local:InfoBox>)", RegexOptions.Singleline)
             .Select(m => m.Value).ToList();
         var hints = Regex.Matches(window, @"<TextBlock\b[^>]*Classes=""hint""[^>]*/?>").Select(m => m.Value).ToList();
@@ -81,8 +80,12 @@ public static class InfoBoxChecks
         var stillHints = InfoNotes.Where(n => hints.Any(h => h.Contains(n.Note, StringComparison.Ordinal)))
             .Select(n => $"{n.Tab}: {n.Note}").ToList();
         Check.True(stillHints.Count == 0, "no note is left as a grey hint as well" + Listing("still a hint", stillHints));
-        var crossfade = boxes.Where(b => b.Contains("CrossfadeHint", StringComparison.Ordinal)).ToList();
-        Check.True(crossfade.Count == 1 && crossfade[0].Contains("The audio is crossfaded", StringComparison.Ordinal),
+        // Its two lines, what this length does and what it applies to, are joined in the view
+        // model since #55, so both follow a switch of language.
+        var crossfade = boxes.Where(b => b.Contains("Crossfade", StringComparison.Ordinal)).ToList();
+        var viewModel = File.ReadAllText(Path.Combine(app, "ViewModels", "MainViewModel.cs"));
+        Check.True(crossfade.Count == 1 && crossfade[0].Contains("{Binding CrossfadeNote}", StringComparison.Ordinal)
+                   && viewModel.Contains("CrossfadeNote => CrossfadeHint + \"\\n\" + Strings.Crossfade_Audio", StringComparison.Ordinal),
             "the crossfade's two lines share one box");
 
         foreach (var warning in WarningNotes)

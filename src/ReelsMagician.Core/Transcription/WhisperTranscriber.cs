@@ -4,6 +4,7 @@ using ReelsMagician.Core.Diagnostics;
 using ReelsMagician.Core.Media;
 using ReelsMagician.Core.Projects;
 using ReelsMagician.Core.Toolchain;
+using ReelsMagician.Core.Localization;
 
 namespace ReelsMagician.Core.Transcription;
 
@@ -31,7 +32,7 @@ public sealed partial class WhisperTranscriber(Toolset tools, AppSettings settin
         string videoPath, double durationSeconds, string workDir, CancellationToken ct)
     {
         if (!tools.HasWhisper)
-            throw new InvalidOperationException("whisper.cpp or its model is not installed.");
+            throw new InvalidOperationException(Lang.Ui[nameof(Strings.Whisper_NotInstalled)]);
 
         Directory.CreateDirectory(workDir);
         var ffmpeg = new FFmpegTool(tools.Ffmpeg, sink);
@@ -66,8 +67,8 @@ public sealed partial class WhisperTranscriber(Toolset tools, AppSettings settin
             args.Add("auto");
         }
 
-        sink.Report("transcribe", "Transcribing with Whisper…", 0);
-        sink.Info("transcribe", $"Backend: {tools.WhisperBackend}");
+        sink.Report("transcribe", Lang.Ui[nameof(Strings.Whisper_Running)], 0);
+        sink.Info("transcribe", $"Backend: {tools.WhisperBackendInfo.Describe(Lang.Log)}");
 
         var result = await ProcessRunner.RunAsync(tools.WhisperCli, args,
             workingDirectory: Path.GetDirectoryName(tools.WhisperCli),
@@ -75,7 +76,7 @@ public sealed partial class WhisperTranscriber(Toolset tools, AppSettings settin
             {
                 var m = ProgressPattern().Match(line);
                 if (m.Success && int.TryParse(m.Groups[1].Value, out var pct))
-                    sink.Report("transcribe", $"Transcribing with Whisper — {pct}%", pct / 100.0);
+                    sink.Report("transcribe", Lang.Ui.Format(nameof(Strings.Whisper_Progress), pct), pct / 100.0);
                 else if (!string.IsNullOrWhiteSpace(line))
                     sink.Debug("whisper", line);
             },
@@ -93,13 +94,14 @@ public sealed partial class WhisperTranscriber(Toolset tools, AppSettings settin
         }
 
         if (!File.Exists(jsonPath))
-            throw new InvalidOperationException("Whisper finished but wrote no JSON transcript.");
+            throw new InvalidOperationException(Lang.Ui[nameof(Strings.Whisper_NoTranscript)]);
 
         var transcript = ParseWhisperJson(await File.ReadAllTextAsync(jsonPath, ct).ConfigureAwait(false));
         transcript.Normalize();
         transcript.EnsureWordTimings();
 
-        sink.Report("transcribe", $"Transcribed {transcript.Segments.Count} cues, {transcript.WordCount} words", 1);
+        sink.Report("transcribe", Lang.Ui.Format(nameof(Strings.Whisper_Done),
+            Lang.Ui.Plural("Count_Cues", transcript.Segments.Count), Lang.Ui.Plural("Count_Words", transcript.WordCount)), 1);
         sink.Info("transcribe", $"Language: {transcript.Language}; {transcript.Segments.Count} cues");
         return transcript;
     }

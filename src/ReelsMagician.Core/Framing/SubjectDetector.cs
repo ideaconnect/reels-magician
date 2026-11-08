@@ -1,5 +1,6 @@
 using OpenCvSharp;
 using ReelsMagician.Core.Diagnostics;
+using ReelsMagician.Core.Localization;
 
 namespace ReelsMagician.Core.Framing;
 
@@ -102,7 +103,7 @@ public sealed class SubjectDetector : IDisposable
             var cause = ex;
             while (cause.InnerException is not null) cause = cause.InnerException;
             throw new InvalidOperationException(
-                $"OpenCV, which follows the speaker, could not load: {cause.Message.Split('\n')[0].Trim()}", ex);
+                Lang.Ui.Format(nameof(Strings.Framing_OpenCvNotLoaded), cause.Message.Split('\n')[0].Trim()), ex);
         }
     }
 

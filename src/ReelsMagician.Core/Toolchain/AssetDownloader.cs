@@ -3,6 +3,7 @@ using System.IO.Compression;
 using System.Net;
 using System.Net.Http.Headers;
 using ReelsMagician.Core.Diagnostics;
+using ReelsMagician.Core.Localization;
 using SharpCompress.Compressors.Xz;
 
 namespace ReelsMagician.Core.Toolchain;
@@ -30,7 +31,9 @@ public sealed class AssetDownloader(HttpClient http, IProgressSink sink)
     }
 
     /// <summary>Downloads <paramref name="url"/> to <paramref name="destination"/>, resuming a partial file when possible.</summary>
-    public async Task DownloadAsync(string url, string destination, string label, CancellationToken ct)
+    /// <param name="label">What the log calls it, in English.</param>
+    /// <param name="shownLabel">What the status bar calls it, in the interface's language; the log's label when null.</param>
+    public async Task DownloadAsync(string url, string destination, string label, CancellationToken ct, string? shownLabel = null)
     {
         if (File.Exists(destination))
         {
@@ -46,7 +49,7 @@ public sealed class AssetDownloader(HttpClient http, IProgressSink sink)
         {
             try
             {
-                await DownloadOnceAsync(url, part, label, existing, ct).ConfigureAwait(false);
+                await DownloadOnceAsync(url, part, shownLabel ?? label, existing, ct).ConfigureAwait(false);
                 break;
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
@@ -60,7 +63,7 @@ public sealed class AssetDownloader(HttpClient http, IProgressSink sink)
 
         if (File.Exists(destination)) File.Delete(destination);
         File.Move(part, destination);
-        sink.Info("install", $"{label}: downloaded ({Humanize(new FileInfo(destination).Length)})");
+        sink.Info("install", $"{label}: downloaded ({Humanize(new FileInfo(destination).Length, Lang.Log)})");
     }
 
     private async Task DownloadOnceAsync(string url, string part, string label, long resumeFrom, CancellationToken ct)
@@ -99,7 +102,7 @@ public sealed class AssetDownloader(HttpClient http, IProgressSink sink)
                 lastReport = DateTime.UtcNow;
                 var frac = total > 0 ? Math.Clamp((double)done / total, 0, 1) : (double?)null;
                 var size = total > 0 ? $"{Humanize(done)} / {Humanize(total)}" : Humanize(done);
-                sink.Report("install", $"Downloading {label} — {size}", frac);
+                sink.Report("install", Lang.Ui.Format(nameof(Strings.Install_Downloading), label, size), frac);
             }
         }
     }
@@ -112,12 +115,16 @@ public sealed class AssetDownloader(HttpClient http, IProgressSink sink)
         return await http.GetStringAsync(url, cts.Token).ConfigureAwait(false);
     }
 
-    public static string Humanize(long bytes) => bytes switch
+    /// <summary>A size as the interface writes it: "22.5 MB", or "22,5 MB" in Polish.</summary>
+    public static string Humanize(long bytes) => Humanize(bytes, Lang.Ui);
+
+    /// <summary>The same with the number format of a language of its own, such as the log's.</summary>
+    public static string Humanize(long bytes, Lang lang) => bytes switch
     {
-        >= 1L << 30 => $"{bytes / (double)(1L << 30):0.##} GB",
-        >= 1L << 20 => $"{bytes / (double)(1L << 20):0.#} MB",
-        >= 1L << 10 => $"{bytes / (double)(1L << 10):0.#} KB",
-        _ => $"{bytes} B",
+        >= 1L << 30 => string.Create(lang.Formats, $"{bytes / (double)(1L << 30):0.##} GB"),
+        >= 1L << 20 => string.Create(lang.Formats, $"{bytes / (double)(1L << 20):0.#} MB"),
+        >= 1L << 10 => string.Create(lang.Formats, $"{bytes / (double)(1L << 10):0.#} KB"),
+        _ => string.Create(lang.Formats, $"{bytes} B"),
     };
 }
 
@@ -136,7 +143,7 @@ public static class ArchiveExtractor
         if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
         Directory.CreateDirectory(staging);
 
-        sink.Report("install", $"Extracting {label}…", null);
+        sink.Report("install", Lang.Ui.Format(nameof(Strings.Install_Extracting), label), null);
         try
         {
             Unpack(archivePath, staging);

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using ReelsMagician.Core.Media;
+using ReelsMagician.Core.Localization;
 
 namespace ReelsMagician.Core.Framing;
 
@@ -23,16 +24,20 @@ public sealed class CropPath
         ? 0
         : Keyframes.Max(k => k.X) - Keyframes.Min(k => k.X);
 
-    public string Describe()
+    /// <summary>What the framing follows and how it moves, in the interface's language.</summary>
+    public string Describe() => Describe(Lang.Ui);
+
+    /// <summary>The same in a language of its own, such as the log's.</summary>
+    public string Describe(Lang lang)
     {
         var subject = DominantSubject switch
         {
-            SubjectKind.Face => $"speaker ({FaceCoverage:P0} of frames)",
-            SubjectKind.Person => "person",
-            SubjectKind.Salient => "main visual subject",
-            _ => "centre",
+            SubjectKind.Face => lang.Format(nameof(Strings.Crop_Speaker), FaceCoverage),
+            SubjectKind.Person => lang[nameof(Strings.Crop_Person)],
+            SubjectKind.Salient => lang[nameof(Strings.Crop_Salient)],
+            _ => lang[nameof(Strings.Crop_Centre)],
         };
-        var motion = IsStatic ? "locked" : $"tracking across {MotionRange:0} px";
+        var motion = IsStatic ? lang[nameof(Strings.Crop_Locked)] : lang.Format(nameof(Strings.Crop_Tracking), MotionRange);
         return $"{subject}, {motion}";
     }
 

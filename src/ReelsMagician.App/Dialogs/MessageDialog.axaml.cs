@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using ReelsMagician.App.Localization;
 
 namespace ReelsMagician.App.Dialogs;
 
@@ -46,5 +47,5 @@ public partial class MessageDialog : Window
 
     /// <summary>Shows a message with a single OK button.</summary>
     public static Task ShowAsync(Window owner, string title, string message) =>
-        new MessageDialog(title, message, "OK", null).ShowDialog(owner);
+        new MessageDialog(title, message, Strings.Common_Ok, null).ShowDialog(owner);
 }

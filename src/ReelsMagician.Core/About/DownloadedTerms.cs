@@ -1,3 +1,4 @@
+using ReelsMagician.Core.Localization;
 using ReelsMagician.Core.Toolchain;
 
 namespace ReelsMagician.Core.About;
@@ -19,27 +20,27 @@ public static class DownloadedTerms
     public static InstallState Describe(DownloadedTool tool, Toolset tools, string dataRoot) => tool switch
     {
         DownloadedTool.Ffmpeg => Tool(tools.HasFfmpeg ? tools.FfmpegPath : null, dataRoot, required: true,
-            "Installed: BtbN's GPL build, so GPL-3.0 applies",
-            "Not downloaded: the app uses the ffmpeg on your system, under that build's own terms"),
+            Ui[nameof(Strings.Terms_Ffmpeg_Installed)], Ui[nameof(Strings.Terms_Ffmpeg_System)]),
         DownloadedTool.Whisper => Build(tools.WhisperCliPath, tools.WhisperBuild, dataRoot,
-            "Installed: the CUDA build, so NVIDIA's CUDA EULA covers the CUDA libraries in it"),
+            Ui[nameof(Strings.Terms_Whisper_Cuda)]),
         DownloadedTool.Llama => Build(tools.LlamaServerPath, tools.LlamaBuild, dataRoot,
-            "Installed: the CUDA build with NVIDIA's CUDA runtime, so NVIDIA's CUDA EULA covers those libraries"),
+            Ui[nameof(Strings.Terms_Llama_Cuda)]),
         DownloadedTool.WhisperModel => Model(tools.WhisperModelPath),
         DownloadedTool.LlmModel => Model(tools.LlmModelPath),
         DownloadedTool.FaceModel => Model(tools.FaceModelPath),
         DownloadedTool.YtDlp => Tool(tools.YtDlpPath, dataRoot, required: false,
-            "Installed: the standalone build, so GPLv3+ applies",
-            "Not downloaded: the app uses the yt-dlp on your PATH, under that copy's own terms"),
+            Ui[nameof(Strings.Terms_YtDlp_Installed)], Ui[nameof(Strings.Terms_YtDlp_System)]),
         DownloadedTool.JsRuntime => Tool(tools.JsRuntimePath, dataRoot, required: false,
-            "Installed",
-            "Not downloaded: the app uses the Deno on your PATH"),
+            Ui[nameof(Strings.Terms_Installed)], Ui[nameof(Strings.Terms_Deno_System)]),
         _ => throw new ArgumentOutOfRangeException(nameof(tool), tool, null),
     };
 
+    // The states are read on the About tab, in the interface's language.
+    private static Lang Ui => Lang.Ui;
+
     private static InstallState Missing(bool required) => required
-        ? new(ComponentState.RequiredMissing, "Not installed")
-        : new(ComponentState.OptionalMissing, "Not downloaded");
+        ? new(ComponentState.RequiredMissing, Ui[nameof(Strings.Terms_NotInstalled)])
+        : new(ComponentState.OptionalMissing, Ui[nameof(Strings.Terms_NotDownloaded)]);
 
     private static InstallState Tool(string? path, string dataRoot, bool required, string downloaded, string onSystem) =>
         path is null ? Missing(required)
@@ -48,12 +49,15 @@ public static class DownloadedTerms
 
     private static InstallState Build(string? path, BuildKind? kind, string dataRoot, string cuda) =>
         path is null ? Missing(required: true)
-        : !IsUnder(path, dataRoot) ? new(ComponentState.System, "Your own build, set in settings.json, under its own terms")
+        : !IsUnder(path, dataRoot) ? new(ComponentState.System, Ui[nameof(Strings.Terms_OwnBuild)])
         : kind == BuildKind.Cuda ? new(ComponentState.Installed, cuda)
-        : new(ComponentState.Installed, kind is { } k ? $"Installed: the {ToolBuilds.Label(k)} build" : "Installed");
+        : new(ComponentState.Installed, kind is { } k
+            ? Ui.Format(nameof(Strings.Terms_InstalledBuild), ToolBuilds.Label(k))
+            : Ui[nameof(Strings.Terms_Installed)]);
 
     private static InstallState Model(string? path) =>
-        path is null ? Missing(required: true) : new(ComponentState.Installed, $"Installed: {Path.GetFileName(path)}");
+        path is null ? Missing(required: true)
+            : new(ComponentState.Installed, Ui.Format(nameof(Strings.Terms_InstalledFile), Path.GetFileName(path)));
 
     /// <summary>True when <paramref name="path"/> is inside <paramref name="folder"/>, not merely a name sharing its start.</summary>
     public static bool IsUnder(string path, string folder)

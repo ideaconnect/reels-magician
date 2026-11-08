@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Microsoft.Win32;
+using ReelsMagician.Core.Localization;
 
 namespace ReelsMagician.Core.Toolchain;
 
@@ -38,18 +39,20 @@ public sealed record GpuCapabilities(
 
     public string PrimaryAdapterName => Adapters.Count > 0 ? Adapters[0].Name : "unknown";
 
-    public string Describe()
+    /// <summary>The header's line about the graphics card, in the interface's language.</summary>
+    public string Describe() => Describe(Lang.Ui);
+
+    /// <summary>The same in a language of its own, such as the log's English.</summary>
+    public string Describe(Lang lang)
     {
-        var gpus = Adapters.Count == 0 ? "no adapter detected" : string.Join(", ", Adapters.Select(a => a.Name));
+        var gpus = Adapters.Count == 0 ? lang[nameof(Strings.Gpu_NoAdapter)] : string.Join(", ", Adapters.Select(a => a.Name));
         var windows = OperatingSystem.IsWindows();
         var vulkan =
-            VulkanAvailable ? $"Vulkan ready ({VulkanIcdCount} driver{(VulkanIcdCount == 1 ? "" : "s")})" :
+            VulkanAvailable ? lang.Plural("Gpu_VulkanReady", VulkanIcdCount) :
             HasVulkanLoader
-                ? (windows ? "Vulkan loader present but no driver found"
-                           : "Vulkan loader present but no driver for this GPU — install mesa-vulkan-drivers, or the NVIDIA driver")
-                : (windows ? "no Vulkan loader — update your graphics driver"
-                           : "no Vulkan loader — install libvulkan1");
-        var cuda = Cuda is null ? "" : $", CUDA {Cuda.DriverVersion} (compute {Cuda.LowestComputeCapability})";
+                ? lang[windows ? nameof(Strings.Gpu_NoDriver_Windows) : nameof(Strings.Gpu_NoDriver_Linux)]
+                : lang[windows ? nameof(Strings.Gpu_NoLoader_Windows) : nameof(Strings.Gpu_NoLoader_Linux)];
+        var cuda = Cuda is null ? "" : lang.Format(nameof(Strings.Gpu_Cuda), Cuda.DriverVersion, Cuda.LowestComputeCapability);
         return $"{gpus} — {vulkan}{cuda}";
     }
 }

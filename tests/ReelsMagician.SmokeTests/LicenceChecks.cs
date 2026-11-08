@@ -282,7 +282,7 @@ public static class LicenceChecks
     private static void TabPlace(string root)
     {
         var app = Path.Combine(root, "src", "ReelsMagician.App");
-        var window = File.ReadAllText(Path.Combine(app, "MainWindow.axaml"));
+        var window = AppXaml.Read(root, "MainWindow.axaml");
         var tabs = Regex.Matches(window, @"<TabItem (?:(?!>).)*Header=""([^""]+)""((?:(?!>).)*)>", RegexOptions.Singleline)
             .Select(m => (Header: m.Groups[1].Value, Tag: m.Value)).ToList();
         Check.Equal(8, tabs.Count, "the strip has six steps, Cleanup and About");

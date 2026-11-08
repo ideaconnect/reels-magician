@@ -11,7 +11,20 @@ using ReelsMagician.SmokeTests;
 //   recaption  rebuild captions from cached real transcripts and assert no overlap
 //   licences   holds the About tab's licence table to a self-contained publish of the app:
 //              licences out/publish (what CI runs after publishing on each system)
+//
+// The logic mode takes a culture to run under, as the process's own: logic pl-PL, which CI runs
+// as well, so a number written for a machine without the invariant culture fails a check. The
+// output stays English: the interface's language is the app's setting, not the process's culture.
 var mode = args.Length > 0 ? args[0].ToLowerInvariant() : "";
+if (mode == "logic" && args.Length > 1)
+{
+    var culture = System.Globalization.CultureInfo.GetCultureInfo(args[1]);
+    System.Globalization.CultureInfo.CurrentCulture = culture;
+    System.Globalization.CultureInfo.CurrentUICulture = culture;
+    System.Globalization.CultureInfo.DefaultThreadCurrentCulture = culture;
+    System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = culture;
+    Console.WriteLine($"Running under {culture.Name}.");
+}
 
 switch (mode)
 {
@@ -67,5 +80,6 @@ static void RunLogicChecks()
     LicenceChecks.Run();
     InfoBoxChecks.Run();
     MemoryFitChecks.Run();
+    LocalizationChecks.Run();
     InstallerChecks.Run();
 }

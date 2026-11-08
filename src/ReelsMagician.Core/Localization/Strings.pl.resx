@@ -1,0 +1,777 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Model_small-q5_Name" xml:space="preserve">
+    <value>Whisper small (kwantyzowany) — najszybszy</value>
+  </data>
+  <data name="Model_small-q5_Notes" xml:space="preserve">
+    <value>Dobry do wyraźnej mowy. Wielojęzyczny.</value>
+  </data>
+  <data name="Model_medium-q5_Name" xml:space="preserve">
+    <value>Whisper medium (kwantyzowany) — zrównoważony</value>
+  </data>
+  <data name="Model_medium-q5_Notes" xml:space="preserve">
+    <value>Wyraźnie lepsza interpunkcja niż w small.</value>
+  </data>
+  <data name="Model_large-v3-turbo-q5_Name" xml:space="preserve">
+    <value>Whisper large-v3-turbo (kwantyzowany) — zalecany</value>
+  </data>
+  <data name="Model_large-v3-turbo-q5_Notes" xml:space="preserve">
+    <value>Dokładność bliska large-v3 za ułamek kosztu. Najlepszy wybór domyślny.</value>
+  </data>
+  <data name="Model_large-v3-turbo_Name" xml:space="preserve">
+    <value>Whisper large-v3-turbo (f16) — najdokładniejszy</value>
+  </data>
+  <data name="Model_large-v3-turbo_Notes" xml:space="preserve">
+    <value>Turbo w pełnej precyzji. Wolniejszy, najlepsze czasy słów.</value>
+  </data>
+  <data name="Model_qwen3-4b-q4_Name" xml:space="preserve">
+    <value>Qwen3 4B Instruct (Q4_K_M) — lekki</value>
+  </data>
+  <data name="Model_qwen3-4b-q4_Notes" xml:space="preserve">
+    <value>Najlżejszy wybór, dla mniejszych kart graficznych.</value>
+  </data>
+  <data name="Model_qwen3-8b-q4_Name" xml:space="preserve">
+    <value>Qwen3 8B Instruct (Q4_K_M) — zalecany</value>
+  </data>
+  <data name="Model_qwen3-8b-q4_Notes" xml:space="preserve">
+    <value>Najlepiej wybiera fragmenty.</value>
+  </data>
+  <data name="Model_qwen3-8b-q6_Name" xml:space="preserve">
+    <value>Qwen3 8B Instruct (Q6_K) — najwyższa jakość</value>
+  </data>
+  <data name="Model_qwen3-8b-q6_Notes" xml:space="preserve">
+    <value>Niewielki zysk względem Q4_K_M.</value>
+  </data>
+  <data name="Fit_Need_Graphics_Context" xml:space="preserve">
+    <value>Potrzebuje około {0} pamięci graficznej przy kontekście {1}.</value>
+  </data>
+  <data name="Fit_Need_System_Context" xml:space="preserve">
+    <value>Potrzebuje około {0} pamięci przy kontekście {1}.</value>
+  </data>
+  <data name="Fit_Need_Graphics" xml:space="preserve">
+    <value>Potrzebuje około {0} pamięci graficznej.</value>
+  </data>
+  <data name="Fit_Need_System" xml:space="preserve">
+    <value>Potrzebuje około {0} pamięci.</value>
+  </data>
+  <data name="Fit_Risk_Graphics" xml:space="preserve">
+    <value>{0} potrzebuje około {1} pamięci graficznej, a ten komputer ma {2}. Może działać wolno albo zawieść, a w rzadkich przypadkach zawiesić system.</value>
+  </data>
+  <data name="Fit_Risk_Graphics_Context" xml:space="preserve">
+    <value>{0} potrzebuje około {1} pamięci graficznej przy tym kontekście, a ten komputer ma {2}. Może działać wolno albo zawieść, a w rzadkich przypadkach zawiesić system.</value>
+  </data>
+  <data name="Fit_Risk_System" xml:space="preserve">
+    <value>{0} potrzebuje około {1} pamięci, a ten komputer ma {2}, z czego około {3} potrzebuje sam system. Może działać wolno albo zawieść, a w rzadkich przypadkach zawiesić system.</value>
+  </data>
+  <data name="Fit_Risk_System_Context" xml:space="preserve">
+    <value>{0} potrzebuje około {1} pamięci przy tym kontekście, a ten komputer ma {2}, z czego około {3} potrzebuje sam system. Może działać wolno albo zawieść, a w rzadkich przypadkach zawiesić system.</value>
+  </data>
+  <data name="Fit_CanStillTry" xml:space="preserve">
+    <value>Mimo to można go wypróbować.</value>
+  </data>
+  <data name="Fit_DidNotFit_Graphics" xml:space="preserve">
+    <value>Model nie zmieścił się w pamięci graficznej. Wybierz mniejszy model.</value>
+  </data>
+  <data name="Fit_DidNotFit_System" xml:space="preserve">
+    <value>Model nie zmieścił się w pamięci tego komputera. Wybierz mniejszy model.</value>
+  </data>
+  <data name="Crash_Title_Transcription" xml:space="preserve">
+    <value>ReelsMagician zamknął się podczas transkrypcji</value>
+  </data>
+  <data name="Crash_Title_Analysis" xml:space="preserve">
+    <value>ReelsMagician zamknął się podczas analizy</value>
+  </data>
+  <data name="Crash_DateFormat" xml:space="preserve">
+    <value>d MMMM 'o' HH:mm</value>
+  </data>
+  <data name="Crash_Happened_Transcription" xml:space="preserve">
+    <value>Ostatnim razem, {1}, ReelsMagician zamknął się, gdy model {0} przepisywał mowę.</value>
+  </data>
+  <data name="Crash_Happened_Analysis" xml:space="preserve">
+    <value>Ostatnim razem, {1}, ReelsMagician zamknął się, gdy model {0} analizował transkrypcję.</value>
+  </data>
+  <data name="Crash_Needs_Graphics" xml:space="preserve">
+    <value>Potrzebuje około {0} pamięci graficznej</value>
+  </data>
+  <data name="Crash_Needs_Graphics_Context" xml:space="preserve">
+    <value>Potrzebuje około {0} pamięci graficznej przy tamtym kontekście</value>
+  </data>
+  <data name="Crash_Needs_System" xml:space="preserve">
+    <value>Potrzebuje około {0} pamięci</value>
+  </data>
+  <data name="Crash_Needs_System_Context" xml:space="preserve">
+    <value>Potrzebuje około {0} pamięci przy tamtym kontekście</value>
+  </data>
+  <data name="Crash_Has" xml:space="preserve">
+    <value>, a ten komputer ma {0}</value>
+  </data>
+  <data name="Crash_Has_Device" xml:space="preserve">
+    <value>, a ten komputer ma {0} na {1}</value>
+  </data>
+  <data name="Crash_TooBig" xml:space="preserve">
+    <value>Model był prawdopodobnie za duży dla tego komputera, a to może zatrzymać aplikację albo cały system. Wybierz mniejszy model na karcie Konfiguracja.</value>
+  </data>
+  <data name="Crash_MayHaveBeen" xml:space="preserve">
+    <value>Jeśli wtedy padła aplikacja albo komputer, model mógł być dla nich za duży: mniejszy model z karty Konfiguracja potrzebuje mniej pamięci.</value>
+  </data>
+  <data name="Gpu_NoAdapter" xml:space="preserve">
+    <value>nie wykryto karty graficznej</value>
+  </data>
+  <data name="Gpu_VulkanReady_one" xml:space="preserve">
+    <value>Vulkan gotowy ({0} sterownik)</value>
+  </data>
+  <data name="Gpu_VulkanReady_few" xml:space="preserve">
+    <value>Vulkan gotowy ({0} sterowniki)</value>
+  </data>
+  <data name="Gpu_VulkanReady_many" xml:space="preserve">
+    <value>Vulkan gotowy ({0} sterowników)</value>
+  </data>
+  <data name="Gpu_VulkanReady_other" xml:space="preserve">
+    <value>Vulkan gotowy ({0} sterownika)</value>
+  </data>
+  <data name="Gpu_NoDriver_Windows" xml:space="preserve">
+    <value>jest loader Vulkana, ale nie znaleziono sterownika</value>
+  </data>
+  <data name="Gpu_NoDriver_Linux" xml:space="preserve">
+    <value>jest loader Vulkana, ale brak sterownika dla tej karty — zainstaluj mesa-vulkan-drivers albo sterownik NVIDIA</value>
+  </data>
+  <data name="Gpu_NoLoader_Windows" xml:space="preserve">
+    <value>brak loadera Vulkana — zaktualizuj sterownik karty graficznej</value>
+  </data>
+  <data name="Gpu_NoLoader_Linux" xml:space="preserve">
+    <value>brak loadera Vulkana — zainstaluj libvulkan1</value>
+  </data>
+  <data name="Gpu_Cuda" xml:space="preserve">
+    <value>, CUDA {0} (compute {1})</value>
+  </data>
+  <data name="Tool_NotInstalled" xml:space="preserve">
+    <value>Nie zainstalowano {0}.</value>
+  </data>
+  <data name="Missing_WhisperModel" xml:space="preserve">
+    <value>model Whisper</value>
+  </data>
+  <data name="Missing_QwenModel" xml:space="preserve">
+    <value>model Qwen</value>
+  </data>
+  <data name="Missing_FaceModel" xml:space="preserve">
+    <value>model wykrywania twarzy</value>
+  </data>
+  <data name="Backend_NotInstalled" xml:space="preserve">
+    <value>nie zainstalowano</value>
+  </data>
+  <data name="Backend_Custom" xml:space="preserve">
+    <value>własna kompilacja</value>
+  </data>
+  <data name="Fallback_Warning" xml:space="preserve">
+    <value>{0} działa jako kompilacja {1}, bo kompilacja {2}, którą obsługuje ten komputer, nie była dostępna przy instalacji. Usuń go w Zwolnij miejsce i zainstaluj ponownie, by spróbować jeszcze raz.</value>
+  </data>
+  <data name="Component_Ffmpeg_Download" xml:space="preserve">
+    <value>zostanie pobrana kompilacja GPL od BtbN</value>
+  </data>
+  <data name="Component_Whisper_Download" xml:space="preserve">
+    <value>sam wybiera najlepszą kompilację dla tego komputera</value>
+  </data>
+  <data name="Component_Llama_Cuda" xml:space="preserve">
+    <value>kompilacja CUDA dla karty NVIDIA</value>
+  </data>
+  <data name="Component_Llama_Vulkan" xml:space="preserve">
+    <value>kompilacja Vulkan, gdy jest sterownik</value>
+  </data>
+  <data name="Component_FaceModel" xml:space="preserve">
+    <value>Wykrywanie twarzy (YuNet)</value>
+  </data>
+  <data name="Component_FaceModel_Detail" xml:space="preserve">
+    <value>Utrzymuje mówcę w środku pionowego kadru</value>
+  </data>
+  <data name="Component_YtDlp_Detail" xml:space="preserve">
+    <value>pobiera film z linku</value>
+  </data>
+  <data name="Component_JsRuntime" xml:space="preserve">
+    <value>Środowisko JavaScript (Deno)</value>
+  </data>
+  <data name="Component_JsRuntime_Detail" xml:space="preserve">
+    <value>bez niego yt-dlp pomija formaty i może nie znaleźć 4K</value>
+  </data>
+  <data name="Download_FaceModel" xml:space="preserve">
+    <value>model wykrywania twarzy</value>
+  </data>
+  <data name="Download_CudaRuntime" xml:space="preserve">
+    <value>środowisko CUDA {0}</value>
+  </data>
+  <data name="Install_Ready" xml:space="preserve">
+    <value>Narzędzia gotowe</value>
+  </data>
+  <data name="Install_Downloading" xml:space="preserve">
+    <value>Pobieranie: {0} — {1}</value>
+  </data>
+  <data name="Install_Extracting" xml:space="preserve">
+    <value>Rozpakowywanie: {0}…</value>
+  </data>
+  <data name="Cleanup_Models" xml:space="preserve">
+    <value>Pobrane modele</value>
+  </data>
+  <data name="Cleanup_Models_Detail" xml:space="preserve">
+    <value>Whisper, Qwen i wykrywanie twarzy. Największa pozycja — kilka gigabajtów.</value>
+  </data>
+  <data name="Cleanup_Tools" xml:space="preserve">
+    <value>Pobrane narzędzia</value>
+  </data>
+  <data name="Cleanup_Working" xml:space="preserve">
+    <value>Pliki robocze</value>
+  </data>
+  <data name="Cleanup_Working_Detail" xml:space="preserve">
+    <value>Wyodrębniony dźwięk, próbki klatek, pliki pośrednie klipów i niedokończone pobierania. Można je bezpiecznie usunąć w każdej chwili; aplikacja odtworzy je sama.</value>
+  </data>
+  <data name="Cleanup_Logs" xml:space="preserve">
+    <value>Dzienniki</value>
+  </data>
+  <data name="Cleanup_Logs_Detail" xml:space="preserve">
+    <value>Dzienniki błędów zapisane, gdy coś poszło nie tak.</value>
+  </data>
+  <data name="Cleanup_Settings" xml:space="preserve">
+    <value>Ustawienia</value>
+  </data>
+  <data name="Cleanup_Settings_Detail" xml:space="preserve">
+    <value>Wybrane modele, folder wyników i ostatnie źródła. Usunięcie przywraca ustawienia początkowe.</value>
+  </data>
+  <data name="Cleanup_Tools_JsRuntime" xml:space="preserve">
+    <value>środowisko JavaScript</value>
+  </data>
+  <data name="Cleanup_Tools_None" xml:space="preserve">
+    <value>ffmpeg, whisper.cpp i llama.cpp, gdy zostaną pobrane.</value>
+  </data>
+  <data name="Cleanup_Tools_List" xml:space="preserve">
+    <value>{0} i {1}.</value>
+  </data>
+  <data name="Cleanup_OutsideFolder" xml:space="preserve">
+    <value>{0} leży poza folderem danych, więc pozostał nietknięty.</value>
+  </data>
+  <data name="Media_ExtractingAudio_Running" xml:space="preserve">
+    <value>Wyodrębnianie dźwięku…</value>
+  </data>
+  <data name="Media_ExtractingAudio" xml:space="preserve">
+    <value>Wyodrębnianie dźwięku</value>
+  </data>
+  <data name="Media_SamplingFrames" xml:space="preserve">
+    <value>Próbkowanie klatek</value>
+  </data>
+  <data name="Media_ExtractingFrame" xml:space="preserve">
+    <value>Wyodrębnianie klatki</value>
+  </data>
+  <data name="Media_NoAudio" xml:space="preserve">
+    <value>Wyodrębnianie dźwięku nie dało użytecznego wyniku — czy film ma ścieżkę dźwiękową?</value>
+  </data>
+  <data name="Media_NoAudioTrack" xml:space="preserve">
+    <value> · bez dźwięku</value>
+  </data>
+  <data name="Media_Anamorphic" xml:space="preserve">
+    <value> · anamorficzny {0}:{1}</value>
+  </data>
+  <data name="Media_FileNotFound" xml:space="preserve">
+    <value>Nie znaleziono pliku multimedialnego.</value>
+  </data>
+  <data name="Media_NoVideoStream" xml:space="preserve">
+    <value>Nie znaleziono strumienia wideo w {0}.</value>
+  </data>
+  <data name="Source_NotFound" xml:space="preserve">
+    <value>Nie znaleziono „{0}”.</value>
+  </data>
+  <data name="Source_NeedsYtDlp" xml:space="preserve">
+    <value>Linki wymagają yt-dlp. Zainstaluj go na karcie Konfiguracja.</value>
+  </data>
+  <data name="Source_NoVideoFile" xml:space="preserve">
+    <value>yt-dlp zakończył pracę, ale nie zapisał pliku wideo.</value>
+  </data>
+  <data name="Source_NotMerged" xml:space="preserve">
+    <value>yt-dlp pobrał obraz i dźwięk osobno i nie mógł ich połączyć ({0}). Oznacza to, że nie mógł uruchomić ffmpeg. Zainstaluj ffmpeg na karcie Konfiguracja.</value>
+  </data>
+  <data name="Source_Downloading" xml:space="preserve">
+    <value>Pobieranie — {0:0.#}%</value>
+  </data>
+  <data name="Source_Downloading_Detail" xml:space="preserve">
+    <value>Pobieranie — {0:0.#}% {1}</value>
+  </data>
+  <data name="Source_Merging" xml:space="preserve">
+    <value>Łączenie obrazu i dźwięku…</value>
+  </data>
+  <data name="Source_FetchingSubtitles" xml:space="preserve">
+    <value>Pobieranie napisów…</value>
+  </data>
+  <data name="Process_NotStarted" xml:space="preserve">
+    <value>Nie udało się uruchomić procesu: {0}</value>
+  </data>
+  <data name="Tool_Failed" xml:space="preserve">
+    <value>{0} zakończył działanie z kodem {1}.</value>
+  </data>
+  <data name="Whisper_NotInstalled" xml:space="preserve">
+    <value>Nie zainstalowano whisper.cpp lub jego modelu.</value>
+  </data>
+  <data name="Whisper_Running" xml:space="preserve">
+    <value>Transkrypcja Whisperem…</value>
+  </data>
+  <data name="Whisper_Progress" xml:space="preserve">
+    <value>Transkrypcja Whisperem — {0}%</value>
+  </data>
+  <data name="Whisper_NoTranscript" xml:space="preserve">
+    <value>Whisper zakończył pracę, ale nie zapisał transkrypcji JSON.</value>
+  </data>
+  <data name="Whisper_Done" xml:space="preserve">
+    <value>Rozpoznano {0}, {1}</value>
+  </data>
+  <data name="Count_Cues_one" xml:space="preserve">
+    <value>{0} napis</value>
+  </data>
+  <data name="Count_Cues_few" xml:space="preserve">
+    <value>{0} napisy</value>
+  </data>
+  <data name="Count_Cues_many" xml:space="preserve">
+    <value>{0} napisów</value>
+  </data>
+  <data name="Count_Cues_other" xml:space="preserve">
+    <value>{0} napisu</value>
+  </data>
+  <data name="Count_Words_one" xml:space="preserve">
+    <value>{0} słowo</value>
+  </data>
+  <data name="Count_Words_few" xml:space="preserve">
+    <value>{0} słowa</value>
+  </data>
+  <data name="Count_Words_many" xml:space="preserve">
+    <value>{0} słów</value>
+  </data>
+  <data name="Count_Words_other" xml:space="preserve">
+    <value>{0} słowa</value>
+  </data>
+  <data name="Count_Clips_one" xml:space="preserve">
+    <value>{0} klip</value>
+  </data>
+  <data name="Count_Clips_few" xml:space="preserve">
+    <value>{0} klipy</value>
+  </data>
+  <data name="Count_Clips_many" xml:space="preserve">
+    <value>{0} klipów</value>
+  </data>
+  <data name="Count_Clips_other" xml:space="preserve">
+    <value>{0} klipu</value>
+  </data>
+  <data name="Count_WordsPerLine_one" xml:space="preserve">
+    <value>{0} słowo/wiersz</value>
+  </data>
+  <data name="Count_WordsPerLine_few" xml:space="preserve">
+    <value>{0} słowa/wiersz</value>
+  </data>
+  <data name="Count_WordsPerLine_many" xml:space="preserve">
+    <value>{0} słów/wiersz</value>
+  </data>
+  <data name="Count_WordsPerLine_other" xml:space="preserve">
+    <value>{0} słowa/wiersz</value>
+  </data>
+  <data name="Pipeline_SuppliedLoaded_one" xml:space="preserve">
+    <value>Wczytano {0} napis z dołączonych napisów</value>
+  </data>
+  <data name="Pipeline_SuppliedLoaded_few" xml:space="preserve">
+    <value>Wczytano {0} napisy z dołączonych napisów</value>
+  </data>
+  <data name="Pipeline_SuppliedLoaded_many" xml:space="preserve">
+    <value>Wczytano {0} napisów z dołączonych napisów</value>
+  </data>
+  <data name="Pipeline_SuppliedLoaded_other" xml:space="preserve">
+    <value>Wczytano {0} napisu z dołączonych napisów</value>
+  </data>
+  <data name="Plan_EmptyTranscript" xml:space="preserve">
+    <value>Transkrypcja jest pusta, więc nie ma czego analizować.</value>
+  </data>
+  <data name="Plan_Fallback" xml:space="preserve">
+    <value>Złożone z najwyżej ocenionych akapitów bez pomocy modelu.</value>
+  </data>
+  <data name="Analysis_Scoring" xml:space="preserve">
+    <value>Ocenianie akapitów {0}–{1} z {2}…</value>
+  </data>
+  <data name="Analysis_Scored" xml:space="preserve">
+    <value>Ocenianie akapitów zakończone</value>
+  </data>
+  <data name="Analysis_Assembling" xml:space="preserve">
+    <value>Składanie propozycji rolek…</value>
+  </data>
+  <data name="Candidate_Summary" xml:space="preserve">
+    <value>{0:0.0} s · {1} · ocena {2:0.0}</value>
+  </data>
+  <data name="Llama_NotInstalled" xml:space="preserve">
+    <value>Nie zainstalowano llama.cpp lub modelu Qwen.</value>
+  </data>
+  <data name="Llama_NotStarted" xml:space="preserve">
+    <value>Nie udało się uruchomić llama-server.</value>
+  </data>
+  <data name="Llama_ExitedAtStart" xml:space="preserve">
+    <value>llama-server zakończył działanie podczas uruchamiania (kod {0}).</value>
+  </data>
+  <data name="Llama_Loading" xml:space="preserve">
+    <value>Wczytywanie modelu Qwen…</value>
+  </data>
+  <data name="Llama_Timeout" xml:space="preserve">
+    <value>llama-server nie był gotowy w ciągu sześciu minut.</value>
+  </data>
+  <data name="Llama_Http" xml:space="preserve">
+    <value>llama-server zwrócił {0}: {1}</value>
+  </data>
+  <data name="Llama_NoChoices" xml:space="preserve">
+    <value>llama-server nie zwrócił żadnej odpowiedzi: {0}</value>
+  </data>
+  <data name="Framing_OpenCvNotLoaded" xml:space="preserve">
+    <value>Nie udało się wczytać OpenCV, które śledzi mówcę: {0}</value>
+  </data>
+  <data name="Framing_Analysing" xml:space="preserve">
+    <value>Analiza kadrowania klipu {0} z {1}…</value>
+  </data>
+  <data name="Framing_Tracking" xml:space="preserve">
+    <value>Śledzenie obiektu w klipie {0} z {1} — klatka {2}/{3}</value>
+  </data>
+  <data name="Framing_Planned" xml:space="preserve">
+    <value>Kadrowanie zaplanowane</value>
+  </data>
+  <data name="Crop_Speaker" xml:space="preserve">
+    <value>mówca ({0:P0} klatek)</value>
+  </data>
+  <data name="Crop_Person" xml:space="preserve">
+    <value>osoba</value>
+  </data>
+  <data name="Crop_Salient" xml:space="preserve">
+    <value>główny obiekt obrazu</value>
+  </data>
+  <data name="Crop_Centre" xml:space="preserve">
+    <value>środek</value>
+  </data>
+  <data name="Crop_Locked" xml:space="preserve">
+    <value>nieruchomy kadr</value>
+  </data>
+  <data name="Crop_Tracking" xml:space="preserve">
+    <value>śledzenie w zakresie {0:0} px</value>
+  </data>
+  <data name="Render_NoClips" xml:space="preserve">
+    <value>Nie ma klipów do wyrenderowania.</value>
+  </data>
+  <data name="Render_Clip" xml:space="preserve">
+    <value>Renderowanie klipu {0} z {1}…</value>
+  </data>
+  <data name="Render_ClipLabel" xml:space="preserve">
+    <value>Klip {0}</value>
+  </data>
+  <data name="Render_Joining" xml:space="preserve">
+    <value>Łączenie klipów i wtapianie podpisów…</value>
+  </data>
+  <data name="Render_FinalEncode" xml:space="preserve">
+    <value>Końcowe kodowanie</value>
+  </data>
+  <data name="Render_NoOutput" xml:space="preserve">
+    <value>ffmpeg zakończył pracę, ale nie zapisał pliku wynikowego.</value>
+  </data>
+  <data name="Render_Complete" xml:space="preserve">
+    <value>Rolka gotowa</value>
+  </data>
+  <data name="Render_NoDuration" xml:space="preserve">
+    <value>Nie udało się ustalić długości {0}.</value>
+  </data>
+  <data name="Preview_Rendering" xml:space="preserve">
+    <value>Renderowanie podglądu podpisów</value>
+  </data>
+  <data name="Preview_NotRendered" xml:space="preserve">
+    <value>Nie udało się wyrenderować klatki podglądu.</value>
+  </data>
+  <data name="Style_Plain" xml:space="preserve">
+    <value>zwykły tekst</value>
+  </data>
+  <data name="Style_Highlight" xml:space="preserve">
+    <value>podświetlanie słów</value>
+  </data>
+  <data name="Style_Grow" xml:space="preserve">
+    <value> · powiększenie {0:0.00}×</value>
+  </data>
+  <data name="Style_ColourOnly" xml:space="preserve">
+    <value> · tylko kolor</value>
+  </data>
+  <data name="Style_Animation_None" xml:space="preserve">
+    <value>bez animacji</value>
+  </data>
+  <data name="Style_Animation_FadeIn" xml:space="preserve">
+    <value>pojawienie się</value>
+  </data>
+  <data name="Style_Animation_Pop" xml:space="preserve">
+    <value>wyskok</value>
+  </data>
+  <data name="Style_Animation_SlideUp" xml:space="preserve">
+    <value>wjazd z dołu</value>
+  </data>
+  <data name="Style_Animation_Bounce" xml:space="preserve">
+    <value>odbicie</value>
+  </data>
+  <data name="Style_Summary" xml:space="preserve">
+    <value>{0}{1} · {2} · {3} {4} px · {5}</value>
+  </data>
+  <data name="Pipeline_NoSource" xml:space="preserve">
+    <value>Najpierw wczytaj źródło.</value>
+  </data>
+  <data name="Pipeline_NoTranscript" xml:space="preserve">
+    <value>Najpierw zrób transkrypcję.</value>
+  </data>
+  <data name="Pipeline_NoParagraphs" xml:space="preserve">
+    <value>Z transkrypcji nie powstały akapity do analizy.</value>
+  </data>
+  <data name="Pipeline_NoReel" xml:space="preserve">
+    <value>Najpierw wybierz rolkę.</value>
+  </data>
+  <data name="Pipeline_NoFraming" xml:space="preserve">
+    <value>Najpierw zaplanuj kadrowanie.</value>
+  </data>
+  <data name="Note_Info" xml:space="preserve">
+    <value>Informacja</value>
+  </data>
+  <data name="Note_Warning" xml:space="preserve">
+    <value>Ostrzeżenie</value>
+  </data>
+  <data name="Note_Error" xml:space="preserve">
+    <value>Błąd</value>
+  </data>
+  <data name="Note_Named" xml:space="preserve">
+    <value>{0}: {1}</value>
+  </data>
+  <data name="Terms_Ffmpeg_Installed" xml:space="preserve">
+    <value>Zainstalowano: kompilacja GPL od BtbN, więc obowiązuje GPL-3.0</value>
+  </data>
+  <data name="Terms_Ffmpeg_System" xml:space="preserve">
+    <value>Nie pobrano: aplikacja używa ffmpeg z systemu, na warunkach tej kompilacji</value>
+  </data>
+  <data name="Terms_Whisper_Cuda" xml:space="preserve">
+    <value>Zainstalowano: kompilacja CUDA, więc jej biblioteki CUDA obejmuje licencja NVIDIA CUDA EULA</value>
+  </data>
+  <data name="Terms_Llama_Cuda" xml:space="preserve">
+    <value>Zainstalowano: kompilacja CUDA ze środowiskiem CUDA firmy NVIDIA, więc te biblioteki obejmuje licencja NVIDIA CUDA EULA</value>
+  </data>
+  <data name="Terms_YtDlp_Installed" xml:space="preserve">
+    <value>Zainstalowano: samodzielna kompilacja, więc obowiązuje GPLv3+</value>
+  </data>
+  <data name="Terms_YtDlp_System" xml:space="preserve">
+    <value>Nie pobrano: aplikacja używa yt-dlp z PATH, na warunkach tej kopii</value>
+  </data>
+  <data name="Terms_Deno_System" xml:space="preserve">
+    <value>Nie pobrano: aplikacja używa Deno z PATH</value>
+  </data>
+  <data name="Terms_Installed" xml:space="preserve">
+    <value>Zainstalowano</value>
+  </data>
+  <data name="Terms_NotInstalled" xml:space="preserve">
+    <value>Nie zainstalowano</value>
+  </data>
+  <data name="Terms_NotDownloaded" xml:space="preserve">
+    <value>Nie pobrano</value>
+  </data>
+  <data name="Terms_OwnBuild" xml:space="preserve">
+    <value>Własna kompilacja, wskazana w settings.json, na jej własnych warunkach</value>
+  </data>
+  <data name="Terms_InstalledBuild" xml:space="preserve">
+    <value>Zainstalowano: kompilacja {0}</value>
+  </data>
+  <data name="Terms_InstalledFile" xml:space="preserve">
+    <value>Zainstalowano: {0}</value>
+  </data>
+  <data name="LicenceGroup_EveryBuild_Title" xml:space="preserve">
+    <value>W każdej kompilacji</value>
+  </data>
+  <data name="LicenceGroup_EveryBuild_Description" xml:space="preserve">
+    <value>Część samej aplikacji: skopiowane do jej źródeł albo pobierane przez NuGet podczas kompilacji.</value>
+  </data>
+  <data name="LicenceGroup_ReleasePackage_Title" xml:space="preserve">
+    <value>Dodane przez pakiet</value>
+  </data>
+  <data name="LicenceGroup_ReleasePackage_Description" xml:space="preserve">
+    <value>Pakiety wydań dodają to, czego aplikacja potrzebuje do uruchomienia, więc nie trzeba instalować nic więcej. Instalator dla Windows dodaje też to, co aplikację instaluje i usuwa.</value>
+  </data>
+  <data name="LicenceGroup_DownloadedByApp_Title" xml:space="preserve">
+    <value>Pobierane przez aplikację</value>
+  </data>
+  <data name="LicenceGroup_DownloadedByApp_Description" xml:space="preserve">
+    <value>„Zainstaluj brakujące” pobiera je od ich wydawców do folderu danych. Narzędzie, które już jest w systemie, zostaje użyte zamiast nich, na jego własnych warunkach.</value>
+  </data>
+  <data name="LicenceGroup_DownloadedIfAgreed_Title" xml:space="preserve">
+    <value>Pobierane tylko za zgodą</value>
+  </data>
+  <data name="LicenceGroup_DownloadedIfAgreed_Description" xml:space="preserve">
+    <value>Potrzebne tylko do linków do filmów. Aplikacja pyta, zanim je pobierze.</value>
+  </data>
+  <data name="Licence_ReelsMagician_Purpose" xml:space="preserve">
+    <value>Ta aplikacja</value>
+  </data>
+  <data name="Licence_FontAwesomeFree731_Purpose" xml:space="preserve">
+    <value>Ikony, które rysuje aplikacja</value>
+  </data>
+  <data name="Licence_FontAwesomeFree731_Licence" xml:space="preserve">
+    <value>Ikony: CC BY 4.0</value>
+  </data>
+  <data name="Licence_Avalonia_Purpose" xml:space="preserve">
+    <value>Interfejs użytkownika</value>
+  </data>
+  <data name="Licence_NWayland_Purpose" xml:space="preserve">
+    <value>Wiązania Avalonii do Waylanda</value>
+  </data>
+  <data name="Licence_MicroComRuntime_Purpose" xml:space="preserve">
+    <value>Używany przez Avalonię</value>
+  </data>
+  <data name="Licence_TmdsDBusProtocol_Purpose" xml:space="preserve">
+    <value>Używany przez Avalonię na Linuksie</value>
+  </data>
+  <data name="Licence_SkiaSharpWithItsNativeSkiaLibrary_Name" xml:space="preserve">
+    <value>SkiaSharp z natywną biblioteką Skia</value>
+  </data>
+  <data name="Licence_SkiaSharpWithItsNativeSkiaLibrary_Purpose" xml:space="preserve">
+    <value>Rysuje interfejs</value>
+  </data>
+  <data name="Licence_SkiaSharpWithItsNativeSkiaLibrary_Licence" xml:space="preserve">
+    <value>MIT; sama Skia jest na licencji BSD-3-Clause, a biblioteka natywna ma własne informacje o licencjach</value>
+  </data>
+  <data name="Licence_HarfBuzzSharpWithItsNativeHarfBuzzLibrary_Name" xml:space="preserve">
+    <value>HarfBuzzSharp z natywną biblioteką HarfBuzz</value>
+  </data>
+  <data name="Licence_HarfBuzzSharpWithItsNativeHarfBuzzLibrary_Purpose" xml:space="preserve">
+    <value>Kształtuje tekst</value>
+  </data>
+  <data name="Licence_HarfBuzzSharpWithItsNativeHarfBuzzLibrary_Licence" xml:space="preserve">
+    <value>MIT; sam HarfBuzz jest na licencji „Old MIT”</value>
+  </data>
+  <data name="Licence_ANGLEAvaloniaAngleWindowsNatives_Purpose" xml:space="preserve">
+    <value>Rysuje interfejs przez Direct3D w Windows</value>
+  </data>
+  <data name="Licence_OpenCvSharp5_Purpose" xml:space="preserve">
+    <value>Wykrywanie twarzy i ludzi: OpenCV 5.0 dla .NET</value>
+  </data>
+  <data name="Licence_OpenCVForWindowsOpenCvSharp5RuntimeWin_Name" xml:space="preserve">
+    <value>OpenCV dla Windows (OpenCvSharp5.runtime.win)</value>
+  </data>
+  <data name="Licence_OpenCVForWindowsOpenCvSharp5RuntimeWin_Purpose" xml:space="preserve">
+    <value>Biblioteka natywna OpenCV</value>
+  </data>
+  <data name="Licence_OpenCVForWindowsOpenCvSharp5RuntimeWin_Licence" xml:space="preserve">
+    <value>Apache-2.0; jej biblioteka opencv_videoio_ffmpeg to kompilacja FFmpeg od OpenCV na licencji LGPL-2.1</value>
+  </data>
+  <data name="Licence_OpenCVForLinuxHeadlessOpenCvSharp5OfficialRuntimeLinuxX64Headless_Name" xml:space="preserve">
+    <value>OpenCV dla Linuksa, bez okien (OpenCvSharp5.official.runtime.linux-x64.headless)</value>
+  </data>
+  <data name="Licence_OpenCVForLinuxHeadlessOpenCvSharp5OfficialRuntimeLinuxX64Headless_Purpose" xml:space="preserve">
+    <value>Biblioteka natywna OpenCV, bez własnych okien OpenCV</value>
+  </data>
+  <data name="Licence_OpenCVForLinuxHeadlessOpenCvSharp5OfficialRuntimeLinuxX64Headless_Licence" xml:space="preserve">
+    <value>Apache-2.0; statycznie dołącza FFmpeg (LGPL-2.1) i Tesseract (Apache-2.0)</value>
+  </data>
+  <data name="Licence_SharpCompress_Purpose" xml:space="preserve">
+    <value>Rozpakowuje archiwa .tar.xz, w których przychodzą narzędzia dla Linuksa</value>
+  </data>
+  <data name="Licence_Velopack_Purpose" xml:space="preserve">
+    <value>Łączy aplikację z jej instalatorem dla Windows</value>
+  </data>
+  <data name="Licence_NETRuntime_Name" xml:space="preserve">
+    <value>Środowisko uruchomieniowe .NET</value>
+  </data>
+  <data name="Licence_NETRuntime_Purpose" xml:space="preserve">
+    <value>Uruchamia aplikację; zawierają je instalator i archiwum zip dla Windows oraz AppImage</value>
+  </data>
+  <data name="Licence_NETRuntime_Licence" xml:space="preserve">
+    <value>MIT, z własnymi informacjami o licencjach</value>
+  </data>
+  <data name="Licence_AppImageType2Runtime_Name" xml:space="preserve">
+    <value>Środowisko uruchomieniowe AppImage type2</value>
+  </data>
+  <data name="Licence_AppImageType2Runtime_Purpose" xml:space="preserve">
+    <value>Montuje AppImage i uruchamia aplikację</value>
+  </data>
+  <data name="Licence_AppImageType2Runtime_Licence" xml:space="preserve">
+    <value>MIT; statycznie dołącza musl (MIT), libfuse (LGPL-2.1), squashfuse (BSD-2-Clause), zstd (BSD-3-Clause lub GPL-2.0) i zlib (licencja zlib)</value>
+  </data>
+  <data name="Licence_VelopackSSetupExeAndUpdateExe_Name" xml:space="preserve">
+    <value>Setup.exe i Update.exe z Velopacka</value>
+  </data>
+  <data name="Licence_VelopackSSetupExeAndUpdateExe_Purpose" xml:space="preserve">
+    <value>Instalują aplikację dla bieżącego użytkownika i ją odinstalowują</value>
+  </data>
+  <data name="Licence_FfmpegFfprobe_Purpose" xml:space="preserve">
+    <value>Odczytuje, tnie i koduje film</value>
+  </data>
+  <data name="Licence_FfmpegFfprobe_Licence" xml:space="preserve">
+    <value>GPL-3.0: kompilacja GPL od BtbN zawiera biblioteki dostępne tylko na GPL, takie jak libx264</value>
+  </data>
+  <data name="Licence_WhisperCpp_Purpose" xml:space="preserve">
+    <value>Rozpoznawanie mowy</value>
+  </data>
+  <data name="Licence_WhisperCpp_Licence" xml:space="preserve">
+    <value>MIT; kompilacja CUDA zawiera biblioteki środowiska CUDA firmy NVIDIA, na licencji NVIDIA CUDA EULA</value>
+  </data>
+  <data name="Licence_LlamaCpp_Purpose" xml:space="preserve">
+    <value>Uruchamia Qwena, który wybiera rolkę</value>
+  </data>
+  <data name="Licence_LlamaCpp_Licence" xml:space="preserve">
+    <value>MIT; z kompilacją CUDA aplikacja pobiera też biblioteki środowiska CUDA firmy NVIDIA, na licencji NVIDIA CUDA EULA</value>
+  </data>
+  <data name="Licence_WhisperModel_Name" xml:space="preserve">
+    <value>Model Whisper</value>
+  </data>
+  <data name="Licence_WhisperModel_Purpose" xml:space="preserve">
+    <value>Model rozpoznawania mowy, przekonwertowany do ggml</value>
+  </data>
+  <data name="Licence_Qwen3Model_Name" xml:space="preserve">
+    <value>Model Qwen3</value>
+  </data>
+  <data name="Licence_Qwen3Model_Purpose" xml:space="preserve">
+    <value>Model językowy, 4B lub 8B, w formacie GGUF</value>
+  </data>
+  <data name="Licence_YuNetFaceDetector_Name" xml:space="preserve">
+    <value>Detektor twarzy YuNet</value>
+  </data>
+  <data name="Licence_YuNetFaceDetector_Purpose" xml:space="preserve">
+    <value>Znajduje twarze, by trzymać je w kadrze</value>
+  </data>
+  <data name="Licence_YtDlp_Purpose" xml:space="preserve">
+    <value>Pobiera film z linku</value>
+  </data>
+  <data name="Licence_YtDlp_Licence" xml:space="preserve">
+    <value>GPLv3+: samodzielne kompilacje zawierają kod na GPLv3+; własny kod yt-dlp jest na licencji Unlicense</value>
+  </data>
+  <data name="Licence_Deno_Purpose" xml:space="preserve">
+    <value>Środowisko JavaScript, którym yt-dlp odczytuje formaty filmu</value>
+  </data>
+</root>

@@ -13,4 +13,15 @@
     <!-- .NET reads zip and gzip itself; ffmpeg's Linux builds come as .tar.xz. -->
     <PackageReference Include="SharpCompress" Version="0.50.8" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- The messages Core shows the user, in English, with Strings.pl.resx beside it. The build
+         generates the Strings class, so every key used in code is checked by the compiler. -->
+    <EmbeddedResource Update="Localization\Strings.resx">
+      <StronglyTypedFileName>$(IntermediateOutputPath)Strings.Designer.cs</StronglyTypedFileName>
+      <StronglyTypedLanguage>CSharp</StronglyTypedLanguage>
+      <StronglyTypedNamespace>ReelsMagician.Core.Localization</StronglyTypedNamespace>
+      <StronglyTypedClassName>Strings</StronglyTypedClassName>
+      <PublicClass>true</PublicClass>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>
