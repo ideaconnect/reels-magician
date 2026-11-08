@@ -79,6 +79,7 @@ static void RunLogicChecks()
     ScrollShadowChecks.Run();
     LicenceChecks.Run();
     InfoBoxChecks.Run();
+    SetupListChecks.Run();
     MemoryFitChecks.Run();
     LocalizationChecks.Run();
     InstallerChecks.Run();

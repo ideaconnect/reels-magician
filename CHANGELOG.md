@@ -20,6 +20,7 @@ Changes to ReelsMagician, newest first.
 
 ### Fixed
 
+- **Setup lists:** in **Required tools**, a model's name was cut off just where it says which one is recommended (`Whisper large-v3-turbo (quantised) — recom…`), and further in Polish, with no way to read the rest. The name column now widens to the longest name, up to a limit that leaves the details room, and **Video links** lines up with it. A name or detail still too long for its column, as at the window's smallest size, shows whole in its tooltip.
 - **Context on a new install:** a new install ran the default model, Qwen3 8B (Q4_K_M), at a 16k context, although choosing it on the Setup tab gives it 32k, so the same model got half the context until it was chosen again. A new install now starts at the context the model list gives the default model, 32k, which needs about 9.7 GB of graphics memory instead of 7.4 GB; where this computer has less, the Setup tab warns, as for any model too big for it. An install that already has a settings.json keeps its context until you choose a model on the Setup tab.
 
 ## 0.2.0 (2026-11-08)
