@@ -266,11 +266,14 @@
 
                 <TextBlock Text="Topic used for the analysis" Classes="label" Margin="0,14,0,4" />
                 <TextBox Text="{Binding Topic}" />
-                <local:InfoBox Margin="0,8,0,0"
-                               Text="Taken from the video title, or from the filename for a local file. Qwen scores every paragraph against this, so correct it if it is misleading." />
-
-                <Button Content="Transcribe" Classes="accent" Command="{Binding TranscribeCommand}"
-                        HorizontalAlignment="Right" Margin="0,16,0,0" />
+                <!-- The note beside the button, as on Subtitles and Reel, so a page with a
+                     warning still fits the default window. -->
+                <Grid Margin="0,8,0,0" ColumnDefinitions="*,Auto">
+                  <local:InfoBox VerticalAlignment="Center" Margin="0,0,12,0"
+                                 Text="Taken from the video title, or from the filename for a local file. Qwen scores every paragraph against this, so correct it if it is misleading." />
+                  <Button Grid.Column="1" Content="Transcribe" Classes="accent" Command="{Binding TranscribeCommand}"
+                          VerticalAlignment="Center" />
+                </Grid>
               </StackPanel>
             </Border>
           </StackPanel>
@@ -651,12 +654,15 @@
                   <Button Grid.Column="1" Content="Choose folder…" local:FaIcon.ButtonIcon="{StaticResource fa-folder-open}"
                           Command="{Binding BrowseOutputCommand}" Margin="8,0,0,0" />
                 </Grid>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0" Spacing="8">
-                  <Button Content="Copy path" local:FaIcon.ButtonIcon="{StaticResource fa-copy}" Command="{Binding CopyOutputPathCommand}" />
-                  <Button Content="Render the reel" Classes="accent" local:FaIcon.ButtonIcon="{StaticResource fa-film}" Command="{Binding RenderCommand}" />
-                </StackPanel>
-                <local:InfoBox Margin="0,12,0,0"
-                               Text="Renders 1080×1920 H.264 at 30 fps with AAC audio, normalised to −14 LUFS — the loudness target the social platforms use." />
+                <!-- What the render produces, beside the buttons that make it. -->
+                <Grid Margin="0,16,0,0" ColumnDefinitions="*,Auto">
+                  <local:InfoBox VerticalAlignment="Center" Margin="0,0,12,0"
+                                 Text="Renders 1080×1920 H.264 at 30 fps with AAC audio, normalised to −14 LUFS — the loudness target the social platforms use." />
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+                    <Button Content="Copy path" local:FaIcon.ButtonIcon="{StaticResource fa-copy}" Command="{Binding CopyOutputPathCommand}" />
+                    <Button Content="Render the reel" Classes="accent" local:FaIcon.ButtonIcon="{StaticResource fa-film}" Command="{Binding RenderCommand}" />
+                  </StackPanel>
+                </Grid>
               </StackPanel>
             </Border>
 
@@ -705,15 +711,17 @@
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0" Spacing="8">
-                  <Button Content="Copy path" local:FaIcon.ButtonIcon="{StaticResource fa-copy}" Command="{Binding CopyDataFolderCommand}" />
-                  <Button Content="Re-measure" local:FaIcon.ButtonIcon="{StaticResource fa-rotate}" Command="{Binding RefreshCleanupCommand}" />
-                  <Button Content="{Binding CleanupButtonText}" Classes="accent" local:FaIcon.ButtonIcon="{StaticResource fa-broom}"
-                          Command="{Binding CleanupCommand}" />
-                </StackPanel>
-
-                <local:InfoBox Margin="0,12,0,0"
-                               Text="Only this folder is touched, and you are asked to confirm before anything is deleted. Working files are safe to clear at any time; removing the models or tools means downloading them again." />
+                <!-- What cleaning up touches, beside the buttons, so the page fits the smallest window. -->
+                <Grid Margin="0,14,0,0" ColumnDefinitions="*,Auto">
+                  <local:InfoBox VerticalAlignment="Center" Margin="0,0,12,0"
+                                 Text="Only this folder is touched, and you are asked to confirm before anything is deleted. Working files are safe to clear at any time; removing the models or tools means downloading them again." />
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+                    <Button Content="Copy path" local:FaIcon.ButtonIcon="{StaticResource fa-copy}" Command="{Binding CopyDataFolderCommand}" />
+                    <Button Content="Re-measure" local:FaIcon.ButtonIcon="{StaticResource fa-rotate}" Command="{Binding RefreshCleanupCommand}" />
+                    <Button Content="{Binding CleanupButtonText}" Classes="accent" local:FaIcon.ButtonIcon="{StaticResource fa-broom}"
+                            Command="{Binding CleanupCommand}" />
+                  </StackPanel>
+                </Grid>
               </StackPanel>
             </Border>
           </StackPanel>
