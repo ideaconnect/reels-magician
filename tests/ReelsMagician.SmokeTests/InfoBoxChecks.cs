@@ -37,8 +37,8 @@ public static class InfoBoxChecks
         ("About", "ReelsMagician and every component it uses come under their own licences"),
     ];
 
-    // The source warning and a component's warning, such as a Fallback build.
-    private static readonly string[] WarningNotes = ["{Binding SourceWarning}", "{Binding Warning}"];
+    // The source warning, a component's warning, such as a Fallback build, and a transcript stuck on one line (#75).
+    private static readonly string[] WarningNotes = ["{Binding SourceWarning}", "{Binding Warning}", "{Binding StuckWarning}"];
 
     // Data, not notes: summaries, states, sizes and times keep the small muted hint style.
     private static readonly string[] DataHints =

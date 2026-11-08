@@ -152,9 +152,11 @@ warns when this computer probably has too little.
 - **Speech recognition on the processor** on Linux, and on Windows without an NVIDIA card:
   whisper.cpp publishes no Vulkan build for either. It still transcribes about 6× faster than real
   time on a modern processor. On Linux the analysis runs through Vulkan; there is no CUDA build.
-- **Whisper can repeat one line through long stretches of music**, as on a film
-  ([#75](https://github.com/ideaconnect/reels-magician/issues/75)). Check the Subtitles step, or
-  put the video's own subtitles next to it (see [Making a reel](#making-a-reel)).
+- **Whisper can make up a line over long stretches of music**, such as "Thank you." over a film's
+  credits. When it gets stuck repeating one, the app transcribes the video again, and the Subtitles
+  step warns if a line still repeats
+  ([#75](https://github.com/ideaconnect/reels-magician/issues/75)). The video's own subtitles avoid
+  it (see [Making a reel](#making-a-reel)).
 - **Subtitles that come with the video are all marked amber**, as if Whisper had been unsure of them
   ([#76](https://github.com/ideaconnect/reels-magician/issues/76)).
 - **The builds aren't signed yet**, so Windows SmartScreen warns the first time.
@@ -222,7 +224,8 @@ the title or filename; correct it if it is wrong, because the analysis is anchor
 
 **3 · Subtitles** — the review step. Every cue with its times, editable in place. Amber text marks
 cues Whisper was unsure about, so you can aim your attention. Split, merge, nudge by 100 ms,
-delete, or import and export SRT.
+delete, or import and export SRT. An amber box above the list warns when Whisper wrote one line
+five times in a row or more, as it can over music; **Analyse** then asks before it uses the text.
 
 Edits are safe: when you change a line, word timings are re-derived so that words which survived
 the edit keep their original timing and only new ones are re-spread. A typo fix never
@@ -413,9 +416,11 @@ for the graphics card runs with some of its layers on the processor, which is sl
 warns about it beforehand.
 
 **The subtitles repeat one line over and over** — Whisper got stuck over a stretch of music
-([#75](https://github.com/ideaconnect/reels-magician/issues/75)). Use the video's own subtitles if
-it has any (a `.srt` with the same name next to a local file), or delete the repeated lines on the
-Subtitles step before analysing.
+([#75](https://github.com/ideaconnect/reels-magician/issues/75)). The app sees five in a row and
+transcribes the video again without handing each 30-second window the text before it, which is what
+keeps the line going; the activity log says so. If the Subtitles step still warns, delete the
+repeated lines before analysing, or use the video's own subtitles if it has any (a `.srt` with the
+same name next to a local file).
 
 **The reel picked a dull stretch** — check the topic on the Source tab first; a wrong topic
 misdirects the scoring. Otherwise choose a different proposal on the Reel tab, or re-analyse.

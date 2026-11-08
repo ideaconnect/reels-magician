@@ -332,6 +332,25 @@
   <data name="Subtitles_Note" xml:space="preserve">
     <value>Amber text marks cues Whisper was unsure about. Edits are applied when you analyse.</value>
   </data>
+  <data name="Subtitles_Stuck" xml:space="preserve">
+    <value>The transcript looks stuck: “{0}” comes {1} times in a row, from {2} to {3}. Whisper can keep repeating a line it made up over music. Delete those cues, or import subtitles, before you analyse.</value>
+    <comment>{0} the line, {1} how many times in a row (5 or more), {2} and {3} where the run starts and ends, as 5:29.</comment>
+  </data>
+  <data name="Stuck_Title" xml:space="preserve">
+    <value>The transcript looks stuck</value>
+  </data>
+  <data name="Stuck_Ask" xml:space="preserve">
+    <value>“{0}” comes {1} times in a row, from {2} to {3}. The analysis would pick the reel from this text.
+
+Analyse anyway?</value>
+    <comment>As in Subtitles_Stuck.</comment>
+  </data>
+  <data name="Stuck_Analyse" xml:space="preserve">
+    <value>Analyse anyway</value>
+  </data>
+  <data name="Stuck_NotStarted" xml:space="preserve">
+    <value>Not analysed. Delete the repeated cues, or import subtitles, first.</value>
+  </data>
   <data name="Subtitles_Analyse" xml:space="preserve">
     <value>Analyse and pick the reel</value>
   </data>

@@ -365,6 +365,8 @@ public static class EndToEnd
         Check.True(transcript.HasWordTimings, "transcript carries word-level timings");
         Check.True(transcript.Segments.All(s => s.End > s.Start), "every cue has a positive duration");
         Check.True(transcript.AllWords().All(w => w.End >= w.Start), "no word ends before it starts");
+        Check.True(RepeatedLine.Longest(transcript.Segments) is null,
+            $"the transcript is not stuck on one line ({RepeatedLine.Longest(transcript.Segments)?.Text ?? "no line repeats"})");
 
         Console.WriteLine("    first cues:");
         foreach (var cue in transcript.Segments.Take(3))

@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Globalization;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using ReelsMagician.App.Localization;
@@ -108,6 +110,14 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         OpenSponsorsCommand = new AsyncRelayCommand(() => OpenSupportLinkAsync(SponsorsLink));
         RefreshCleanupCommand = new RelayCommand(RefreshCleanup);
         CleanupCommand = new AsyncRelayCommand(CleanupAsync, () => !IsBusy && SelectedCleanupBytes > 0);
+
+        // A deleted, merged or edited cue can end a run of one line, so the warning follows the rows.
+        Subtitles.CollectionChanged += (_, e) =>
+        {
+            foreach (var row in e.NewItems?.OfType<SubtitleRowViewModel>() ?? []) row.PropertyChanged += OnSubtitleChanged;
+            foreach (var row in e.OldItems?.OfType<SubtitleRowViewModel>() ?? []) row.PropertyChanged -= OnSubtitleChanged;
+            ShowStuckWarning();
+        };
 
         RefreshTools();
         RefreshCleanup();
@@ -390,6 +400,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         RefreshCleanup(keepSelection: true);
         ShowSource();
         ShowTranscriptSummary();
+        ShowStuckWarning();
         ShowPlanSummary();
         foreach (var row in Subtitles) row.RefreshTexts();
         foreach (var candidate in Candidates) candidate.RefreshTexts();
@@ -566,6 +577,14 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     private string _transcriptSummary = Strings.Transcript_None;
     public string TranscriptSummary { get => _transcriptSummary; private set => Set(ref _transcriptSummary, value); }
+
+    // The line a Whisper transcript repeats, when it does so often enough in a row to look stuck.
+    private RepeatedLine? _stuckLine;
+
+    private string _stuckWarning = "";
+
+    /// <summary>The Subtitles tab's warning over a transcript stuck on one line (#75); empty when it isn't.</summary>
+    public string StuckWarning { get => _stuckWarning; private set => Set(ref _stuckWarning, value); }
 
     // ── Reel plan ────────────────────────────────────────────────────────────────────────
 
@@ -959,6 +978,8 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     private async Task AnalyzeAsync()
     {
+        if (!await ConfirmStuckAsync().ConfigureAwait(true)) return;
+
         // The estimate uses llama.cpp's own devices, so a build not asked yet is asked first.
         await _toolchain.ProbeLlamaAsync(_tools, CancellationToken.None).ConfigureAwait(true);
         if (!await ConfirmFitAsync(MemoryFit.ForLlm(_tools, _settings), SelectedLlmModel.Id, ModelStage.Analysis).ConfigureAwait(true))
@@ -1049,6 +1070,52 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             : L.Format(nameof(Strings.Transcript_FromWhisper), transcript.Language);
         TranscriptSummary = L.Format(nameof(Strings.Transcript_Summary),
             L.Plural("Transcript_Cues", Subtitles.Count), L.Plural("Transcript_Words", transcript.WordCount), origin);
+    }
+
+    /// <summary>
+    /// Warns when a Whisper transcript gives one line <see cref="RepeatedLine.StuckAt"/> times in a
+    /// row or more, as whisper.cpp can over a long stretch of music even after transcribing it
+    /// again without context (#75). Subtitles that came with the video, or were imported, are what
+    /// their author wrote, and get no warning.
+    /// </summary>
+    private void ShowStuckWarning()
+    {
+        _stuckLine = _project.Transcript is { Origin: TranscriptOrigin.Whisper }
+            ? RepeatedLine.Longest(Subtitles.Select(r => r.Segment))
+            : null;
+        StuckWarning = _stuckLine is { } line
+            ? L.Format(nameof(Strings.Subtitles_Stuck), line.Text, line.Count, Clock(line.Start), Clock(line.End))
+            : "";
+    }
+
+    private void OnSubtitleChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SubtitleRowViewModel.Text)) ShowStuckWarning();
+    }
+
+    /// <summary>A time in a sentence: "5:29", or "1:05:29" from an hour on.</summary>
+    private static string Clock(double seconds)
+    {
+        var t = TimeSpan.FromSeconds(Math.Max(0, Math.Round(seconds)));
+        return t.TotalHours >= 1
+            ? string.Format(CultureInfo.InvariantCulture, "{0}:{1:00}:{2:00}", (int)t.TotalHours, t.Minutes, t.Seconds)
+            : string.Format(CultureInfo.InvariantCulture, "{0}:{1:00}", t.Minutes, t.Seconds);
+    }
+
+    /// <summary>
+    /// Asks before the analysis picks a reel from a transcript stuck on one line. Cancel, the
+    /// default, leaves the rows to be cleaned up first.
+    /// </summary>
+    private async Task<bool> ConfirmStuckAsync()
+    {
+        if (_stuckLine is not { } line) return true;
+
+        var question = L.Format(nameof(Strings.Stuck_Ask), line.Text, line.Count, Clock(line.Start), Clock(line.End));
+        if (await _shell.AskAsync(Strings.Stuck_Title, question, Strings.Stuck_Analyse, Strings.Common_Cancel).ConfigureAwait(true))
+            return true;
+
+        ShowStatus(() => Strings.Stuck_NotStarted);
+        return false;
     }
 
     // The reel length the plan was made for, which its summary names.

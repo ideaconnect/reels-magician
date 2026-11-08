@@ -326,7 +326,12 @@
       <TabItem Header="{Binding SubtitlesStep}" AutomationProperties.Name="{Binding SubtitlesStep.AccessibleName}">
         <Grid Margin="0,12,0,0" RowDefinitions="Auto,Auto,Auto,*,Auto">
 
-          <TextBlock Grid.Row="0" Text="{Binding TranscriptSummary}" Classes="hint" Margin="0,0,0,10" />
+          <StackPanel Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock Text="{Binding TranscriptSummary}" Classes="hint" />
+            <!-- Whisper stuck on one line over music (#75): said before the analysis gets it. -->
+            <local:InfoBox Kind="Warning" Text="{Binding StuckWarning}" Margin="0,8,0,0"
+                           IsVisible="{Binding StuckWarning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          </StackPanel>
 
           <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10" Spacing="8">
             <Button Content="{l:Tr Subtitles_Split}" local:FaIcon.ButtonIcon="{StaticResource fa-scissors}" Command="{Binding SplitCueCommand}" />

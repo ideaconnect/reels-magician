@@ -367,6 +367,13 @@
   <data name="Whisper_Progress" xml:space="preserve">
     <value>Transcribing with Whisper — {0}%</value>
   </data>
+  <data name="Whisper_Retrying" xml:space="preserve">
+    <value>Whisper got stuck repeating one line. Transcribing again…</value>
+  </data>
+  <data name="Whisper_RetryProgress" xml:space="preserve">
+    <value>Transcribing again — {0}%</value>
+    <comment>The second pass after Whisper got stuck repeating one line.</comment>
+  </data>
   <data name="Whisper_NoTranscript" xml:space="preserve">
     <value>Whisper finished but wrote no JSON transcript.</value>
   </data>
