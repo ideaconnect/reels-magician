@@ -1,10 +1,12 @@
 # Changelog
 
-Changes to ReelsMagician, newest first. Version numbers will be assigned once the cross-platform port is done. Until then, every change goes under **Unreleased**.
+Changes to ReelsMagician, newest first.
 
-## Unreleased
+## 0.2.0 (2026-11-08)
 
-### Windows and Linux port, in progress
+The first release that runs on Linux as well as Windows, and the first with ready-to-run packages: a zip for Windows and an AppImage for Linux. Still an early preview.
+
+### Windows and Linux
 
 - **Processing core:** the core now builds for Linux as well as Windows, and passes the same checks on both.
 - **Linux graphics:** on Linux the app finds the graphics card, and Vulkan support, from the system itself.

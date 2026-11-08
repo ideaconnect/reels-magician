@@ -1,6 +1,6 @@
 # System requirements
 
-These are the requirements for the upcoming release of ReelsMagician for Windows and Linux. The current release runs on Windows only and is described in the [README](../README.md).
+These are the requirements for ReelsMagician 0.2.0 and later, on Windows and Linux. Version 0.1.0 ran on Windows only, from source.
 
 ## Where it runs
 
