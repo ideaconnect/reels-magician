@@ -35,6 +35,12 @@ jobs:
         run: |
           $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { '0.0.0-dev' }
           dotnet publish src/ReelsMagician.App -c Release -r win-x64 --self-contained -p:Version=$version -o out/ReelsMagician
+          # The zip must carry the licences of what it bundles (THIRD-PARTY-NOTICES.md).
+          $notices = 'LICENSE', 'THIRD-PARTY-NOTICES.md', 'licenses/Avalonia/licence.md', 'licenses/OpenCvSharp/LICENSE',
+            'licenses/FFmpeg/COPYING.LGPLv2.1', 'licenses/SkiaSharp.NativeAssets.Win32/THIRD-PARTY-NOTICES.txt',
+            'licenses/Avalonia.Angle.Windows.Natives/LICENSE', 'licenses/Microsoft.NETCore.App.Runtime.win-x64/THIRD-PARTY-NOTICES.TXT'
+          $missing = $notices | Where-Object { -not (Test-Path "out/ReelsMagician/$_") }
+          if ($missing) { throw "The publish lacks: $($missing -join ', ')" }
           Compress-Archive -Path out/ReelsMagician -DestinationPath ReelsMagician-win-x64.zip
       - uses: actions/upload-artifact@v7
         with:
@@ -59,6 +65,8 @@ jobs:
           dotnet publish src/ReelsMagician.App -c Release -r linux-x64 --self-contained -p:Version=$version -o out/publish
       - name: Build the AppImage
         run: sh packaging/linux/build-appimage.sh out/publish ReelsMagician-x86_64.AppImage "$VERSION"
+      - name: Check the AppImage
+        run: sh packaging/linux/check-appimage.sh ReelsMagician-x86_64.AppImage
       - uses: actions/upload-artifact@v7
         with:
           name: linux

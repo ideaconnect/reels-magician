@@ -29,6 +29,12 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     private Toolset _tools = new();
     private CancellationTokenSource? _cts;
 
+    // The number of the stage that is running, or 0 while none is. A progress report keeps the
+    // number of the stage it came from and is dropped once that stage has finished, so a report
+    // still queued from the stage's threads cannot replace the status it finished with.
+    private int _runningStage;
+    private int _stagesStarted;
+
     public MainViewModel(IAppShell shell)
     {
         _shell = shell;
@@ -217,13 +223,13 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             RefreshCleanup();
             RefreshTools();
 
-            Status = result.Complete
+            if (!result.Complete)
+                this.Warn("cleanup", "Close anything using these files and try again.");
+
+            return result.Complete
                 ? $"Freed {AssetDownloader.Humanize(result.BytesFreed)}."
                 : $"Freed {AssetDownloader.Humanize(result.BytesFreed)}, but some files are still in use: " +
                   string.Join("; ", result.Failures.Take(3));
-
-            if (!result.Complete)
-                this.Warn("cleanup", "Close anything using these files and try again.");
         }).ConfigureAwait(true);
     }
 
@@ -374,6 +380,13 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         }
     }
 
+    /// <summary>
+    /// The full path of the output folder as typed: <c>~</c> is the home folder, a relative folder
+    /// is taken from it, and an empty box means the default folder. The box itself keeps the
+    /// text as typed, so it does not change under the user's cursor.
+    /// </summary>
+    private string OutputFolderPath => UserPaths.ResolveOutputFolder(OutputFolder, AppSettings.DefaultOutputDirectory);
+
     public ObservableCollection<string> Log { get; } = [];
 
     private string _status = "Ready.";
@@ -427,9 +440,13 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     // ── Toolchain actions ────────────────────────────────────────────────────────────────
 
-    private void RefreshTools()
+    /// <summary>Looks for the tools on disk again, probing the GPU, and shows what it finds.</summary>
+    private void RefreshTools() => ShowTools(_toolchain.Detect(_settings));
+
+    /// <summary>Shows a toolset that has just been detected, such as the one an install ends with.</summary>
+    private void ShowTools(Toolset tools)
     {
-        _tools = _toolchain.Detect(_settings);
+        _tools = tools;
 
         ShowRows(Components, _toolchain.Describe(_settings, _tools));
         ShowRows(LinkComponents, _toolchain.DescribeLinkTools(_tools));
@@ -461,11 +478,24 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             ct => InstallThenRefreshAsync(c => _toolchain.InstallLinkToolsAsync(_settings, c), ct)).ConfigureAwait(true);
     }
 
-    /// <summary>Runs an install, then shows what is on disk afterwards; <see cref="RefreshTools"/> reads it back.</summary>
+    /// <summary>
+    /// Runs an install, then shows what is on disk afterwards. Every install already ends by
+    /// detecting the tools afresh, so its result is shown as it is rather than detected again.
+    /// </summary>
     private async Task InstallThenRefreshAsync(Func<CancellationToken, Task<Toolset>> install, CancellationToken ct)
     {
-        await install(ct).ConfigureAwait(true);
-        RefreshTools();
+        Toolset installed;
+        try
+        {
+            installed = await install(ct).ConfigureAwait(true);
+        }
+        catch
+        {
+            // A failed or cancelled install may have put some of the tools in place already.
+            RefreshTools();
+            throw;
+        }
+        ShowTools(installed);
     }
 
     // ── Pipeline stages ──────────────────────────────────────────────────────────────────
@@ -602,19 +632,16 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         {
             _project.RenderOptions = _project.RenderOptions with { CrossfadeSeconds = CrossfadeMs / 1000.0 };
 
-            Directory.CreateDirectory(OutputFolder);
+            var folder = OutputFolderPath;
+            Directory.CreateDirectory(folder);
             var name = Sanitise(_project.SelectedCandidate?.Title ?? _project.Topic);
-            var output = Path.Combine(OutputFolder, $"{name}_{DateTime.Now:yyyyMMdd-HHmmss}.mp4");
+            var output = Path.Combine(folder, $"{name}_{DateTime.Now:yyyyMMdd-HHmmss}.mp4");
 
             var pipeline = new ReelPipeline(_tools, _settings, _paths, this);
             var result = await pipeline.RenderAsync(_project, output, ct).ConfigureAwait(true);
 
-            // The render's last progress reports are still queued from its own thread; let them
-            // land first, or one of them replaces the path the user needs with "Reel complete".
-            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
-            Status = $"Reel written to {result.OutputPath}";
-
             RefreshCommands();
+            return $"Reel written to {result.OutputPath}";
         }).ConfigureAwait(true);
     }
 
@@ -753,7 +780,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     {
         CommitSubtitleEdits();
         var file = await _shell.PickSaveFileAsync("Export subtitles", Sanitise(Topic) + ".srt",
-            Directory.Exists(OutputFolder) ? OutputFolder : null, new FileFilter("SubRip", "*.srt")).ConfigureAwait(true);
+            Directory.Exists(OutputFolderPath) ? OutputFolderPath : null, new FileFilter("SubRip", "*.srt")).ConfigureAwait(true);
         if (file is null) return;
 
         try
@@ -844,7 +871,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     private async Task BrowseOutputAsync()
     {
         var folder = await _shell.PickFolderAsync("Choose where reels are saved",
-            Directory.Exists(OutputFolder) ? OutputFolder : null).ConfigureAwait(true);
+            Directory.Exists(OutputFolderPath) ? OutputFolderPath : null).ConfigureAwait(true);
         if (folder is not null) OutputFolder = folder;
     }
 
@@ -871,8 +898,19 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         Status = "Cancelling…";
     }
 
-    /// <summary>Runs one pipeline stage with shared busy state, cancellation and error reporting.</summary>
-    private async Task RunStageAsync(string label, Func<CancellationToken, Task> work)
+    /// <summary>Runs one pipeline stage that ends with "<paramref name="label"/> complete."</summary>
+    private Task RunStageAsync(string label, Func<CancellationToken, Task> work) =>
+        RunStageAsync(label, async ct =>
+        {
+            await work(ct).ConfigureAwait(true);
+            return (string?)null;
+        });
+
+    /// <summary>
+    /// Runs one pipeline stage with shared busy state, cancellation and error reporting. The work
+    /// returns the status to finish with, or null for "<paramref name="label"/> complete.".
+    /// </summary>
+    private async Task RunStageAsync(string label, Func<CancellationToken, Task<string?>> work)
     {
         if (IsBusy) return;
 
@@ -881,34 +919,37 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         IsBusy = true;
         Indeterminate = true;
         Progress = 0;
+        Volatile.Write(ref _runningStage, ++_stagesStarted);
         Status = label + "…";
         this.Info(label.ToLowerInvariant(), label + " started.");
 
+        string finalStatus;
         try
         {
-            await work(cts.Token).ConfigureAwait(true);
-            if (!Status.StartsWith("Reel written", StringComparison.Ordinal))
-                Status = label + " complete.";
+            finalStatus = await work(cts.Token).ConfigureAwait(true) ?? label + " complete.";
         }
         catch (OperationCanceledException)
         {
-            Status = label + " cancelled.";
+            finalStatus = label + " cancelled.";
             this.Warn(label.ToLowerInvariant(), "Cancelled by the user.");
         }
         catch (Exception ex)
         {
-            Status = $"{label} failed: {ex.Message}";
+            finalStatus = $"{label} failed: {ex.Message}";
             this.Error(label.ToLowerInvariant(), ex.Message);
             ErrorReporter.Report(ex, $"{label} failed");
         }
         finally
         {
+            // From here on, reports still queued from this stage are dropped.
+            Volatile.Write(ref _runningStage, 0);
             _cts = null;
             IsBusy = false;
             Indeterminate = false;
             Progress = 0;
             RefreshCommands();
         }
+        Status = finalStatus;
     }
 
     private void RefreshCommands()
@@ -956,8 +997,13 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     void IProgressSink.Report(string stage, string message, double? fraction)
     {
+        // Progress belongs to a running stage. A report from one that has finished, a late line
+        // of ffmpeg output say, would replace the status that stage finished with.
+        var from = Volatile.Read(ref _runningStage);
+        if (from == 0) return;
         Post(() =>
         {
+            if (from != _runningStage) return;
             Status = message;
             Indeterminate = fraction is null;
             Progress = fraction is null ? 0 : Math.Clamp(fraction.Value, 0, 1) * 100;

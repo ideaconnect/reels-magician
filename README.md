@@ -156,7 +156,8 @@ and are not installed with the tools above:
 The first time you load a link, the app asks before downloading them; you can also start the
 download from **Video links** on the Setup tab. If you decline, local video files keep working as
 normal. A yt-dlp already on your PATH is used without asking. You are responsible for having the
-right to download the videos you load, and for following the terms of the site they come from.
+right to download each video you load from a link, and for following the terms of the site it comes
+from.
 
 Two things are easy to get wrong here, and ReelsMagician handles both:
 
@@ -226,7 +227,8 @@ dotnet run --project src/ReelsMagician.App -c Release
 
 The same commands work on Windows and Linux. On Linux, run it from a Wayland session. The
 release packages are built by `.github/workflows/release.yml`, and the AppImage by
-`packaging/linux/build-appimage.sh`.
+`packaging/linux/build-appimage.sh`. Before the AppImage is uploaded,
+`packaging/linux/check-appimage.sh` checks that it starts and holds its libraries and licences.
 
 On first launch, open **1 · Setup** and press **Install everything missing**. It resumes if
 interrupted, so a dropped connection is not a restart.
@@ -331,7 +333,7 @@ src/ReelsMagician.Core/        no UI, fully testable
   Projects/     settings, project state, pipeline orchestration
 src/ReelsMagician.App/         Avalonia front end, Windows and Wayland
 tests/ReelsMagician.SmokeTests/
-packaging/linux/               the AppImage: desktop entry, icons, build script
+packaging/linux/               the AppImage: desktop entry, icons, licences, build and check scripts
 docs/                          system requirements and architecture decisions
 tools/make-speech-video.ps1 generates a narrated 4K test video (Windows: it uses the Windows speech engine)
 ```
@@ -345,17 +347,15 @@ dotnet run --project tests/ReelsMagician.SmokeTests -c Release
 # Logic checks only, needing no tools; this is what CI runs on Windows and Ubuntu
 dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- logic
 
-# Install the whole toolchain, the optional link tools included, and assert the right backends were chosen
+# Install what "Install everything missing" installs, never yt-dlp or Deno, and assert the right backends were chosen
 dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- install
-
-# The same, but only the required tools: never yt-dlp or Deno
-dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- tools
 
 # Full pipeline: Whisper, Qwen, framing and render over a narrated test video
 pwsh tools/make-speech-video.ps1
 dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- e2e
 
-# Resolve a real compatible video link: download, 4K check, language, subtitles, progress
+# Resolve a real compatible video link: download, 4K check, language, subtitles, progress.
+# This is the only mode that fetches yt-dlp and Deno, and only when they are missing.
 dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- link [url]
 ```
 

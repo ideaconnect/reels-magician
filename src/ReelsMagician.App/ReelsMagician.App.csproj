@@ -24,4 +24,40 @@
   <ItemGroup>
     <ProjectReference Include="..\ReelsMagician.Core\ReelsMagician.Core.csproj" />
   </ItemGroup>
+
+  <!--
+    A published build carries the licences of everything it bundles (THIRD-PARTY-NOTICES.md):
+    the app's own, the notices file, the texts kept in licenses/ for packages that ship none,
+    and, below, the licence files the packages and the .NET runtime ship themselves.
+  -->
+  <ItemGroup>
+    <None Include="..\..\LICENSE;..\..\THIRD-PARTY-NOTICES.md" Link="%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\..\licenses\**\*" Link="licenses\%(RecursiveDir)%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Each package that puts a file in the build, and the runtime pack of a self-contained one,
+       gets its LICENSE and THIRD-PARTY-NOTICES files copied to licenses/<package id>/. -->
+  <Target Name="PublishPackageLicences" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <_LicencePackage Include="%(ResolvedFileToPublish.NuGetPackageId)" Condition="'%(ResolvedFileToPublish.NuGetPackageId)' != ''">
+        <Version>%(ResolvedFileToPublish.NuGetPackageVersion)</Version>
+      </_LicencePackage>
+      <!-- Runtime packs can live outside the NuGet folder, so they bring their own directory. -->
+      <_UnusedRuntimePack Include="@(ResolvedRuntimePack)" Exclude="@(_LicencePackage)" />
+      <_UsedRuntimePack Include="@(ResolvedRuntimePack)" Exclude="@(_UnusedRuntimePack)" />
+      <_NuGetLicencePackage Include="@(_LicencePackage)" Exclude="@(ResolvedRuntimePack)" />
+      <_NuGetLicencePackage>
+        <PackageDirectory>$(NuGetPackageRoot)$([System.String]::Copy('%(Identity)').ToLowerInvariant())/%(Version)</PackageDirectory>
+      </_NuGetLicencePackage>
+      <_LicenceSource Include="@(_NuGetLicencePackage);@(_UsedRuntimePack)" />
+      <_PackageLicenceFile Include="%(_LicenceSource.PackageDirectory)/LICENSE*;%(_LicenceSource.PackageDirectory)/THIRD-PARTY-NOTICES*">
+        <PackageId>%(_LicenceSource.Identity)</PackageId>
+      </_PackageLicenceFile>
+      <_PackageLicenceFile>
+        <RelativePath>licenses/%(PackageId)/%(Filename)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </_PackageLicenceFile>
+      <ResolvedFileToPublish Include="@(_PackageLicenceFile)" />
+    </ItemGroup>
+  </Target>
 </Project>

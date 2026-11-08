@@ -10,7 +10,7 @@ Changes to ReelsMagician, newest first. Version numbers will be assigned once th
 - **Linux graphics:** on Linux the app finds the graphics card, and Vulkan support, from the system itself.
 - **Linux archives:** tool archives in the formats Linux builds use (`.tar.gz`, `.tar.xz`) unpack with their permissions and links intact.
 - **OpenCV:** face and people detection now use OpenCvSharp 4.13.
-- **Releases:** Windows gets a zip with everything included; Linux gets a single AppImage that needs only FUSE 3, which Ubuntu installs by default. The app has an icon of its own for the first time.
+- **Releases:** Windows gets a zip with everything included; Linux gets a single AppImage that needs only FUSE 3, which Ubuntu installs by default. The app has an icon of its own for the first time. Both carry the licences of everything they include, in a `licenses` folder next to the app.
 - **New interface toolkit:** the interface is rebuilt on Avalonia, so the same app runs on Windows and on Linux, where it runs natively on Wayland. The tabs, wording and colours stay as they were.
 - **The app's own dialogs:** the app now draws its own file pickers and confirmation dialogs instead of using the system's, so they look and behave the same on both systems. Questions still default to the answer that changes nothing.
 - **Copy path:** the output and data folders now have a **Copy path** button. **Open folder** appears wherever the system can show a folder.
@@ -27,6 +27,9 @@ Changes to ReelsMagician, newest first. Version numbers will be assigned once th
 
 - **Repeated speech:** words spoken again were sometimes dropped or cut short, as if they were a caption repeating the previous line. Only a real rolling repeat is trimmed now: one that starts as the previous cue ends and repeats it on a line of its own.
 - **One-word captions:** in captions that come with a video, a line adding a single new word could appear up to a second late. It now appears when that word is spoken.
+- **Free up space:** after deleting, the status bar says how much was freed, or which files are still in use, instead of only "Freeing up space complete.". A progress line arriving late from a finished step can no longer replace that, or the path of a rendered reel.
+- **Failed installs:** when an install fails or is cancelled partway, the Setup tab now shows the tools it did install, instead of listing them as missing until you press **Refresh**.
+- **Typed paths:** a source or output folder typed as `~/Videos/…` now starts in the home folder, instead of failing to load or creating a folder named `~`. A relative output folder no longer fails the render after it has started; it is taken from the home folder, and an empty one means the default folder.
 - **Quoted links:** a link pasted in quotes skipped the ffmpeg check and the question before yt-dlp is downloaded. Quotes are now removed once, before anything looks at the input, and single quotes from a Linux terminal are removed too.
 - **Where the reel went:** after a render, the status bar could say "Reel complete" instead of naming the file it wrote. It names the file again.
 - **Stale previews:** a caption preview still rendering when another video loaded could put the old video's frame back on screen.
