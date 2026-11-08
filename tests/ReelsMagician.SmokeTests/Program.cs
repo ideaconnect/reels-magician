@@ -82,4 +82,5 @@ static void RunLogicChecks()
     MemoryFitChecks.Run();
     LocalizationChecks.Run();
     InstallerChecks.Run();
+    UpdateChecks.Run();
 }

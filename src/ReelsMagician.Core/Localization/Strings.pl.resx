@@ -774,4 +774,19 @@
   <data name="Licence_Deno_Purpose" xml:space="preserve">
     <value>Środowisko JavaScript, którym yt-dlp odczytuje formaty filmu</value>
   </data>
+  <data name="Update_HostRefused" xml:space="preserve">
+    <value>ReelsMagician pobiera aktualizacje tylko przez HTTPS z GitHuba, a {0} nie jest jednym z jego adresów. Nic nie zostało zmienione.</value>
+  </data>
+  <data name="Update_TooManyRedirects" xml:space="preserve">
+    <value>{0} przekierował pobieranie zbyt wiele razy. Nic nie zostało zmienione.</value>
+  </data>
+  <data name="Update_NoDigest" xml:space="preserve">
+    <value>Plik {0} nie ma na GitHubie sumy kontrolnej, z którą można sprawdzić pobrany plik, więc ReelsMagician go nie zainstaluje.</value>
+  </data>
+  <data name="Update_SizeMismatch" xml:space="preserve">
+    <value>Pobrany plik {0} ma inny rozmiar, niż podaje GitHub, więc został usunięty i nic się nie zmieniło.</value>
+  </data>
+  <data name="Update_DigestMismatch" xml:space="preserve">
+    <value>Pobrany plik {0} nie zgadza się z sumą kontrolną podaną przez GitHuba, więc został usunięty i nic się nie zmieniło.</value>
+  </data>
 </root>

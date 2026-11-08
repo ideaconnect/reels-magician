@@ -48,6 +48,27 @@ public sealed class AppSettings
     [JsonConverter(typeof(UiLanguageJsonConverter))]
     public UiLanguage Language { get; set; } = UiLanguage.System;
 
+    /// <summary>Whether the app asks GitHub for a newer version, at most once a day (issue #57).</summary>
+    public bool CheckForUpdates { get; set; } = true;
+
+    /// <summary>
+    /// Whether pre-releases are offered as updates. Unset means <see cref="DefaultIncludesPrereleases"/>,
+    /// which settings.json then leaves out, so a later release can change the default for everyone
+    /// who never chose.
+    /// </summary>
+    public bool? IncludePrereleases { get; set; }
+
+    /// <summary>On while every release is a pre-release: without them there would be nothing to offer.</summary>
+    public const bool DefaultIncludesPrereleases = true;
+
+    [JsonIgnore] public bool TakesPrereleases => IncludePrereleases ?? DefaultIncludesPrereleases;
+
+    /// <summary>When GitHub last answered a check, so the automatic one runs once a day.</summary>
+    public DateTimeOffset? LastUpdateCheck { get; set; }
+
+    /// <summary>A version the user chose to skip: it, and anything older, isn't offered again unasked.</summary>
+    public string? SkippedVersion { get; set; }
+
     [JsonIgnore] public string? LoadedFrom { get; private set; }
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)

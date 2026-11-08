@@ -38,4 +38,10 @@ public interface IAppShell
     /// can also be true when no browser opened, as xdg-open reports nothing back.
     /// </summary>
     Task<bool> OpenLinkAsync(Uri link);
+
+    /// <summary>
+    /// Closes the window and ends the app, as closing it would: for an update, which Velopack
+    /// applies once the app has exited, or a restart into a new AppImage.
+    /// </summary>
+    void Quit();
 }
