@@ -13,6 +13,7 @@ These are the requirements for ReelsMagician 0.2.0 and later, on Windows and Lin
 
 - **Processor:** 64-bit x86 (amd64). ARM isn't supported.
 - **Internet on first run:** the app downloads its tools and models itself, about 6 GB with the default models. After that, local video files work offline.
+- **Update check:** once a day, once the window is up, the app asks GitHub whether there is a newer version, sending only its own version number. Without a connection it says nothing, so working offline is unaffected. Clear **Check for updates** on the **About** tab to turn it off. An update is installed only when you choose **Update now**.
 - **Disk space:** about 6 GB for the tools and default models, plus room for working files. A 4K source alone can be over 1 GB, so leave at least 10 GB free.
 - **Graphics card:** strongly recommended for the analysis step. The default model, Qwen3 8B (Q4_K_M), needs about 7.4 GB of video memory at a 16k context and 9.7 GB at 32k, the context choosing it on the Setup tab sets; the lighter Qwen3 4B needs about 5.1 GB. Integrated graphics also count the system memory they share: the Radeon 760M with 6 GB of its own memory runs the default model at 32k. The Setup tab says what the chosen model needs and warns when this computer probably has too little. A model too big for the card runs with some of its layers on the processor, which is slower. Without a usable graphics card, everything runs on the processor, which works but is much slower.
 - **Fonts:** captions use the fonts installed on your computer. If a preset names a font you don't have, a similar one is used, so captions can look slightly different from one computer to another.
@@ -36,6 +37,7 @@ Loading a video from a compatible video link is optional. It needs yt-dlp and De
 
 - **Windows 11, x64.** Windows 10 22H2 still runs the app, but Microsoft and .NET no longer support it.
 - **Installer or zip:** `ReelsMagician-win-x64-Setup.exe` installs the app for your account into `%LOCALAPPDATA%\IDCT.ReelsMagician`, about 340 MB, with shortcuts in the Start menu and on the desktop and an entry under **Installed apps** in Settings to uninstall it. Or unzip `ReelsMagician-win-x64.zip` and run `ReelsMagician.exe`, and nothing is installed. Neither needs admin rights, and both carry everything the app needs.
+- **Updates:** the installed app updates itself when you choose **Update now**, and starts again in the new version. It can do that from the first release that comes with the installer onwards, so that one is installed by hand. The zip only tells you about a newer version and links to it, as its files are yours to manage.
 - **First start:** the installer and the app aren't signed yet, so Windows SmartScreen warns you the first time. Choose **More info**, then **Run anyway**.
 - **Graphics drivers:**
   - **NVIDIA:** a current driver. The app picks the CUDA build the driver can run. CUDA 13 needs an RTX 20 or GTX 16 series card or newer; older cards get CUDA 12.
@@ -68,7 +70,7 @@ chmod +x ReelsMagician-x86_64.AppImage
 In most file managers you can instead open the file's properties and allow it to run as a program.
 
 - **Applications menu:** the AppImage doesn't add itself. Tools such as Gear Lever can add it if you want.
-- **Updates:** the AppImage doesn't update itself. Download the newer file and replace the old one.
+- **Updates:** when a newer version is out, **Update now** downloads the new AppImage into the folder the one you run is in, checks it against the checksum GitHub gives for it, and puts it in place under the same name; **Restart now** starts it. That needs a folder you can write to: from `/opt`, say, the app links to the release page instead, and you replace the file yourself.
 
 ### Graphics
 

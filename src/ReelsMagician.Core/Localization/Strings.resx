@@ -768,4 +768,22 @@
   <data name="Licence_Deno_Purpose" xml:space="preserve">
     <value>The JavaScript runtime yt-dlp uses to read a video's formats</value>
   </data>
+  <data name="Update_HostRefused" xml:space="preserve">
+    <value>ReelsMagician downloads updates only over HTTPS from GitHub, and {0} isn't one of its addresses. Nothing was changed.</value>
+    <comment>{0} the address, without its query.</comment>
+  </data>
+  <data name="Update_TooManyRedirects" xml:space="preserve">
+    <value>{0} sent the download on too many times. Nothing was changed.</value>
+    <comment>{0} a host name.</comment>
+  </data>
+  <data name="Update_NoDigest" xml:space="preserve">
+    <value>{0} has no checksum on GitHub to check the download against, so ReelsMagician won't install it.</value>
+    <comment>{0} a file name, such as ReelsMagician-x86_64.AppImage.</comment>
+  </data>
+  <data name="Update_SizeMismatch" xml:space="preserve">
+    <value>{0} didn't download at the size GitHub gives for it, so it was deleted and nothing changed.</value>
+  </data>
+  <data name="Update_DigestMismatch" xml:space="preserve">
+    <value>{0} doesn't match the checksum GitHub gives for it, so it was deleted and nothing changed.</value>
+  </data>
 </root>

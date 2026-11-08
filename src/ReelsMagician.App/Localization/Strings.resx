@@ -862,4 +862,135 @@ Local video files work without it. Download now?</value>
   <data name="Link_NoBrowser" xml:space="preserve">
     <value>No browser could be opened. The page is at {0}</value>
   </data>
+  <data name="Stage_Update" xml:space="preserve">
+    <value>Updating ReelsMagician</value>
+  </data>
+  <data name="Updates_Title" xml:space="preserve">
+    <value>Updates</value>
+  </data>
+  <data name="Updates_Note" xml:space="preserve">
+    <value>Once a day ReelsMagician asks GitHub whether there is a newer version, sending nothing but its own version number. Without a connection it says nothing, and local videos work offline as before. An update is installed only when you choose Update now.</value>
+  </data>
+  <data name="Updates_CheckAutomatically" xml:space="preserve">
+    <value>Check for updates</value>
+  </data>
+  <data name="Updates_IncludePrereleases" xml:space="preserve">
+    <value>Include pre-releases</value>
+  </data>
+  <data name="Updates_IncludePrereleases_Tip" xml:space="preserve">
+    <value>Every release so far is a pre-release: with this off, nothing is offered until a full release comes out.</value>
+  </data>
+  <data name="Updates_CheckNow" xml:space="preserve">
+    <value>Check now</value>
+  </data>
+  <data name="Updates_Status_NotChecked" xml:space="preserve">
+    <value>Not checked yet.</value>
+  </data>
+  <data name="Updates_Status_Checking" xml:space="preserve">
+    <value>Asking GitHub for the newest version…</value>
+  </data>
+  <data name="Updates_Status_UpToDate" xml:space="preserve">
+    <value>This is the newest version. Last checked {0}.</value>
+    <comment>{0} a date and time.</comment>
+  </data>
+  <data name="Updates_Status_LastChecked" xml:space="preserve">
+    <value>Last checked {0}.</value>
+    <comment>{0} a date and time.</comment>
+  </data>
+  <data name="Updates_Status_Off" xml:space="preserve">
+    <value>Checking for updates is off. Check now still asks GitHub, once.</value>
+  </data>
+  <data name="Updates_Status_Development" xml:space="preserve">
+    <value>A development build doesn't check for updates.</value>
+  </data>
+  <data name="Updates_Status_Failed" xml:space="preserve">
+    <value>Couldn't check for updates: {0}</value>
+    <comment>{0} why, a sentence of its own.</comment>
+  </data>
+  <data name="Updates_Status_Skipped" xml:space="preserve">
+    <value>You chose to skip {0}. Check now shows it again.</value>
+    <comment>{0} a version, such as 0.3.0.</comment>
+  </data>
+  <data name="Updates_Failed_Offline" xml:space="preserve">
+    <value>GitHub couldn't be reached.</value>
+  </data>
+  <data name="Updates_Failed_Answered" xml:space="preserve">
+    <value>GitHub answered with error {0}.</value>
+    <comment>{0} an HTTP status, such as 502.</comment>
+  </data>
+  <data name="Updates_Failed_RateLimit" xml:space="preserve">
+    <value>GitHub allows 60 checks an hour from one address, and they are used up. Try again later.</value>
+  </data>
+  <data name="Updates_Available" xml:space="preserve">
+    <value>ReelsMagician {0} is available (you have {1}).</value>
+    <comment>{0} the new version, {1} this one.</comment>
+  </data>
+  <data name="Updates_ReleaseNotes" xml:space="preserve">
+    <value>What's new</value>
+  </data>
+  <data name="Updates_UpdateNow" xml:space="preserve">
+    <value>Update now</value>
+  </data>
+  <data name="Updates_Later" xml:space="preserve">
+    <value>Later</value>
+  </data>
+  <data name="Updates_Skip" xml:space="preserve">
+    <value>Skip this version</value>
+  </data>
+  <data name="Updates_OpenRelease" xml:space="preserve">
+    <value>Release page</value>
+  </data>
+  <data name="Updates_Link_Zip" xml:space="preserve">
+    <value>You run the zip, so ReelsMagician leaves its files to you: download the new zip from the release page and unpack it in place of this one.</value>
+  </data>
+  <data name="Updates_Link_NotPackaged" xml:space="preserve">
+    <value>This copy doesn't run from the installer or an AppImage, so it can't update itself. Get the new version from the release page.</value>
+  </data>
+  <data name="Updates_Link_FolderNotWritable" xml:space="preserve">
+    <value>The AppImage's folder, {0}, can't be written to, so ReelsMagician can't replace it. Download the new AppImage from the release page and put it in place of this one yourself.</value>
+    <comment>{0} a folder.</comment>
+  </data>
+  <data name="Updates_Link_MissingAsset" xml:space="preserve">
+    <value>This release has no {0} to update from. Get it from the release page.</value>
+    <comment>{0} a file name.</comment>
+  </data>
+  <data name="Updates_Link_MissingDigest" xml:space="preserve">
+    <value>This release's {0} has no checksum to check it against, so ReelsMagician won't install it. Get it from the release page.</value>
+    <comment>{0} a file name.</comment>
+  </data>
+  <data name="Updates_Ready" xml:space="preserve">
+    <value>ReelsMagician {0} is in place. Restart to use it; until then this window keeps running {1}.</value>
+    <comment>{0} the new version, {1} the running one.</comment>
+  </data>
+  <data name="Updates_Restarting" xml:space="preserve">
+    <value>ReelsMagician closes to install {0}, and starts again.</value>
+    <comment>{0} a version.</comment>
+  </data>
+  <data name="Updates_RestartNow" xml:space="preserve">
+    <value>Restart now</value>
+  </data>
+  <data name="Updates_Ask_Title" xml:space="preserve">
+    <value>Restart ReelsMagician?</value>
+  </data>
+  <data name="Updates_Ask_Project" xml:space="preserve">
+    <value>ReelsMagician closes for the update and starts again. The video you have open, with its subtitles, reels and framing, isn't kept: export the subtitles first if you want them.</value>
+  </data>
+  <data name="Updates_Ask_Confirm" xml:space="preserve">
+    <value>Update and restart</value>
+  </data>
+  <data name="Updates_RestartFailed" xml:space="preserve">
+    <value>The new AppImage couldn't be started: {0} Start it yourself; it is already in place.</value>
+    <comment>{0} the system's reason.</comment>
+  </data>
+  <data name="Updates_FeedEmpty" xml:space="preserve">
+    <value>The installer's update feed doesn't list a newer version yet. Nothing was changed; check again in a while.</value>
+  </data>
+  <data name="Updates_FeedOtherVersion" xml:space="preserve">
+    <value>The installer's update feed offers {0}, not {1}. Nothing was changed; check again in a while.</value>
+    <comment>{0} the feed's version, {1} the one offered.</comment>
+  </data>
+  <data name="Updates_NotListed" xml:space="preserve">
+    <value>{0} isn't a file of a release ReelsMagician checked, so it wasn't downloaded.</value>
+    <comment>{0} a file name.</comment>
+  </data>
 </root>

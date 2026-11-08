@@ -17,13 +17,15 @@ public sealed class AboutViewModel : ViewModelBase
     private readonly TargetOs _os;
 
     /// <param name="openLink">Opens a page and says so in the status bar, spelling it out in case no browser opens.</param>
+    /// <param name="updates">The Updates card's: the settings, Check now and an offer (issue #57).</param>
     public AboutViewModel(IAppShell shell, Func<string, Task> openLink, string dataFolder,
-        string? appFolder = null, TargetOs? os = null)
+        string? appFolder = null, TargetOs? os = null, UpdatesViewModel? updates = null)
     {
         _shell = shell;
         _dataFolder = dataFolder;
         _appFolder = appFolder ?? AppContext.BaseDirectory;
         _os = os ?? ToolBuilds.Current;
+        Updates = updates;
 
         Version = AppInfo.DisplayVersion(AppInfo.InformationalVersion(typeof(AboutViewModel).Assembly));
         SystemText = AppInfo.SystemDescription();
@@ -65,6 +67,9 @@ public sealed class AboutViewModel : ViewModelBase
     public string ReleasesLink => AppInfo.ReleasesLink;
 
     public string FontAwesomeAttribution => Licences.FontAwesomeAttribution;
+
+    /// <summary>Checking for a newer version, and the offer when there is one.</summary>
+    public UpdatesViewModel? Updates { get; }
 
     public LicenceRowViewModel AppLicence { get; }
 

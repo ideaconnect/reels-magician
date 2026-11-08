@@ -798,6 +798,55 @@
               </Border>
             </Grid>
 
+            <!-- Updates (issue #57): a newer version with its notes, the settings and Check now. -->
+            <Border Classes="card" DataContext="{Binding Updates}" x:DataType="vm:UpdatesViewModel">
+              <StackPanel>
+                <TextBlock Text="{l:Tr Updates_Title}" Classes="h2" />
+                <local:InfoBox Margin="0,0,0,10" Text="{l:Tr Updates_Note}" />
+
+                <StackPanel IsVisible="{Binding HasOffer}" Margin="0,0,0,12">
+                  <local:InfoBox Text="{Binding OfferText}" />
+                  <local:InfoBox Kind="Warning" Text="{Binding LinkText}" IsVisible="{Binding IsLinkOnly}" Margin="0,8,0,0" />
+                  <TextBlock Text="{l:Tr Updates_ReleaseNotes}" Classes="label" Margin="0,10,0,4" IsVisible="{Binding HasNotes}" />
+                  <!-- The release's notes as text: the Markdown is shown as written, never rendered. -->
+                  <Border IsVisible="{Binding HasNotes}" Background="{DynamicResource PanelAlt}" CornerRadius="6"
+                          Padding="10,8" MaxHeight="220">
+                    <ScrollViewer local:ScrollShadow.IsEnabled="True">
+                      <SelectableTextBlock Text="{Binding Notes}" TextWrapping="Wrap" FontSize="12" />
+                    </ScrollViewer>
+                  </Border>
+                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0" Spacing="8">
+                    <Button Content="{l:Tr Updates_Skip}" Command="{Binding SkipCommand}" />
+                    <Button Content="{l:Tr Updates_Later}" Command="{Binding LaterCommand}" />
+                    <Button Content="{l:Tr Updates_OpenRelease}" Classes.accent="{Binding IsLinkOnly}"
+                            local:FaIcon.ButtonIcon="{StaticResource fa-arrow-up-right-from-square}"
+                            Command="{Binding OpenReleaseCommand}" />
+                    <Button Content="{l:Tr Updates_UpdateNow}" Classes="accent" local:FaIcon.ButtonIcon="{StaticResource fa-download}"
+                            Command="{Binding UpdateNowCommand}" IsVisible="{Binding CanUpdateInPlace}" />
+                  </StackPanel>
+                </StackPanel>
+
+                <!-- The new AppImage is in place: it runs once the app starts again. -->
+                <Grid IsVisible="{Binding IsReadyToRestart}" Margin="0,0,0,12" ColumnDefinitions="*,Auto">
+                  <local:InfoBox VerticalAlignment="Center" Margin="0,0,12,0" Text="{Binding RestartText}" />
+                  <Button Grid.Column="1" Content="{l:Tr Updates_RestartNow}" Classes="accent" VerticalAlignment="Center"
+                          local:FaIcon.ButtonIcon="{StaticResource fa-rotate}" Command="{Binding RestartNowCommand}" />
+                </Grid>
+
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel>
+                    <CheckBox Content="{l:Tr Updates_CheckAutomatically}" IsChecked="{Binding CheckAutomatically}"
+                              IsEnabled="{Binding CanCheck}" />
+                    <CheckBox Content="{l:Tr Updates_IncludePrereleases}" IsChecked="{Binding IncludePrereleases}"
+                              IsEnabled="{Binding CanCheck}" ToolTip.Tip="{l:Tr Updates_IncludePrereleases_Tip}" />
+                    <TextBlock Text="{Binding StatusText}" Classes="hint" TextWrapping="Wrap" Margin="0,6,0,0" />
+                  </StackPanel>
+                  <Button Grid.Column="1" Content="{l:Tr Updates_CheckNow}" local:FaIcon.ButtonIcon="{StaticResource fa-rotate}"
+                          Command="{Binding CheckNowCommand}" VerticalAlignment="Bottom" Margin="12,0,0,0" />
+                </Grid>
+              </StackPanel>
+            </Border>
+
             <Border Classes="card">
               <StackPanel>
                 <TextBlock Text="{l:Tr About_Links_Title}" Classes="h2" />
@@ -851,15 +900,38 @@
 
     <!-- Status bar -->
     <Border Grid.Row="2" Classes="card" Margin="0,12,0,0" Padding="12">
-      <Grid ColumnDefinitions="*,Auto">
-        <StackPanel>
-          <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" />
-          <ProgressBar Margin="0,8,0,0" Minimum="0" Maximum="100" Value="{Binding Progress}"
-                       IsIndeterminate="{Binding Indeterminate}" IsVisible="{Binding IsBusy}" />
-        </StackPanel>
-        <Button Grid.Column="1" Content="{l:Tr Common_Cancel}" local:FaIcon.ButtonIcon="{StaticResource fa-xmark}" Command="{Binding CancelCommand}" Margin="12,0,0,0"
-                VerticalAlignment="Center" IsVisible="{Binding IsBusy}" />
-      </Grid>
+      <StackPanel>
+        <!-- A newer version, offered without interrupting (issue #57), until Later or Skip. -->
+        <Grid IsVisible="{Binding Updates.ShowsInStatusArea}" Margin="0,0,0,10" ColumnDefinitions="*,Auto">
+          <local:InfoBox VerticalAlignment="Center" Margin="0,0,12,0" Text="{Binding Updates.OfferText}" />
+          <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+            <Button Content="{l:Tr Updates_ReleaseNotes}" local:FaIcon.ButtonIcon="{StaticResource fa-file-lines}"
+                    Command="{Binding Updates.ShowNotesCommand}" />
+            <Button Content="{l:Tr Updates_Skip}" Command="{Binding Updates.SkipCommand}" />
+            <Button Content="{l:Tr Updates_Later}" Command="{Binding Updates.LaterCommand}" />
+            <Button Content="{l:Tr Updates_OpenRelease}" Classes="accent" IsVisible="{Binding Updates.IsLinkOnly}"
+                    local:FaIcon.ButtonIcon="{StaticResource fa-arrow-up-right-from-square}"
+                    Command="{Binding Updates.OpenReleaseCommand}" />
+            <Button Content="{l:Tr Updates_UpdateNow}" Classes="accent" IsVisible="{Binding Updates.CanUpdateInPlace}"
+                    local:FaIcon.ButtonIcon="{StaticResource fa-download}" Command="{Binding Updates.UpdateNowCommand}" />
+          </StackPanel>
+        </Grid>
+        <Grid IsVisible="{Binding Updates.IsReadyToRestart}" Margin="0,0,0,10" ColumnDefinitions="*,Auto">
+          <local:InfoBox VerticalAlignment="Center" Margin="0,0,12,0" Text="{Binding Updates.RestartText}" />
+          <Button Grid.Column="1" Content="{l:Tr Updates_RestartNow}" Classes="accent" VerticalAlignment="Center"
+                  local:FaIcon.ButtonIcon="{StaticResource fa-rotate}" Command="{Binding Updates.RestartNowCommand}" />
+        </Grid>
+
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel>
+            <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" />
+            <ProgressBar Margin="0,8,0,0" Minimum="0" Maximum="100" Value="{Binding Progress}"
+                         IsIndeterminate="{Binding Indeterminate}" IsVisible="{Binding IsBusy}" />
+          </StackPanel>
+          <Button Grid.Column="1" Content="{l:Tr Common_Cancel}" local:FaIcon.ButtonIcon="{StaticResource fa-xmark}" Command="{Binding CancelCommand}" Margin="12,0,0,0"
+                  VerticalAlignment="Center" IsVisible="{Binding IsBusy}" />
+        </Grid>
+      </StackPanel>
     </Border>
 
     <!-- Support bar -->

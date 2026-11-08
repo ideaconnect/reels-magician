@@ -1,4 +1,6 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
@@ -23,8 +25,13 @@ public partial class MainWindow : Window, IAppShell
             Dispatcher.UIThread.InvokeAsync(() => MessageDialog.ShowAsync(this, title, message));
 
         // A model left running when the app last went down is explained once the window is up,
-        // and a normal close says no model took it down.
-        Opened += async (_, _) => await vm.ExplainLastCrashAsync();
+        // and a normal close says no model took it down. Then, in the background and at most once
+        // a day, GitHub is asked for a newer version; nothing is said when it can't be reached.
+        Opened += async (_, _) =>
+        {
+            await vm.ExplainLastCrashAsync();
+            await vm.Updates.CheckOnStartAsync();
+        };
         Closed += (_, _) => vm.OnClosed();
 
         // Clicking into a cue's text box should make that cue the selected one, so Split, Merge
@@ -89,6 +96,12 @@ public partial class MainWindow : Window, IAppShell
         LicenceDialog.ShowAsync(this, title, files);
 
     public Task<bool> OpenLinkAsync(Uri link) => Launcher.LaunchUriAsync(link);
+
+    public void Quit()
+    {
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) desktop.Shutdown();
+        else Close();
+    }
 
     private static FilePickerFileType ToFileType(FileFilter filter) => new(filter.Name) { Patterns = filter.Patterns };
 

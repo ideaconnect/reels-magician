@@ -853,4 +853,121 @@ Pliki wideo z dysku działają bez tego. Pobrać teraz?</value>
   <data name="Link_NoBrowser" xml:space="preserve">
     <value>Nie udało się otworzyć przeglądarki. Strona jest pod adresem {0}</value>
   </data>
+  <data name="Stage_Update" xml:space="preserve">
+    <value>Aktualizowanie ReelsMagician</value>
+  </data>
+  <data name="Updates_Title" xml:space="preserve">
+    <value>Aktualizacje</value>
+  </data>
+  <data name="Updates_Note" xml:space="preserve">
+    <value>Raz dziennie ReelsMagician pyta GitHuba, czy jest nowsza wersja, i wysyła przy tym tylko numer swojej wersji. Bez połączenia niczego nie zgłasza, a lokalne filmy działają offline jak dotąd. Aktualizacja instaluje się dopiero po wybraniu Aktualizuj teraz.</value>
+  </data>
+  <data name="Updates_CheckAutomatically" xml:space="preserve">
+    <value>Sprawdzaj aktualizacje</value>
+  </data>
+  <data name="Updates_IncludePrereleases" xml:space="preserve">
+    <value>Uwzględniaj wersje przedpremierowe</value>
+  </data>
+  <data name="Updates_IncludePrereleases_Tip" xml:space="preserve">
+    <value>Jak dotąd każde wydanie jest przedpremierowe: po wyłączeniu tej opcji nic nie zostanie zaproponowane, dopóki nie ukaże się pełne wydanie.</value>
+  </data>
+  <data name="Updates_CheckNow" xml:space="preserve">
+    <value>Sprawdź teraz</value>
+  </data>
+  <data name="Updates_Status_NotChecked" xml:space="preserve">
+    <value>Jeszcze nie sprawdzano.</value>
+  </data>
+  <data name="Updates_Status_Checking" xml:space="preserve">
+    <value>Sprawdzanie najnowszej wersji na GitHubie…</value>
+  </data>
+  <data name="Updates_Status_UpToDate" xml:space="preserve">
+    <value>To najnowsza wersja. Ostatnio sprawdzono: {0}.</value>
+  </data>
+  <data name="Updates_Status_LastChecked" xml:space="preserve">
+    <value>Ostatnio sprawdzono: {0}.</value>
+  </data>
+  <data name="Updates_Status_Off" xml:space="preserve">
+    <value>Sprawdzanie aktualizacji jest wyłączone. Przycisk Sprawdź teraz nadal zapyta GitHuba, jednorazowo.</value>
+  </data>
+  <data name="Updates_Status_Development" xml:space="preserve">
+    <value>Wersja deweloperska nie sprawdza aktualizacji.</value>
+  </data>
+  <data name="Updates_Status_Failed" xml:space="preserve">
+    <value>Nie udało się sprawdzić aktualizacji: {0}</value>
+  </data>
+  <data name="Updates_Status_Skipped" xml:space="preserve">
+    <value>Wybrano pominięcie wersji {0}. Sprawdź teraz pokaże ją ponownie.</value>
+  </data>
+  <data name="Updates_Failed_Offline" xml:space="preserve">
+    <value>Nie udało się połączyć z GitHubem.</value>
+  </data>
+  <data name="Updates_Failed_Answered" xml:space="preserve">
+    <value>GitHub odpowiedział błędem {0}.</value>
+  </data>
+  <data name="Updates_Failed_RateLimit" xml:space="preserve">
+    <value>GitHub pozwala na 60 sprawdzeń na godzinę z jednego adresu i ten limit się wyczerpał. Spróbuj później.</value>
+  </data>
+  <data name="Updates_Available" xml:space="preserve">
+    <value>Dostępna jest wersja ReelsMagician {0} (masz {1}).</value>
+  </data>
+  <data name="Updates_ReleaseNotes" xml:space="preserve">
+    <value>Co nowego</value>
+  </data>
+  <data name="Updates_UpdateNow" xml:space="preserve">
+    <value>Aktualizuj teraz</value>
+  </data>
+  <data name="Updates_Later" xml:space="preserve">
+    <value>Później</value>
+  </data>
+  <data name="Updates_Skip" xml:space="preserve">
+    <value>Pomiń tę wersję</value>
+  </data>
+  <data name="Updates_OpenRelease" xml:space="preserve">
+    <value>Strona wydania</value>
+  </data>
+  <data name="Updates_Link_Zip" xml:space="preserve">
+    <value>Używasz wersji z archiwum zip, więc ReelsMagician zostawia jej pliki tobie: pobierz nowe archiwum ze strony wydania i rozpakuj je w miejsce obecnego.</value>
+  </data>
+  <data name="Updates_Link_NotPackaged" xml:space="preserve">
+    <value>Ta kopia nie działa z instalatora ani z pliku AppImage, więc nie może się sama zaktualizować. Pobierz nową wersję ze strony wydania.</value>
+  </data>
+  <data name="Updates_Link_FolderNotWritable" xml:space="preserve">
+    <value>Do folderu z plikiem AppImage, {0}, nie można zapisywać, więc ReelsMagician nie może go podmienić. Pobierz nowy plik AppImage ze strony wydania i zastąp nim obecny.</value>
+  </data>
+  <data name="Updates_Link_MissingAsset" xml:space="preserve">
+    <value>To wydanie nie ma pliku {0}, z którego można by się zaktualizować. Pobierz je ze strony wydania.</value>
+  </data>
+  <data name="Updates_Link_MissingDigest" xml:space="preserve">
+    <value>Plik {0} z tego wydania nie ma sumy kontrolnej, z którą można go sprawdzić, więc ReelsMagician go nie zainstaluje. Pobierz wydanie ze strony wydania.</value>
+  </data>
+  <data name="Updates_Ready" xml:space="preserve">
+    <value>ReelsMagician {0} jest już na miejscu. Uruchom aplikację ponownie, aby z niej korzystać; do tego czasu to okno działa w wersji {1}.</value>
+  </data>
+  <data name="Updates_Restarting" xml:space="preserve">
+    <value>ReelsMagician zamyka się, aby zainstalować wersję {0}, i uruchomi się ponownie.</value>
+  </data>
+  <data name="Updates_RestartNow" xml:space="preserve">
+    <value>Uruchom ponownie</value>
+  </data>
+  <data name="Updates_Ask_Title" xml:space="preserve">
+    <value>Uruchomić ReelsMagician ponownie?</value>
+  </data>
+  <data name="Updates_Ask_Project" xml:space="preserve">
+    <value>ReelsMagician zamknie się na czas aktualizacji i uruchomi ponownie. Otwarty film wraz z napisami, rolkami i kadrowaniem nie zostanie zachowany: jeśli chcesz zachować napisy, najpierw je wyeksportuj.</value>
+  </data>
+  <data name="Updates_Ask_Confirm" xml:space="preserve">
+    <value>Zaktualizuj i uruchom ponownie</value>
+  </data>
+  <data name="Updates_RestartFailed" xml:space="preserve">
+    <value>Nie udało się uruchomić nowego pliku AppImage: {0} Uruchom go samodzielnie; jest już na miejscu.</value>
+  </data>
+  <data name="Updates_FeedEmpty" xml:space="preserve">
+    <value>Kanał aktualizacji instalatora nie podaje jeszcze nowszej wersji. Nic nie zostało zmienione; sprawdź ponownie za jakiś czas.</value>
+  </data>
+  <data name="Updates_FeedOtherVersion" xml:space="preserve">
+    <value>Kanał aktualizacji instalatora proponuje wersję {0}, a nie {1}. Nic nie zostało zmienione; sprawdź ponownie za jakiś czas.</value>
+  </data>
+  <data name="Updates_NotListed" xml:space="preserve">
+    <value>{0} nie jest plikiem wydania sprawdzonego przez ReelsMagician, więc nie został pobrany.</value>
+  </data>
 </root>

@@ -8,12 +8,27 @@ public sealed class GhAsset
     [JsonPropertyName("name")] public string Name { get; set; } = "";
     [JsonPropertyName("browser_download_url")] public string Url { get; set; } = "";
     [JsonPropertyName("size")] public long Size { get; set; }
+
+    /// <summary>
+    /// The asset's checksum as GitHub computed it on upload, <c>sha256:&lt;hex&gt;</c>, or null for an
+    /// asset uploaded before GitHub kept them (June 2025). App updates refuse an asset without one.
+    /// </summary>
+    [JsonPropertyName("digest")] public string? Digest { get; set; }
 }
 
 public sealed class GhRelease
 {
     [JsonPropertyName("tag_name")] public string TagName { get; set; } = "";
+    [JsonPropertyName("name")] public string? Name { get; set; }
+    [JsonPropertyName("draft")] public bool Draft { get; set; }
     [JsonPropertyName("prerelease")] public bool Prerelease { get; set; }
+
+    /// <summary>The release notes, as Markdown.</summary>
+    [JsonPropertyName("body")] public string? Body { get; set; }
+
+    /// <summary>The release's page on GitHub.</summary>
+    [JsonPropertyName("html_url")] public string? PageUrl { get; set; }
+
     [JsonPropertyName("assets")] public List<GhAsset> Assets { get; set; } = [];
 }
 

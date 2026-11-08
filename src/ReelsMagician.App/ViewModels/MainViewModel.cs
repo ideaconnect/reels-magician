@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using ReelsMagician.App.Localization;
+using ReelsMagician.App.Updates;
+using ReelsMagician.Core.About;
 using ReelsMagician.Core.Analysis;
 using ReelsMagician.Core.Diagnostics;
 using ReelsMagician.Core.Framing;
@@ -10,6 +12,7 @@ using ReelsMagician.Core.Projects;
 using ReelsMagician.Core.Rendering;
 using ReelsMagician.Core.Toolchain;
 using ReelsMagician.Core.Transcription;
+using ReelsMagician.Core.Updates;
 
 namespace ReelsMagician.App.ViewModels;
 
@@ -50,8 +53,18 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         AppTheme.Apply(_settings.Appearance);
         _toolchain = new ToolchainManager(_paths, this);
         _linkConsent = new LinkToolsConsent(shell, _toolchain);
+        // Checking for a newer version (issue #57), shown on the About tab and in the status area.
+        Updates = new UpdatesViewModel(shell, _settings, _paths, new UpdateHost(
+                IsBusy: () => IsBusy,
+                HasOpenProject: () => _project.HasSource,
+                RunStage: work => RunStageAsync(Stage.Update, work),
+                OpenLink: link => OpenLinkAsync(link, () => L.Format(nameof(Strings.Link_Opening), link)),
+                ShowAbout: () => ActiveTab = AboutTab,
+                Sink: this),
+            AppInfo.InformationalVersion(typeof(MainViewModel).Assembly), DetectPackage);
         // Before RefreshTools below, which shows the downloaded tools' state on it too.
-        About = new AboutViewModel(shell, link => OpenLinkAsync(link, () => L.Format(nameof(Strings.Link_Opening), link)), _paths.Root);
+        About = new AboutViewModel(shell, link => OpenLinkAsync(link, () => L.Format(nameof(Strings.Link_Opening), link)), _paths.Root,
+            updates: Updates);
 
         StyleEditor = new StyleEditorViewModel(_project.Style);
         StyleEditor.Changed += (_, _) => OnStyleChanged();
@@ -382,6 +395,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         foreach (var candidate in Candidates) candidate.RefreshTexts();
         foreach (var clip in ClipFramings) clip.RefreshTexts();
         About.RefreshTexts();
+        Updates.RefreshTexts();
         Raise(nameof(Status));
         Raise(nameof(PreviewStatus));
         Raise(nameof(ModelsHint));
@@ -779,6 +793,18 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     // ── About ────────────────────────────────────────────────────────────────────────────
 
     public AboutViewModel About { get; }
+
+    // ── Updates ──────────────────────────────────────────────────────────────────────────
+
+    public UpdatesViewModel Updates { get; }
+
+    /// <summary>
+    /// What this copy runs from, asked only when an update is planned: Velopack's installed app,
+    /// the zip, or the AppImage <c>$APPIMAGE</c> names, with whether its folder takes a new file.
+    /// </summary>
+    private static AppPackage DetectPackage() =>
+        AppPackage.Detect(ToolBuilds.Current, OperatingSystem.IsWindows() && InstallerUpdate.IsInstalled(),
+            Environment.GetEnvironmentVariable("APPIMAGE"), File.Exists, AppImageSwap.CanReplace);
 
     // ── Toolchain actions ────────────────────────────────────────────────────────────────
 
@@ -1281,6 +1307,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         public static readonly Stage Framing = new("Planning framing", nameof(Strings.Stage_Framing));
         public static readonly Stage Render = new("Rendering", nameof(Strings.Stage_Render));
         public static readonly Stage Cleanup = new("Freeing up space", nameof(Strings.Stage_Cleanup));
+        public static readonly Stage Update = new("Updating ReelsMagician", nameof(Strings.Stage_Update));
 
         public string Label => Localizer.Instance[Key];
     }
@@ -1365,6 +1392,9 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             ShiftEarlierCommand, ShiftLaterCommand, ApplyPresetCommand,
         })
             command.RaiseCanExecuteChanged();
+
+        // An update waits for a stage to end, and a stage can't start during an update.
+        Updates.RefreshCommands();
     }
 
     // ── IProgressSink ────────────────────────────────────────────────────────────────────

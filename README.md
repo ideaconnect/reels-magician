@@ -233,6 +233,29 @@ Releases come as an installer and a zip for Windows, and an AppImage for Linux.
   [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher) does for you. Until then the
   dock shows a generic icon (see [Troubleshooting](#troubleshooting)).
 
+### Updates
+
+Once the window is up, at most once a day, ReelsMagician asks GitHub for its newest releases,
+sending nothing but `User-Agent: ReelsMagician/<version>`. Offline, or when GitHub can't be
+reached, it says nothing and carries on, so local videos still work offline. A development build
+never checks. A newer version shows in the status area and on the **About** tab, with its release
+notes, **Update now**, **Later** and **Skip this version**; nothing is installed until you choose
+**Update now**, and never while a step is running.
+
+- **Windows, installed:** Velopack downloads the new package and restarts the app into it. It reads
+  only releases that carry the installer's `releases.win.json`, so 0.1.0 and 0.2.0 can't update:
+  install the first release with an installer by hand.
+- **Linux AppImage:** the new AppImage is downloaded next to the one you run, checked and renamed
+  over it; **Restart now** starts it. In a folder you can't write to, such as `/opt`, you get a
+  link to the release page instead, as you do with the Windows zip, whose files are yours to manage.
+- **Checks:** every download is held to the sha256 digest GitHub gives each release asset and to
+  its size, comes over HTTPS from GitHub's own hosts only, and is refused without a digest. That
+  guards against a broken or altered download, not against someone taking over the GitHub account.
+
+To turn it off, clear **Check for updates** on the **About** tab; **Check now** still asks once.
+**Include pre-releases** is on by default, because every release so far is a pre-release. The
+choices live in settings.json as `checkForUpdates` and `includePrereleases`.
+
 ## Build and run
 
 ```sh
