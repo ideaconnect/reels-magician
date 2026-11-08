@@ -53,4 +53,5 @@ static void RunLogicChecks()
     LinkToolChecks.Run();
     StepProgressChecks.Run();
     IconChecks.Run();
+    AppIconChecks.Run();
 }

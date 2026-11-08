@@ -7,7 +7,6 @@
         x:Class="ReelsMagician.App.MainWindow"
         x:DataType="vm:MainViewModel"
         Title="ReelsMagician — reels from long videos"
-        Icon="/Assets/reelsmagician-256.png"
         Width="1360" Height="900" MinWidth="1120" MinHeight="680"
         WindowStartupLocation="CenterScreen">
 
@@ -67,14 +66,19 @@
 
   <Grid Margin="16" RowDefinitions="Auto,*,Auto,Auto">
 
-    <!-- Header -->
-    <Grid Grid.Row="0" Margin="0,0,0,10" ColumnDefinitions="*,Auto">
-      <StackPanel>
+    <!-- Header: the app's icon, then its name and what it does. -->
+    <Grid Grid.Row="0" Margin="0,0,0,10" ColumnDefinitions="Auto,*,Auto">
+      <!-- Decoration beside the name, hidden from screen readers. 128 px of image drawn at 40 px
+           stays sharp up to 300 % scaling. -->
+      <Image Source="/Assets/reelsmagician-128.png" Width="40" Height="40" Margin="0,0,12,0"
+             VerticalAlignment="Center" RenderOptions.BitmapInterpolationMode="HighQuality"
+             AutomationProperties.AccessibilityView="Raw" />
+      <StackPanel Grid.Column="1">
         <TextBlock Text="ReelsMagician" Classes="h1" />
         <TextBlock Classes="hint"
                    Text="Turn a long video into a vertical 1080×1920 reel: transcribe, review the subtitles, let Qwen pick the best stretch, keep the subject centred, and burn in captions." />
       </StackPanel>
-      <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
+      <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
         <TextBlock Text="{Binding GpuText}" Classes="hint" VerticalAlignment="Center" MaxWidth="460" />
       </StackPanel>
     </Grid>

@@ -1,3 +1,5 @@
+<p align="center"><img src="src/ReelsMagician.App/Assets/reelsmagician-256.png" width="128" height="128" alt="ReelsMagician's icon: a film reel rising out of a magician's hat"></p>
+
 # ReelsMagician
 
 A desktop app for Windows and Linux that turns a long video into a vertical **1080×1920** reel.
@@ -214,7 +216,11 @@ Releases come as a zip for Windows and an AppImage for Linux.
 
 - **Windows:** unzip `ReelsMagician-win-x64.zip` and run `ReelsMagician.exe`. It isn't signed yet,
   so SmartScreen asks once: choose **More info**, then **Run anyway**.
-- **Linux:** `chmod +x ReelsMagician-x86_64.AppImage`, then run it from a Wayland session.
+- **Linux:** `chmod +x ReelsMagician-x86_64.AppImage`, then run it from a Wayland session. GNOME
+  and KDE show its icon in the dock once the AppImage is integrated with the desktop, which
+  [Gear Lever](https://github.com/mijorus/gearlever) or
+  [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher) does for you. Until then the
+  dock shows a generic icon (see [Troubleshooting](#troubleshooting)).
 
 ## Build and run
 
@@ -343,6 +349,8 @@ src/ReelsMagician.App/         Avalonia front end, Windows and Wayland
 tests/ReelsMagician.SmokeTests/
 packaging/linux/               the AppImage: desktop entry, icons, licences, build and check scripts
 docs/                          system requirements and architecture decisions
+assets/AppIconBase.png         the app's icon, which every icon file is made from
+tools/make-icons.cs         makes the .ico and the PNG icons from it: dotnet run tools/make-icons.cs
 tools/make-speech-video.ps1 generates a narrated 4K test video (Windows: it uses the Windows speech engine)
 tools/update-icons.cs       copies the Font Awesome icons the app draws: dotnet run tools/update-icons.cs
 ```
@@ -382,6 +390,14 @@ choose **Ubuntu** rather than **Ubuntu on Xorg** on the login screen. The app ha
 **Linux: the AppImage does not start** — it needs FUSE 3 (`fusermount3`, in the `fuse3` package),
 which Ubuntu installs by default. Without it, run it as
 `./ReelsMagician-x86_64.AppImage --appimage-extract-and-run`.
+
+**Linux: a generic icon in the dock** — on Wayland an app can't give its window an icon. The
+desktop finds it through the window's app id, `ReelsMagician`, in an installed
+`ReelsMagician.desktop` file, and an AppImage installs none by itself. Integrate the AppImage with
+Gear Lever or AppImageLauncher, and the dock, the app list and the window switcher show the icon.
+Once Avalonia supports the protocol that lets a window send its icon
+([AvaloniaUI/Avalonia#21910](https://github.com/AvaloniaUI/Avalonia/issues/21910)), desktops that
+implement it, such as KWin 6.7 and labwc, will show it without integration.
 
 **Linux: "no driver for this GPU"** — install Mesa's Vulkan drivers (`mesa-vulkan-drivers`), or
 the NVIDIA driver on an NVIDIA card. Without one, Qwen runs on the CPU, which works but is much
