@@ -175,8 +175,9 @@ public static class UpdateChecks
         Check.True(Plan(new AppPackage(PackageKind.Other)) is { Method: UpdateMethod.Link, Reason: LinkReason.NotPackaged },
             "and so is a copy run with dotnet run or from an extracted AppImage");
 
-        var readOnly = Plan(Image with { AppImagePath = "/opt/ReelsMagician/ReelsMagician.AppImage", CanReplace = false });
-        Check.True(readOnly is { Method: UpdateMethod.Link, Reason: LinkReason.FolderNotWritable, ReasonDetail: "/opt/ReelsMagician" },
+        var readOnlyImage = "/opt/ReelsMagician/ReelsMagician.AppImage";
+        var readOnly = Plan(Image with { AppImagePath = readOnlyImage, CanReplace = false });
+        Check.True(readOnly is { Method: UpdateMethod.Link, Reason: LinkReason.FolderNotWritable } && readOnly.ReasonDetail == Path.GetDirectoryName(readOnlyImage),
             "an AppImage in a folder it can't write to, /opt say, falls back to the link, naming the folder");
 
         GhRelease With(string tag, params GhAsset[] assets) => Release(tag, assets: assets);
