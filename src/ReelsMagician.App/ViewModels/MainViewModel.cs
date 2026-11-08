@@ -634,7 +634,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
             var folder = OutputFolderPath;
             Directory.CreateDirectory(folder);
-            var name = Sanitise(_project.SelectedCandidate?.Title ?? _project.Topic);
+            var name = UserPaths.FileNameFromTitle(_project.SelectedCandidate?.Title ?? _project.Topic);
             var output = Path.Combine(folder, $"{name}_{DateTime.Now:yyyyMMdd-HHmmss}.mp4");
 
             var pipeline = new ReelPipeline(_tools, _settings, _paths, this);
@@ -779,7 +779,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     private async Task ExportSubtitlesAsync()
     {
         CommitSubtitleEdits();
-        var file = await _shell.PickSaveFileAsync("Export subtitles", Sanitise(Topic) + ".srt",
+        var file = await _shell.PickSaveFileAsync("Export subtitles", UserPaths.FileNameFromTitle(Topic) + ".srt",
             Directory.Exists(OutputFolderPath) ? OutputFolderPath : null, new FileFilter("SubRip", "*.srt")).ConfigureAwait(true);
         if (file is null) return;
 
@@ -972,14 +972,6 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             ShiftEarlierCommand, ShiftLaterCommand, ApplyPresetCommand, OpenOutputCommand,
         })
             command.RaiseCanExecuteChanged();
-    }
-
-    private static string Sanitise(string name)
-    {
-        var cleaned = new string((name ?? "reel")
-            .Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c).ToArray()).Trim();
-        if (cleaned.Length == 0) cleaned = "reel";
-        return cleaned.Length <= 60 ? cleaned : cleaned[..60].TrimEnd();
     }
 
     // ── IProgressSink ────────────────────────────────────────────────────────────────────

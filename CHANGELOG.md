@@ -21,6 +21,7 @@ Changes to ReelsMagician, newest first. Version numbers will be assigned once th
 - **Fallback builds are reported:** when the best build of whisper.cpp or llama.cpp that this machine supports cannot be found and a lesser one is installed instead (a CPU build on a machine with a capable graphics card, say), the app says so during the install and on the Setup tab, instead of quietly running slower.
 
 - **Video links:** yt-dlp and Deno are no longer part of the default install. **Install everything missing** never fetches them. The app downloads them only after you agree, either the first time you load a compatible video link or from the optional card on the Setup tab. A yt-dlp already on your PATH is used without asking.
+- **Reel names:** a reel's file name is now made of ASCII letters, digits and underscores only: `Laptop czy tablet? Wszystko w jednym` becomes `Laptop_czy_tablet_Wszystko_w_jednym`. It comes out the same on Windows and Linux, and copies to any USB stick or shared folder. The suggested name for exported subtitles is made the same way.
 - **Links without ffmpeg:** loading a link before ffmpeg is installed now stops and points you to Setup, instead of failing after the download.
 
 ### Fixed
