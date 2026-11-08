@@ -149,4 +149,43 @@
     <Setter Property="Padding" Value="4,1" />
     <Setter Property="MinHeight" Value="0" />
   </Style>
+
+  <!-- The support bar: each button in its service's own colours, Buy Me a Coffee's yellow and
+       the pink heart of GitHub Sponsors on GitHub's dark button. -->
+  <Style Selector="Button.coffee, Button.sponsor">
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="14,7" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.coffee">
+    <Setter Property="Background" Value="#FFDD00" />
+    <Setter Property="Foreground" Value="#0D0C22" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="Button.coffee:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#FFE53D" />
+    <Setter Property="Foreground" Value="#0D0C22" />
+  </Style>
+  <Style Selector="Button.coffee:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#E6C700" />
+    <Setter Property="Foreground" Value="#0D0C22" />
+  </Style>
+  <Style Selector="Button.sponsor">
+    <Setter Property="Background" Value="#21262D" />
+    <Setter Property="Foreground" Value="#F0F6FC" />
+    <Setter Property="BorderBrush" Value="#3D444D" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector="Button.sponsor:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#30363D" />
+    <Setter Property="BorderBrush" Value="#DB61A2" />
+    <Setter Property="Foreground" Value="#F0F6FC" />
+  </Style>
+  <Style Selector="Button.sponsor:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#282E33" />
+    <Setter Property="BorderBrush" Value="#DB61A2" />
+    <Setter Property="Foreground" Value="#F0F6FC" />
+  </Style>
 </Styles>

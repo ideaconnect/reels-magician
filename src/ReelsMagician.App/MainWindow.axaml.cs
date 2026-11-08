@@ -76,6 +76,8 @@ public partial class MainWindow : Window, IAppShell
         if (Clipboard is { } clipboard) await clipboard.SetTextAsync(text);
     }
 
+    public Task<bool> OpenLinkAsync(Uri link) => Launcher.LaunchUriAsync(link);
+
     private static FilePickerFileType ToFileType(FileFilter filter) => new(filter.Name) { Patterns = filter.Patterns };
 
     private async Task<IStorageFolder?> FolderAsync(string? path) =>

@@ -18,6 +18,7 @@ Changes to ReelsMagician, newest first. Version numbers will be assigned once th
 
 ### Changed
 
+- **Supporting the app:** a bar at the bottom of the window links to Buy Me a Coffee and GitHub Sponsors. ReelsMagician is free and open-source software, and that is how to help keep it going.
 - **Fallback builds are reported:** when the best build of whisper.cpp or llama.cpp that this machine supports cannot be found and a lesser one is installed instead (a CPU build on a machine with a capable graphics card, say), the app says so during the install and on the Setup tab, instead of quietly running slower.
 
 - **Video links:** yt-dlp and Deno are no longer part of the default install. **Install everything missing** never fetches them. The app downloads them only after you agree, either the first time you load a compatible video link or from the optional card on the Setup tab. A yt-dlp already on your PATH is used without asking.

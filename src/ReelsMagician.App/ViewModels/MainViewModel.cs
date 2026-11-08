@@ -81,6 +81,8 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         CopyOutputPathCommand = new AsyncRelayCommand(
             () => _shell.CopyTextAsync(_project.OutputPath ?? ""), () => _project.OutputPath is not null);
         CopyDataFolderCommand = new AsyncRelayCommand(() => _shell.CopyTextAsync(_paths.Root));
+        OpenCoffeeCommand = new AsyncRelayCommand(() => OpenSupportLinkAsync(CoffeeLink));
+        OpenSponsorsCommand = new AsyncRelayCommand(() => OpenSupportLinkAsync(SponsorsLink));
         RefreshCleanupCommand = new RelayCommand(RefreshCleanup);
         CleanupCommand = new AsyncRelayCommand(CleanupAsync, () => !IsBusy && SelectedCleanupBytes > 0);
 
@@ -430,6 +432,33 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     public AsyncRelayCommand RefreshPreviewCommand { get; }
     public AsyncRelayCommand CopyOutputPathCommand { get; }
     public AsyncRelayCommand CopyDataFolderCommand { get; }
+    public AsyncRelayCommand OpenCoffeeCommand { get; }
+    public AsyncRelayCommand OpenSponsorsCommand { get; }
+
+    // ── Support ──────────────────────────────────────────────────────────────────────────
+
+    public const string CoffeeLink = "https://buymeacoffee.com/idct";
+    public const string SponsorsLink = "https://github.com/sponsors/ideaconnect?frequency=one-time";
+
+    /// <summary>
+    /// Opens a support page in the system's browser. The status bar spells the address out too,
+    /// because on Linux nothing reports whether a browser actually opened, and a minimal desktop
+    /// may have none.
+    /// </summary>
+    private async Task OpenSupportLinkAsync(string link)
+    {
+        Status = $"Opening {link} in your browser. Thank you for supporting ReelsMagician!";
+        try
+        {
+            if (!await _shell.OpenLinkAsync(new Uri(link)).ConfigureAwait(true))
+                Status = $"No browser could be opened. The page is at {link}";
+        }
+        catch (Exception ex)
+        {
+            Status = $"No browser could be opened. The page is at {link}";
+            this.Warn("support", $"Could not open {link}: {ex.Message}");
+        }
+    }
 
     // ── Toolchain actions ────────────────────────────────────────────────────────────────
 
