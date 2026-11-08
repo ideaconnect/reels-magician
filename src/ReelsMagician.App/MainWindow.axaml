@@ -72,9 +72,9 @@
                 <TextBlock Text="{Binding MissingText}" Classes="hint" Margin="0,12,0,0" />
                 <TextBlock Text="{Binding BackendText}" Classes="hint" Margin="0,4,0,0" />
 
-                <StackPanel Orientation="Horizontal" Margin="0,14,0,0" Spacing="8">
-                  <Button Content="Install everything missing" Classes="accent" Command="{Binding InstallCommand}" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0" Spacing="8">
                   <Button Content="Re-check" Command="{Binding RefreshToolsCommand}" />
+                  <Button Content="Install everything missing" Classes="accent" Command="{Binding InstallCommand}" />
                 </StackPanel>
               </StackPanel>
             </Border>
@@ -87,7 +87,7 @@
 
                 <ItemsControl ItemsSource="{Binding LinkComponents}" ItemTemplate="{StaticResource ComponentRow}" />
 
-                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
                   <Button Content="Download…" Command="{Binding InstallLinkToolsCommand}" />
                 </StackPanel>
               </StackPanel>
@@ -162,7 +162,7 @@
                           IsChecked="{Binding UseProvidedSubtitles}" Margin="0,14,0,0" />
 
                 <Button Content="Load source" Classes="accent" Command="{Binding LoadSourceCommand}"
-                        HorizontalAlignment="Left" Margin="0,16,0,0" />
+                        HorizontalAlignment="Right" Margin="0,16,0,0" />
               </StackPanel>
             </Border>
 
@@ -181,7 +181,7 @@
                            Text="Taken from the video title, or from the filename for a local file. Qwen scores every paragraph against this, so correct it if it is misleading." />
 
                 <Button Content="Transcribe" Classes="accent" Command="{Binding TranscribeCommand}"
-                        HorizontalAlignment="Left" Margin="0,16,0,0" />
+                        HorizontalAlignment="Right" Margin="0,16,0,0" />
               </StackPanel>
             </Border>
           </StackPanel>
@@ -239,11 +239,11 @@
             </ListBox.ItemTemplate>
           </ListBox>
 
-          <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,12,0,0" Spacing="12">
-            <Button Content="Analyse and pick the reel" Classes="accent" Command="{Binding AnalyzeCommand}" />
-            <TextBlock Classes="hint" VerticalAlignment="Center"
+          <Grid Grid.Row="4" Margin="0,12,0,0" ColumnDefinitions="*,Auto">
+            <TextBlock Classes="hint" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,12,0"
                        Text="Amber text marks cues Whisper was unsure about. Edits are applied when you analyse." />
-          </StackPanel>
+            <Button Grid.Column="1" Content="Analyse and pick the reel" Classes="accent" Command="{Binding AnalyzeCommand}" />
+          </Grid>
         </Grid>
       </TabItem>
 
@@ -305,11 +305,11 @@
             </DockPanel>
           </Border>
 
-          <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,12,0,0" Spacing="12">
-            <Button Content="Plan framing for this reel" Classes="accent" Command="{Binding FramingCommand}" />
-            <TextBlock Classes="hint" VerticalAlignment="Center"
+          <Grid Grid.Row="2" Grid.ColumnSpan="3" Margin="0,12,0,0" ColumnDefinitions="*,Auto">
+            <TextBlock Classes="hint" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,12,0"
                        Text="Choosing a different reel clears the framing, so re-run this after switching." />
-          </StackPanel>
+            <Button Grid.Column="1" Content="Plan framing for this reel" Classes="accent" Command="{Binding FramingCommand}" />
+          </Grid>
         </Grid>
       </TabItem>
 
@@ -530,7 +530,7 @@
           <DockPanel Grid.Column="2">
             <TextBlock DockPanel.Dock="Top" Text="Preview" Classes="h2" />
             <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
-              <Button Content="Refresh preview" Command="{Binding RefreshPreviewCommand}" />
+              <Button Content="Refresh preview" Command="{Binding RefreshPreviewCommand}" HorizontalAlignment="Right" />
               <TextBlock Text="{Binding PreviewStatus}" Classes="hint" Margin="0,8,0,0" />
             </StackPanel>
             <Border Background="#0D0D14" CornerRadius="8" BorderThickness="1"
@@ -553,9 +553,9 @@
                   <TextBox Text="{Binding OutputFolder}" VerticalContentAlignment="Center" />
                   <Button Grid.Column="1" Content="Choose folder…" Command="{Binding BrowseOutputCommand}" Margin="8,0,0,0" />
                 </Grid>
-                <StackPanel Orientation="Horizontal" Margin="0,16,0,0" Spacing="8">
-                  <Button Content="Render the reel" Classes="accent" Command="{Binding RenderCommand}" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0" Spacing="8">
                   <Button Content="Copy path" Command="{Binding CopyOutputPathCommand}" />
+                  <Button Content="Render the reel" Classes="accent" Command="{Binding RenderCommand}" />
                 </StackPanel>
                 <TextBlock Classes="hint" Margin="0,10,0,0"
                            Text="Renders 1080×1920 H.264 at 30 fps with AAC audio, normalised to −14 LUFS — the loudness target the social platforms use." />
@@ -605,10 +605,10 @@
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <StackPanel Orientation="Horizontal" Margin="0,14,0,0" Spacing="8">
-                  <Button Content="{Binding CleanupButtonText}" Classes="accent" Command="{Binding CleanupCommand}" />
-                  <Button Content="Re-measure" Command="{Binding RefreshCleanupCommand}" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0" Spacing="8">
                   <Button Content="Copy path" Command="{Binding CopyDataFolderCommand}" />
+                  <Button Content="Re-measure" Command="{Binding RefreshCleanupCommand}" />
+                  <Button Content="{Binding CleanupButtonText}" Classes="accent" Command="{Binding CleanupCommand}" />
                 </StackPanel>
 
                 <TextBlock Classes="hint" Margin="0,10,0,0"

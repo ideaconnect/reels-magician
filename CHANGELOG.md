@@ -25,6 +25,7 @@ Changes to ReelsMagician, newest first. Version numbers will be assigned once th
 - **Reel names:** a reel's file name is now made of ASCII letters, digits and underscores only: `Laptop czy tablet? Wszystko w jednym` becomes `Laptop_czy_tablet_Wszystko_w_jednym`. It comes out the same on Windows and Linux, and copies to any USB stick or shared folder. The suggested name for exported subtitles is made the same way.
 - **Links without ffmpeg:** loading a link before ffmpeg is installed now stops and points you to Setup, instead of failing after the download.
 - **Cleanup tab:** **Free up space** moved from the Setup tab to a tab of its own, **Cleanup**, on the right of the tab strip, apart from the six steps. It measures the data folder afresh each time it opens.
+- **Buttons on the right:** every step's buttons now sit on the right, with its main action rightmost, and so do the confirmation dialogs and the file picker. A question still has the answer that changes nothing selected, so Enter never agrees by accident.
 
 ### Fixed
 
