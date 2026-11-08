@@ -72,13 +72,19 @@ public sealed class ToolchainManager(ToolPaths paths, IProgressSink sink)
         ts.WhisperCliPath = Find(whisperDir, ToolPaths.ExeName("whisper-cli"), ToolPaths.ExeName("main"));
         ts.WhisperBackend = DescribeBackend(whisperDir, ts.WhisperCliPath);
         if (ts.WhisperCliPath is not null && InstalledAsset(whisperDir) is { } whisperAsset)
+        {
+            ts.WhisperBuild = ToolBuilds.KindOf(whisperAsset);
             ts.WhisperWarning = ToolBuilds.FallbackWarning("whisper.cpp", whisperAsset, ToolBuilds.ExpectedWhisper(ts.Gpu, os));
+        }
 
         var llamaDir = Directory.Exists(settings.CustomLlamaDir ?? "") ? settings.CustomLlamaDir! : paths.LlamaDir;
         ts.LlamaServerPath = Find(llamaDir, ToolPaths.ExeName("llama-server"));
         ts.LlamaBackend = DescribeBackend(llamaDir, ts.LlamaServerPath);
         if (ts.LlamaServerPath is not null && InstalledAsset(llamaDir) is { } llamaAsset)
+        {
+            ts.LlamaBuild = ToolBuilds.KindOf(llamaAsset);
             ts.LlamaWarning = ToolBuilds.FallbackWarning("llama.cpp", llamaAsset, ToolBuilds.ExpectedLlama(ts.Gpu, os));
+        }
 
         var whisperModel = ModelCatalog.ResolveWhisper(settings.WhisperModelId);
         var whisperModelPath = Path.Combine(paths.Models, whisperModel.FileName);

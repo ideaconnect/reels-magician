@@ -5,7 +5,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <InvariantGlobalization>false</InvariantGlobalization>
-    <Version>0.1.0</Version>
+    <!-- A build made from a release tag gets its version from CI (-p:Version=0.2.0); any other
+         build is a development build, which the About tab says. -->
+    <Version>0.0.0-dev</Version>
     <Authors>IDCT Bartosz Pachołek</Authors>
     <Copyright>Copyright (c) 2026, IDCT Bartosz Pachołek</Copyright>
   </PropertyGroup>

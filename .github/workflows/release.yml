@@ -43,6 +43,8 @@ jobs:
           $missing = $notices | Where-Object { -not (Test-Path "out/ReelsMagician/$_") }
           if ($missing) { throw "The publish lacks: $($missing -join ', ')" }
           Compress-Archive -Path out/ReelsMagician -DestinationPath ReelsMagician-win-x64.zip
+      - name: Licences in the publish
+        run: dotnet run --project tests/ReelsMagician.SmokeTests -c Release --no-build -- licences out/ReelsMagician
       - uses: actions/upload-artifact@v7
         with:
           name: windows
@@ -64,6 +66,8 @@ jobs:
           if [ "$GITHUB_REF_TYPE" = tag ]; then version=${GITHUB_REF_NAME#v}; else version=0.0.0-dev; fi
           echo "VERSION=$version" >> "$GITHUB_ENV"
           dotnet publish src/ReelsMagician.App -c Release -r linux-x64 --self-contained -p:Version=$version -o out/publish
+      - name: Licences in the publish
+        run: dotnet run --project tests/ReelsMagician.SmokeTests -c Release --no-build -- licences out/publish
       - name: Build the AppImage
         run: sh packaging/linux/build-appimage.sh out/publish ReelsMagician-x86_64.AppImage "$VERSION"
       - name: Check the AppImage

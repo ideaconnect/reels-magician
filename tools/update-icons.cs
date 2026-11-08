@@ -36,6 +36,8 @@ string[] Icons =
     "forward-step", "file-import", "file-export", "film", "broom", "xmark",
     // The support bar.
     "mug-hot", "heart",
+    // The About tab: idct.tech, the repository's pages, a component's source and its licence.
+    "globe", "brands/github", "bug", "tag", "arrow-up-right-from-square", "file-lines",
 ];
 
 var root = Path.GetFullPath(Path.Combine(

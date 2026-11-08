@@ -12,6 +12,7 @@
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
         <ResourceInclude Source="avares://ReelsMagician/Assets/Icons.axaml" />
+        <ResourceInclude Source="avares://ReelsMagician/Assets/IdctMark.axaml" />
       </ResourceDictionary.MergedDictionaries>
 
       <!--
@@ -105,6 +106,10 @@
            black, and the Sponsors heart keeps GitHub's pink. -->
       <SolidColorBrush x:Key="VideoFrame" Color="#000000" />
       <SolidColorBrush x:Key="SponsorHeart" Color="#DB61A2" />
+      <!-- The IDCT mark keeps its own colours in both themes, as on idct.tech: amber on a near-black
+           plate (assets/idct-mark.svg). -->
+      <SolidColorBrush x:Key="IdctMarkPlate" Color="#0C0C0B" />
+      <SolidColorBrush x:Key="IdctMarkAmber" Color="#FFB224" />
 
       <!-- Fluent's defaults are sized for touch; this is a dense desktop tool. -->
       <x:Double x:Key="ControlContentThemeFontSize">13</x:Double>
@@ -341,7 +346,7 @@
     <Setter Property="FontSize" Value="12" />
     <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
-  <Style Selector="TextBlock.mono">
+  <Style Selector="TextBlock.mono, SelectableTextBlock.mono">
     <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, DejaVu Sans Mono, Liberation Mono, monospace" />
     <Setter Property="FontSize" Value="12" />
   </Style>
