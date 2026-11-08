@@ -400,6 +400,14 @@ silently otherwise. The dropdown lists only installed fonts.
 
 ---
 
+## Supporting ReelsMagician
+
+ReelsMagician is free and open-source software, made in spare time and kept going by goodwill and
+coffee. If it saves you time, please support its development on
+[Buy Me a Coffee](https://buymeacoffee.com/idct) or
+[GitHub Sponsors](https://github.com/sponsors/ideaconnect?frequency=one-time). The bar at the
+bottom of the app's window links to both.
+
 ## Licence and third-party components
 
 ReelsMagician is released under the [BSD 3-Clause License](LICENSE).

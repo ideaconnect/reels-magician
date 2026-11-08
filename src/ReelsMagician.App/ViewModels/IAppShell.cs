@@ -5,8 +5,9 @@ public sealed record FileFilter(string Name, params string[] Patterns);
 
 /// <summary>
 /// What the view models need from the window around them: the app's own dialogs and file
-/// pickers, and the clipboard. Nothing here depends on the desktop: the app hands no folder to a
-/// file manager, so it works the same with or without one, and Copy path stands in for it.
+/// pickers, the clipboard, and the system's browser for the two support links. Nothing the app
+/// needs to work depends on the desktop: it hands no folder to a file manager, so it works the
+/// same with or without one, and Copy path stands in for it.
 /// </summary>
 public interface IAppShell
 {
@@ -20,4 +21,10 @@ public interface IAppShell
     Task<string?> PickFolderAsync(string title, string? startFolder);
 
     Task CopyTextAsync(string text);
+
+    /// <summary>
+    /// Opens a web page in the system's browser. False when it could not be started. On Linux it
+    /// can also be true when no browser opened, as xdg-open reports nothing back.
+    /// </summary>
+    Task<bool> OpenLinkAsync(Uri link);
 }
