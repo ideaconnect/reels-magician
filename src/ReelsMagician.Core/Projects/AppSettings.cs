@@ -34,6 +34,12 @@ public sealed class AppSettings
 
     public List<string> RecentSources { get; set; } = [];
 
+    /// <summary>
+    /// The models the user chose to run although they probably won't fit this computer's memory,
+    /// so the question before a run is asked once per model (issue #54).
+    /// </summary>
+    public List<string> AcceptedMemoryRisks { get; set; } = [];
+
     /// <summary>The theme: the system's light or dark setting by default, or one of the two.</summary>
     [JsonConverter(typeof(AppearanceJsonConverter))]
     public Appearance Appearance { get; set; } = Appearance.System;

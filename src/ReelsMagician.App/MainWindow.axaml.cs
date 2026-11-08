@@ -16,10 +16,16 @@ public partial class MainWindow : Window, IAppShell
     public MainWindow()
     {
         InitializeComponent();
-        DataContext = new MainViewModel(this);
+        var vm = new MainViewModel(this);
+        DataContext = vm;
 
         ErrorReporter.Presenter = (title, message) =>
             Dispatcher.UIThread.InvokeAsync(() => MessageDialog.ShowAsync(this, title, message));
+
+        // A model left running when the app last went down is explained once the window is up,
+        // and a normal close says no model took it down.
+        Opened += async (_, _) => await vm.ExplainLastCrashAsync();
+        Closed += (_, _) => vm.OnClosed();
 
         // Clicking into a cue's text box should make that cue the selected one, so Split, Merge
         // and the time nudges act on the row being edited.
@@ -36,6 +42,8 @@ public partial class MainWindow : Window, IAppShell
 
     public Task<bool> AskAsync(string title, string message, string confirmText, string cancelText) =>
         MessageDialog.AskAsync(this, title, message, confirmText, cancelText);
+
+    public Task TellAsync(string title, string message) => MessageDialog.ShowAsync(this, title, message);
 
     public async Task<string?> PickFileAsync(string title, IReadOnlyList<FileFilter> filters)
     {

@@ -6,13 +6,18 @@ namespace ReelsMagician.Core.Toolchain;
 
 public enum GpuVendor { Unknown, Nvidia, Amd, Intel, Qualcomm }
 
-public sealed record GpuInfo(string Name, GpuVendor Vendor, bool HasVulkanDriver);
+/// <param name="MemoryBytes">
+/// The memory a model can use on this card, as the system reports it before llama.cpp is
+/// installed; null when it doesn't say. llama.cpp's own report replaces it once it is there.
+/// </param>
+public sealed record GpuInfo(string Name, GpuVendor Vendor, bool HasVulkanDriver, long? MemoryBytes = null);
 
 /// <summary>
-/// What the NVIDIA driver reports through CUDA: the newest CUDA version it runs, and the
-/// compute capability (such as 8.9) of the oldest card it drives.
+/// What the NVIDIA driver reports through CUDA: the newest CUDA version it runs, the
+/// compute capability (such as 8.9) of the oldest card it drives, and the memory of all of its
+/// cards together, which llama.cpp splits a model across.
 /// </summary>
-public sealed record CudaSupport(Version DriverVersion, Version LowestComputeCapability)
+public sealed record CudaSupport(Version DriverVersion, Version LowestComputeCapability, long? TotalMemoryBytes = null)
 {
     public bool CanRun(Version cudaBuild) => DriverVersion >= new Version(cudaBuild.Major, cudaBuild.Minor);
 }
@@ -95,10 +100,27 @@ public static class GpuProbe
                           (driver is null ? "" : $" ({driver})");
             if (adapters.Any(a => a.Name == display)) continue;
 
-            adapters.Add(new GpuInfo(display, vendor, manifests.Any(m => DriverServes(m, vendor, driver))));
+            adapters.Add(new GpuInfo(display, vendor, manifests.Any(m => DriverServes(m, vendor, driver)),
+                driver == "amdgpu" ? AmdgpuMemory(device) : null));
         }
 
         return new GpuCapabilities(adapters, hasLoader, adapters.Count(a => a.HasVulkanDriver));
+    }
+
+    /// <summary>
+    /// The memory amdgpu offers a model, from its sysfs counters. An integrated Radeon's VRAM is
+    /// a slice of the system's memory set aside by the firmware, and Mesa's Vulkan driver lets
+    /// llama.cpp use GTT, more of the system's memory, on top of it, so both count: on a Radeon
+    /// 760M with 6 GiB of VRAM and 12.6 GiB of GTT llama.cpp reports 19,062 MiB, the sum. amdgpu
+    /// shows mem_info_vram_vendor only when it knows who made the card's memory chips, which an
+    /// APU doesn't have; a card that shows it is taken for a discrete one, where only VRAM counts,
+    /// as llama.cpp's Vulkan backend reports only the card's own memory there.
+    /// </summary>
+    private static long? AmdgpuMemory(string device)
+    {
+        if (!long.TryParse(ReadTrimmed(Path.Combine(device, "mem_info_vram_total")), out var vram) || vram <= 0) return null;
+        if (File.Exists(Path.Combine(device, "mem_info_vram_vendor"))) return vram;
+        return long.TryParse(ReadTrimmed(Path.Combine(device, "mem_info_gtt_total")), out var gtt) && gtt > 0 ? vram + gtt : vram;
     }
 
     /// <summary>
@@ -270,6 +292,9 @@ public static class GpuProbe
     [DllImport(CudaDriver), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern int cuDeviceGetAttribute(out int value, int attribute, int device);
 
+    [DllImport(CudaDriver), DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    private static extern int cuDeviceTotalMem_v2(out nuint bytes, int device);
+
     [SupportedOSPlatform("windows")]
     private static CudaSupport? ProbeCuda()
     {
@@ -278,8 +303,10 @@ public static class GpuProbe
             if (cuInit(0) != 0 || cuDriverGetVersion(out var version) != 0 || cuDeviceGetCount(out var count) != 0)
                 return null;
 
-            // With several cards llama.cpp uses them all, so the oldest one decides what can run.
+            // With several cards llama.cpp uses them all, so the oldest one decides what can run,
+            // and their memory adds up.
             Version? lowest = null;
+            long memory = 0;
             for (var i = 0; i < count; i++)
             {
                 if (cuDeviceGet(out var device, i) != 0 ||
@@ -287,15 +314,24 @@ public static class GpuProbe
                     cuDeviceGetAttribute(out var minor, ComputeCapabilityMinor, device) != 0) continue;
                 var capability = new Version(major, minor);
                 if (lowest is null || capability < lowest) lowest = capability;
+                if (TotalMemory(device) is { } bytes) memory += bytes;
             }
 
             // The driver encodes CUDA 13.4 as 13040.
-            return lowest is null ? null : new CudaSupport(new Version(version / 1000, version % 1000 / 10), lowest);
+            return lowest is null ? null
+                : new CudaSupport(new Version(version / 1000, version % 1000 / 10), lowest, memory > 0 ? memory : null);
         }
         catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or BadImageFormatException)
         {
             return null;
         }
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static long? TotalMemory(int device)
+    {
+        try { return cuDeviceTotalMem_v2(out var bytes, device) == 0 && bytes > 0 ? (long)bytes : null; }
+        catch (EntryPointNotFoundException) { return null; }
     }
 
     [SupportedOSPlatform("windows")]
@@ -316,11 +352,38 @@ public static class GpuProbe
                 if (key?.GetValue("DriverDesc") is not string desc || string.IsNullOrWhiteSpace(desc)) continue;
                 if (adapters.Any(a => a.Name.Equals(desc, StringComparison.OrdinalIgnoreCase))) continue;
 
-                adapters.Add(new GpuInfo(desc, ClassifyVendor(desc), HasVulkanIcd(key)));
+                var vendor = ClassifyVendor(desc);
+                adapters.Add(new GpuInfo(desc, vendor, HasVulkanIcd(key), DedicatedMemory(key, desc, vendor)));
             }
         }
         catch (Exception) { /* registry unavailable — report what we have */ }
         return adapters;
+    }
+
+    /// <summary>
+    /// The card's own memory, as its driver records it on the adapter's key: qwMemorySize, a
+    /// QWORD, on current drivers, and MemorySize, which stops at 4 GB, on older ones. Intel's
+    /// integrated graphics record only the small slice set aside for them, while llama.cpp can use
+    /// shared system memory on top, so a warning from that figure would be a false one; it is left
+    /// unknown, as is any value the driver doesn't record.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    private static long? DedicatedMemory(RegistryKey adapterKey, string name, GpuVendor vendor)
+    {
+        if (vendor == GpuVendor.Intel && !name.Contains("Arc", StringComparison.OrdinalIgnoreCase)) return null;
+
+        var bytes = adapterKey.GetValue("HardwareInformation.qwMemorySize") switch
+        {
+            long q => q,
+            byte[] { Length: 8 } raw => BitConverter.ToInt64(raw),
+            _ => adapterKey.GetValue("HardwareInformation.MemorySize") switch
+            {
+                int d => (long)(uint)d,
+                byte[] { Length: 4 } raw => BitConverter.ToUInt32(raw),
+                _ => 0L,
+            },
+        };
+        return bytes > 0 ? bytes : null;
     }
 
     /// <summary>True when the adapter advertises a Vulkan ICD manifest that is actually on disk.</summary>

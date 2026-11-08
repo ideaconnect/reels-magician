@@ -14,7 +14,7 @@ These are the requirements for ReelsMagician 0.2.0 and later, on Windows and Lin
 - **Processor:** 64-bit x86 (amd64). ARM isn't supported.
 - **Internet on first run:** the app downloads its tools and models itself, about 6 GB with the default models. After that, local video files work offline.
 - **Disk space:** about 6 GB for the tools and default models, plus room for working files. A 4K source alone can be over 1 GB, so leave at least 10 GB free.
-- **Graphics card:** strongly recommended for the analysis step. The default model (Qwen3 8B) wants about 6 GB of video memory, and the lighter Qwen3 4B fits smaller cards. Without a usable graphics card, everything runs on the processor, which works but is much slower.
+- **Graphics card:** strongly recommended for the analysis step. The default model, Qwen3 8B (Q4_K_M), needs about 7.4 GB of video memory at a 16k context and 9.7 GB at 32k, the context choosing it on the Setup tab sets; the lighter Qwen3 4B needs about 5.1 GB. Integrated graphics also count the system memory they share: the Radeon 760M with 6 GB of its own memory runs the default model at 32k. The Setup tab says what the chosen model needs and warns when this computer probably has too little. A model too big for the card runs with some of its layers on the processor, which is slower. Without a usable graphics card, everything runs on the processor, which works but is much slower.
 - **Fonts:** captions use the fonts installed on your computer. If a preset names a font you don't have, a similar one is used, so captions can look slightly different from one computer to another.
 
 What the app downloads on first run, with the default models:

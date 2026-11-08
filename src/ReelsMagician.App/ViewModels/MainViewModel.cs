@@ -40,6 +40,8 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         _shell = shell;
         _paths.EnsureCreated();
         _settings = AppSettings.Load(_paths);
+        // Before anything can start a model: a record left by one means the app went down with it.
+        _leftoverRun = ModelRunMarker.TakeLeftover(_paths.ModelRunMarkerFile);
         // Before the window first shows, so it opens in the theme it will keep.
         AppTheme.Apply(_settings.Appearance);
         _toolchain = new ToolchainManager(_paths, this);
@@ -112,8 +114,40 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     private string _missingText = "";
     public string MissingText { get => _missingText; private set => Set(ref _missingText, value); }
 
-    public IReadOnlyList<WhisperModelSpec> WhisperModels => ModelCatalog.WhisperModels;
-    public IReadOnlyList<LlmModelSpec> LlmModels => ModelCatalog.LlmModels;
+    /// <summary>The drop-downs' items: each model, marked when it probably won't fit (issue #54).</summary>
+    public IReadOnlyList<ModelOptionViewModel> WhisperOptions { get; } =
+        [.. ModelCatalog.WhisperModels.Select(m => new ModelOptionViewModel(m.Id, m.DisplayName))];
+
+    public IReadOnlyList<ModelOptionViewModel> LlmOptions { get; } =
+        [.. ModelCatalog.LlmModels.Select(m => new ModelOptionViewModel(m.Id, m.DisplayName))];
+
+    public ModelOptionViewModel SelectedWhisperOption
+    {
+        get => WhisperOptions.First(o => o.Id == SelectedWhisperModel.Id);
+        set { if (value is not null) SelectedWhisperModel = ModelCatalog.ResolveWhisper(value.Id); }
+    }
+
+    public ModelOptionViewModel SelectedLlmOption
+    {
+        get => LlmOptions.First(o => o.Id == SelectedLlmModel.Id);
+        set { if (value is not null) SelectedLlmModel = ModelCatalog.ResolveLlm(value.Id); }
+    }
+
+    private string _whisperModelNotes = "";
+    /// <summary>The chosen Whisper model's note and what it needs.</summary>
+    public string WhisperModelNotes { get => _whisperModelNotes; private set => Set(ref _whisperModelNotes, value); }
+
+    private string _llmModelNotes = "";
+    /// <summary>The chosen Qwen model's note and what it needs at the context it will get.</summary>
+    public string LlmModelNotes { get => _llmModelNotes; private set => Set(ref _llmModelNotes, value); }
+
+    private string? _whisperFitWarning;
+    /// <summary>Why the chosen Whisper model may not fit this computer, or null.</summary>
+    public string? WhisperFitWarning { get => _whisperFitWarning; private set => Set(ref _whisperFitWarning, value); }
+
+    private string? _llmFitWarning;
+    /// <summary>Why the chosen Qwen model may not fit this computer, or null.</summary>
+    public string? LlmFitWarning { get => _llmFitWarning; private set => Set(ref _llmFitWarning, value); }
 
     /// <summary>Which builds each model runs on, which differs between the two systems.</summary>
     public string ModelsHint { get; } = OperatingSystem.IsWindows()
@@ -131,6 +165,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         set
         {
             if (!Set(ref _selectedWhisperModel, value)) return;
+            Raise(nameof(SelectedWhisperOption));
             _settings.WhisperModelId = value.Id;
             _settings.Save(_paths);
             RefreshTools();
@@ -144,12 +179,120 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         set
         {
             if (!Set(ref _selectedLlmModel, value)) return;
+            Raise(nameof(SelectedLlmOption));
             _settings.LlmModelId = value.Id;
             _settings.LlamaContextSize = value.RecommendedContext;
             _settings.Save(_paths);
             RefreshTools();
         }
     }
+
+    /// <summary>
+    /// Holds every model against the memory it would run in, for the triangles in the drop-downs
+    /// and the warnings under them. The chosen Qwen model is estimated at the context it will get;
+    /// the others at the context choosing them sets.
+    /// </summary>
+    private void RefreshFit()
+    {
+        var system = MemoryFit.SystemMemoryBytes();
+        var os = ToolBuilds.Current;
+
+        var whisperBudget = MemoryFit.WhisperBudget(_tools, system, os);
+        foreach (var option in WhisperOptions)
+            option.Warning = MemoryFit.AssessWhisper(ModelCatalog.ResolveWhisper(option.Id), whisperBudget).Warning;
+
+        var llmBudget = MemoryFit.LlmBudget(_tools, system, os);
+        foreach (var option in LlmOptions)
+        {
+            var model = ModelCatalog.ResolveLlm(option.Id);
+            var context = model.Id == SelectedLlmModel.Id ? _settings.LlamaContextSize : model.RecommendedContext;
+            option.Warning = MemoryFit.AssessLlm(model, context, llmBudget).Warning;
+        }
+
+        var whisper = MemoryFit.AssessWhisper(SelectedWhisperModel, whisperBudget);
+        WhisperModelNotes = $"{SelectedWhisperModel.Notes} {whisper.NeedText}";
+        WhisperFitWarning = whisper.Warning;
+
+        var llm = MemoryFit.AssessLlm(SelectedLlmModel, _settings.LlamaContextSize, llmBudget);
+        LlmModelNotes = $"{SelectedLlmModel.Notes} {llm.NeedText}";
+        LlmFitWarning = llm.Warning;
+    }
+
+    // The llama-server being asked for its devices, so a refresh meanwhile doesn't ask again, and
+    // the builds that could not be asked this session.
+    private string? _probingLlama;
+    private readonly HashSet<string> _unprobedLlamas = [];
+
+    /// <summary>
+    /// Asks a newly found llama-server for its devices and options, off the UI thread, then
+    /// shows the memory warnings with its own figures. Later detections find them kept.
+    /// </summary>
+    private async Task ProbeLlamaAsync(Toolset tools)
+    {
+        if (tools.LlamaServerPath is not { } exe || tools.LlamaFeatures is not null) return;
+        if (_probingLlama == exe || _unprobedLlamas.Contains(exe)) return;
+
+        _probingLlama = exe;
+        try
+        {
+            if (await _toolchain.ProbeLlamaAsync(tools, CancellationToken.None).ConfigureAwait(true) is null)
+                _unprobedLlamas.Add(exe);
+        }
+        catch (Exception ex)
+        {
+            // Never worth a dialog: the warnings fall back to the system's figures.
+            _unprobedLlamas.Add(exe);
+            this.Debug("setup", $"Could not ask llama-server for its devices: {ex.Message}");
+        }
+        finally { _probingLlama = null; }
+
+        if (ReferenceEquals(tools, _tools)) RefreshFit();
+    }
+
+    /// <summary>
+    /// Before a model that probably won't fit runs for the first time, asks whether to try it,
+    /// with No as the default. A yes is remembered for that model, so it is asked once; its
+    /// warning stays on the Setup tab.
+    /// </summary>
+    private async Task<bool> ConfirmFitAsync(FitAssessment fit, string modelId, string verb)
+    {
+        if (fit.Risk is not { } risk || _settings.AcceptedMemoryRisks.Contains(modelId)) return true;
+
+        var question = $"{risk}\n\n{verb} with it anyway? You won't be asked again for this model.";
+        if (!await _shell.AskAsync("This model may not fit", question, $"{verb} anyway", "Cancel").ConfigureAwait(true))
+        {
+            Status = $"{fit.Model} was not started. A smaller model can be chosen on the Setup tab.";
+            return false;
+        }
+
+        _settings.AcceptedMemoryRisks.Add(modelId);
+        _settings.Save(_paths);
+        return true;
+    }
+
+    /// <summary>
+    /// A model that was running when the app or the system last went down: what it was, and that
+    /// a smaller one needs less. Found by the constructor, shown once the window is up.
+    /// </summary>
+    private readonly ModelRun? _leftoverRun;
+
+    public async Task ExplainLastCrashAsync()
+    {
+        if (_leftoverRun is not { } run) return;
+
+        var message = run.Explanation;
+        // A yes given before the crash no longer holds: the next run asks again.
+        if (_settings.AcceptedMemoryRisks.Remove(run.ModelId))
+        {
+            _settings.Save(_paths);
+            message += "\n\nReelsMagician will ask again before that model runs.";
+        }
+        this.Warn("setup", $"{run.Model} was running when ReelsMagician last closed unexpectedly.");
+        await _shell.TellAsync(run.Title, message).ConfigureAwait(true);
+    }
+
+    /// <summary>The window closed normally, so a model it ran was not what took the app down.</summary>
+    public void OnClosed() => ModelRunMarker.End(_paths.ModelRunMarkerFile);
 
     // ── Appearance ───────────────────────────────────────────────────────────────────────
 
@@ -560,6 +703,9 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
             ? "Everything is installed."
             : "Missing: " + string.Join(", ", _tools.MissingComponents());
 
+        RefreshFit();
+        // A llama-server not asked before: its own figures replace the system's once it answers.
+        _ = ProbeLlamaAsync(_tools);
         RefreshCommands();
     }
 
@@ -679,6 +825,10 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     private async Task TranscribeAsync()
     {
+        if (ReelPipeline.WillRunWhisper(_project, UseProvidedSubtitles) &&
+            !await ConfirmFitAsync(MemoryFit.ForWhisper(_tools, _settings), SelectedWhisperModel.Id, "Transcribe").ConfigureAwait(true))
+            return;
+
         await RunStageAsync("Transcribing", async ct =>
         {
             var pipeline = new ReelPipeline(_tools, _settings, _paths, this);
@@ -690,6 +840,11 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
     private async Task AnalyzeAsync()
     {
+        // The estimate uses llama.cpp's own devices, so a build not asked yet is asked first.
+        await _toolchain.ProbeLlamaAsync(_tools, CancellationToken.None).ConfigureAwait(true);
+        if (!await ConfirmFitAsync(MemoryFit.ForLlm(_tools, _settings), SelectedLlmModel.Id, "Analyse").ConfigureAwait(true))
+            return;
+
         await RunStageAsync("Analysing", async ct =>
         {
             CommitSubtitleEdits();

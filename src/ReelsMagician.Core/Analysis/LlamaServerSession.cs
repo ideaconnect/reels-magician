@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -39,19 +40,23 @@ public sealed class LlamaServerSession : IAsyncDisposable
             throw new InvalidOperationException("llama.cpp or the Qwen model is not installed.");
 
         var port = FindFreePort();
+        var supportsFit = tools.LlamaFeatures?.SupportsFit == true;
         var args = new List<string>
         {
             "-m", tools.LlmModelPath!,
             "--host", "127.0.0.1",
             "--port", port.ToString(),
             "-c", contextSize.ToString(),
-            "-ngl", settings.LlamaGpuLayers < 0 ? "999" : settings.LlamaGpuLayers.ToString(),
+        };
+        args.AddRange(GpuLayerArgs(settings.LlamaGpuLayers, supportsFit));
+        args.AddRange(
+        [
             "-t", Math.Max(2, Environment.ProcessorCount / 2).ToString(),
             // Not --log-disable: that silences fatal startup errors too, leaving the
             // "exited during startup" message below with nothing to report. Routine lines go to
             // the debug sink instead, which the UI already filters out.
             "--log-colors", "off",
-        };
+        ]);
 
         var psi = new ProcessStartInfo
         {
@@ -67,6 +72,10 @@ public sealed class LlamaServerSession : IAsyncDisposable
         foreach (var a in args) psi.ArgumentList.Add(a);
 
         sink.Info("analyze", $"Starting llama-server on port {port} ({tools.LlamaBackend})");
+        if (settings.LlamaGpuLayers < 0)
+            sink.Info("analyze", supportsFit
+                ? "llama.cpp fits the model to the graphics memory, keeping on the processor any layers that don't fit."
+                : "This llama.cpp can't fit a model to the graphics memory (no --fit), so every layer goes to the GPU.");
         var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
 
         var http = new HttpClient { Timeout = TimeSpan.FromMinutes(10), BaseAddress = new Uri($"http://127.0.0.1:{port}") };
@@ -120,8 +129,8 @@ public sealed class LlamaServerSession : IAsyncDisposable
 
             if (_process.HasExited)
             {
-                string tail;
-                lock (_startupLog) tail = string.Join('\n', _startupLog);
+                var tail = LogTail();
+                if (ModelDidNotFitException.FromLog(tail) is { } didNotFit) throw Reported(didNotFit);
                 throw new InvalidOperationException(
                     $"llama-server exited during startup (code {_process.ExitCode}).\n{tail}");
             }
@@ -155,7 +164,20 @@ public sealed class LlamaServerSession : IAsyncDisposable
     {
         var json = JsonSerializer.Serialize(requestBody);
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
-        using var resp = await _http.PostAsync("/v1/chat/completions", content, ct).ConfigureAwait(false);
+        HttpResponseMessage resp;
+        try
+        {
+            resp = await _http.PostAsync("/v1/chat/completions", content, ct).ConfigureAwait(false);
+        }
+        catch (HttpRequestException)
+        {
+            // The server may have died under the request, such as when a buffer it grows while
+            // working could not be allocated. Its exit can trail the dropped connection a little.
+            if (ExitedOutOfMemory() is { } didNotFit) throw Reported(didNotFit);
+            throw;
+        }
+
+        using var _ = resp;
         var body = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
 
         if (!resp.IsSuccessStatusCode)
@@ -166,6 +188,38 @@ public sealed class LlamaServerSession : IAsyncDisposable
             throw new InvalidOperationException($"llama-server returned no choices: {Truncate(body, 600)}");
 
         return choices[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+    }
+
+    /// <summary>
+    /// How many layers go to the GPU. A number set in settings.json (<c>LlamaGpuLayers</c>) is
+    /// passed as it is. Otherwise a build with <c>--fit</c> decides: it offloads the layers that fit
+    /// in the graphics memory and keeps the rest on the processor, so a model too big for the card
+    /// runs slower instead of failing. <c>-ngl 999</c> would switch that off ("n_gpu_layers already
+    /// set by user"), so it goes only to an older build that can't fit, as every layer, as before.
+    /// The context stays as set: fitting may shrink only what is left unset, and an unset context
+    /// would be the model's whole training context, 40k for Qwen3, wherever that fits.
+    /// </summary>
+    public static IReadOnlyList<string> GpuLayerArgs(int configuredLayers, bool supportsFit) =>
+        configuredLayers >= 0 ? ["-ngl", configuredLayers.ToString(CultureInfo.InvariantCulture)]
+        : supportsFit ? ["--fit", "on"]
+        : ["-ngl", "999"];
+
+    private string LogTail()
+    {
+        lock (_startupLog) return string.Join('\n', _startupLog);
+    }
+
+    private ModelDidNotFitException? ExitedOutOfMemory()
+    {
+        try { return _process.WaitForExit(TimeSpan.FromSeconds(2)) ? ModelDidNotFitException.FromLog(LogTail()) : null; }
+        catch (SystemException) { return null; }
+    }
+
+    /// <summary>The lines that showed the shortage go to the activity log, which the message replaces.</summary>
+    private ModelDidNotFitException Reported(ModelDidNotFitException didNotFit)
+    {
+        foreach (var line in didNotFit.Evidence) _sink.Warn("analyze", $"llama-server: {line}");
+        return didNotFit;
     }
 
     private static string Truncate(string s, int max) => s.Length <= max ? s : s[..max] + "…";

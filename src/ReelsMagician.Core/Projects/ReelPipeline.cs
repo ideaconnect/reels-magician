@@ -62,9 +62,35 @@ public sealed class ReelPipeline(Toolset tools, AppSettings settings, ToolPaths 
         }
 
         var whisper = new WhisperTranscriber(tools, settings, sink);
-        project.Transcript = await whisper
-            .TranscribeAsync(source.VideoPath, source.Info.DurationSeconds, project.WorkDir, ct)
-            .ConfigureAwait(false);
+        var fit = MemoryFit.ForWhisper(tools, settings);
+        ReportFit("transcribe", fit);
+        ModelRunMarker.Begin(paths.ModelRunMarkerFile,
+            ModelRun.Of(ModelStage.Transcription, ModelCatalog.ResolveWhisper(settings.WhisperModelId).Id, fit));
+        try
+        {
+            project.Transcript = await whisper
+                .TranscribeAsync(source.VideoPath, source.Info.DurationSeconds, project.WorkDir, ct)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            ModelRunMarker.End(paths.ModelRunMarkerFile);
+        }
+    }
+
+    /// <summary>
+    /// Whether transcribing will run Whisper, rather than take the subtitles that came with the
+    /// video; only then does the Whisper model's memory matter.
+    /// </summary>
+    public static bool WillRunWhisper(ReelProject project, bool preferProvidedSubtitles) =>
+        !(preferProvidedSubtitles && project.Source?.ProvidedSubtitlePath is { } path && File.Exists(path));
+
+    /// <summary>What the model needs, in the log, and a warning there too when it may not fit.</summary>
+    private void ReportFit(string stage, FitAssessment fit)
+    {
+        var has = fit.Budget.Bytes is { } total ? $"; {fit.Budget.Device ?? "the computer"} has {MemoryFit.Format(total)}" : "";
+        sink.Info(stage, $"{fit.Model}: {fit.NeedText.TrimEnd('.')}{has}.");
+        if (fit.Risk is { } risk) sink.Warn(stage, risk);
     }
 
     /// <summary>Stage 3 — group the reviewed transcript into paragraphs and let Qwen pick the reel.</summary>
@@ -82,12 +108,29 @@ public sealed class ReelPipeline(Toolset tools, AppSettings settings, ToolPaths 
         if (project.Paragraphs.Count == 0)
             throw new InvalidOperationException("The transcript produced no paragraphs to analyse.");
 
-        await using var server = await LlamaServerSession
-            .StartAsync(tools, settings, settings.LlamaContextSize, sink, ct).ConfigureAwait(false);
+        // Asked once per build: the devices for the memory estimate, and whether it can fit the
+        // model to them, which decides how many layers it is told to put on the GPU.
+        if (tools.LlamaFeatures is null && tools.LlamaServerPath is { } llamaServer)
+            tools.LlamaFeatures = await new LlamaProbe(paths.LlamaProbeFile)
+                .ProbeAsync(llamaServer, LlamaProbe.GpuKey(tools.Gpu), ct).ConfigureAwait(false);
 
-        var analyzer = new QwenAnalyzer(server, sink);
-        project.Plan = await analyzer.PlanAsync(project.Topic, project.Paragraphs, project.PlanOptions, ct)
-            .ConfigureAwait(false);
+        var fit = MemoryFit.ForLlm(tools, settings);
+        ReportFit("analyze", fit);
+        ModelRunMarker.Begin(paths.ModelRunMarkerFile,
+            ModelRun.Of(ModelStage.Analysis, ModelCatalog.ResolveLlm(settings.LlmModelId).Id, fit));
+        try
+        {
+            await using var server = await LlamaServerSession
+                .StartAsync(tools, settings, settings.LlamaContextSize, sink, ct).ConfigureAwait(false);
+
+            var analyzer = new QwenAnalyzer(server, sink);
+            project.Plan = await analyzer.PlanAsync(project.Topic, project.Paragraphs, project.PlanOptions, ct)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            ModelRunMarker.End(paths.ModelRunMarkerFile);
+        }
 
         project.SelectedCandidate = project.Plan.Candidates.FirstOrDefault();
         foreach (var candidate in project.Plan.Candidates)
