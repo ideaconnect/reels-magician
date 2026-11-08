@@ -10,7 +10,7 @@ namespace ReelsMagician.SmokeTests;
 /// each model needs, which memory it is held against, when that warns, how llama-server is told
 /// to fit a model, how a shortage in its log is explained, and the record that explains a crash.
 /// A wrong figure here builds and runs, and only shows as a warning nobody needed, or none where
-/// a model is about to take the system down.
+/// a model is about to take the system down. Also the context a new install starts at (issue #70).
 /// </summary>
 public static class MemoryFitChecks
 {
@@ -26,6 +26,7 @@ public static class MemoryFitChecks
         FitOption();
         Estimates();
         Thresholds();
+        NewInstallContext();
         Budgets();
         LinuxAmdgpuMemory();
         GpuLayers();
@@ -174,6 +175,59 @@ public static class MemoryFitChecks
         Check.True(MemoryFit.AssessWhisper(turbo, new MemoryBudget(MemoryKind.System, 3 * GiB)).Warning?.Contains("at this context") == false,
             "Whisper's warning names no context");
         Check.True(MemoryFit.SystemMemoryBytes() is > 0, $"this computer's memory is known ({MemoryFit.Format(MemoryFit.SystemMemoryBytes() ?? 0)})");
+    }
+
+    // A new install used to run the default model at 16k while choosing it set 32k, so the same
+    // model got half its context, and half the estimate, until it was chosen again.
+    private static void NewInstallContext()
+    {
+        Check.Section("A new install runs the default model at the context choosing it sets (issue #70)");
+
+        var fresh = new AppSettings();
+        var model = ModelCatalog.ResolveLlm(fresh.LlmModelId);
+        Check.Equal(ModelCatalog.DefaultLlm.Id, model.Id, "a new install runs the default Qwen model");
+        Check.Equal(model.RecommendedContext, fresh.LlamaContextSize,
+            "at the context the catalogue recommends for it, so the default settings and the model can't drift apart");
+        Check.Equal("32k", MemoryFit.FormatContext(fresh.LlamaContextSize), "for Qwen3 8B (Q4_K_M) that is 32k, not 16k");
+        Check.Equal("Needs about 9.7 GB of graphics memory at a 32k context.",
+            MemoryFit.AssessLlm(model, fresh.LlamaContextSize, new MemoryBudget(MemoryKind.Graphics, null)).NeedText,
+            "so a new install's Setup tab states the need it states once the model is chosen, not 7.4 GB at 16k");
+
+        var card = new MemoryBudget(MemoryKind.Graphics, 8 * GiB, "Radeon RX 7600");
+        Check.True(MemoryFit.AssessLlm(model, fresh.LlamaContextSize, card).MayNotFit,
+            "on an 8 GB card the default model now warns from the start, as it did once chosen");
+        Check.True(!MemoryFit.AssessLlm(ModelCatalog.LlmModels[0], ModelCatalog.LlmModels[0].RecommendedContext, card).MayNotFit,
+            "while Qwen3 4B, at its own 16k, fits there");
+
+        var root = IconChecks.FindRepositoryRoot();
+        Check.True(root is not null, "the checks run inside the repository");
+        if (root is not null)
+            Check.Contains(File.ReadAllText(Path.Combine(root, "src", "ReelsMagician.App", "ViewModels", "MainViewModel.cs")),
+                "_settings.LlamaContextSize = value.RecommendedContext;",
+                "choosing a model on the Setup tab sets its recommended context, the one a new install starts at for the default");
+
+        var dir = Path.Combine(Path.GetTempPath(), "rm-context-settings-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var paths = new ToolPaths(dir);
+            Check.Equal(fresh.LlamaContextSize, AppSettings.Load(paths).LlamaContextSize, "with no settings.json yet, the same context");
+
+            paths.EnsureCreated();
+            File.WriteAllText(paths.SettingsFile, "{ not json");
+            Check.Equal(fresh.LlamaContextSize, AppSettings.Load(paths).LlamaContextSize, "and with a corrupt one, which falls back to the defaults");
+
+            fresh.Save(paths);
+            Check.Contains(File.ReadAllText(paths.SettingsFile), $"\"llamaContextSize\": {model.RecommendedContext}",
+                "the first save writes that context into settings.json");
+
+            File.WriteAllText(paths.SettingsFile, "{ \"llmModelId\": \"qwen3-8b-q4\", \"llamaContextSize\": 16384 }");
+            Check.Equal(16384, AppSettings.Load(paths).LlamaContextSize,
+                "an existing install keeps the context its settings.json has, until a model is chosen on the Setup tab");
+        }
+        finally
+        {
+            try { Directory.Delete(dir, recursive: true); } catch (Exception) { /* a temporary folder */ }
+        }
     }
 
     private static void Budgets()
