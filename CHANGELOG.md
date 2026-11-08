@@ -25,6 +25,7 @@ Changes to ReelsMagician, newest first. Version numbers will be assigned once th
 - **Face detection:** faces are now found by YuNet, the face detector in OpenCV's model zoo. It also finds a head turned to the side and a small face, such as a webcam in the corner of a screen recording, and takes about a quarter of the time per frame. It is a 0.2 MB download instead of 11 MB: press **Install everything missing** once to get it, and the old detector's files are deleted.
 - **Reel names:** a reel's file name is now made of ASCII letters, digits and underscores only: `Laptop czy tablet? Wszystko w jednym` becomes `Laptop_czy_tablet_Wszystko_w_jednym`. It comes out the same on Windows and Linux, and copies to any USB stick or shared folder. The suggested name for exported subtitles is made the same way.
 - **Links without ffmpeg:** loading a link before ffmpeg is installed now stops and points you to Setup, instead of failing after the download.
+- **Cleanup tab:** **Free up space** moved from the Setup tab to a tab of its own, **Cleanup**, on the right of the tab strip, apart from the six steps. It measures the data folder afresh each time it opens.
 
 ### Fixed
 

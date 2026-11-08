@@ -267,6 +267,9 @@ burned in. Transition length lives here too.
 paste into an upload page's file dialog, a file manager or a terminal. The activity log shows every
 step.
 
+**Cleanup** — on the right of the tab strip, apart from the steps: frees up space in the app's
+data folder (see [Freeing up space](#freeing-up-space)).
+
 File pickers and confirmations are drawn by the app itself, the same on both systems. A question
 always defaults to the answer that changes nothing.
 
@@ -303,8 +306,8 @@ is kept as it is.
 
 ### Freeing up space
 
-**Free up space** on the Setup tab measures what each of those costs on disk and removes the parts
-you tick:
+**Free up space** on the **Cleanup** tab measures what each of those costs on disk, afresh each time
+the tab opens, and removes the parts you tick:
 
 | | ticked by default | why |
 |---|---|---|
