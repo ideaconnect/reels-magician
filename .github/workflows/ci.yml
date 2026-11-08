@@ -1,7 +1,9 @@
 name: CI
 
 # Builds the app and runs the logic checks on Windows and Ubuntu, so a change made on one
-# system cannot quietly break the other. The checks need no tools, GPU or network.
+# system cannot quietly break the other. The checks need no tools, GPU or network. Each job then
+# publishes the app as its release package does and holds the About tab's licence table to it,
+# so a new package cannot ship without a row there.
 
 on:
   push:
@@ -28,6 +30,10 @@ jobs:
         run: dotnet build ReelsMagician.slnx -c Release
       - name: Logic checks
         run: dotnet run --project tests/ReelsMagician.SmokeTests -c Release --no-build -- logic
+      - name: Publish
+        run: dotnet publish src/ReelsMagician.App -c Release -r win-x64 --self-contained -o out/publish
+      - name: Licences in the publish
+        run: dotnet run --project tests/ReelsMagician.SmokeTests -c Release --no-build -- licences out/publish
 
   ubuntu:
     name: Ubuntu
@@ -41,3 +47,7 @@ jobs:
         run: dotnet build ReelsMagician.slnx -c Release
       - name: Logic checks
         run: dotnet run --project tests/ReelsMagician.SmokeTests -c Release --no-build -- logic
+      - name: Publish
+        run: dotnet publish src/ReelsMagician.App -c Release -r linux-x64 --self-contained -o out/publish
+      - name: Licences in the publish
+        run: dotnet run --project tests/ReelsMagician.SmokeTests -c Release --no-build -- licences out/publish

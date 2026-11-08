@@ -7,6 +7,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ReelsMagician.App.Dialogs;
 using ReelsMagician.App.ViewModels;
+using ReelsMagician.Core.About;
 
 namespace ReelsMagician.App;
 
@@ -75,6 +76,9 @@ public partial class MainWindow : Window, IAppShell
     {
         if (Clipboard is { } clipboard) await clipboard.SetTextAsync(text);
     }
+
+    public Task ShowLicenceAsync(string title, IReadOnlyList<LicenceFile> files) =>
+        LicenceDialog.ShowAsync(this, title, files);
 
     public Task<bool> OpenLinkAsync(Uri link) => Launcher.LaunchUriAsync(link);
 

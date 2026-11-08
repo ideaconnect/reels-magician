@@ -281,6 +281,15 @@ step.
 **Cleanup** — on the right of the strip, apart from the steps and without a number: frees up space
 in the app's data folder (see [Freeing up space](#freeing-up-space)).
 
+**About** — beside Cleanup: the app's version (or "development build" for a build not made from a
+release), the system it runs on and the data folder, with **Copy path**; who makes it, with a link
+to [idct.tech](https://idct.tech/); links to the repository, its issues (**Report a problem**) and
+its releases; and every licence involved. Each component of the app and its package has a **View
+licence** button, which shows the text the build carries in the app itself, including inside the
+AppImage. The downloaded tools and models are marked installed or not, so you can see which terms
+apply on your machine: GPL-3.0 for the app's ffmpeg, NVIDIA's CUDA EULA where a CUDA build was
+installed, GPLv3+ for yt-dlp.
+
 File pickers and confirmations are drawn by the app itself, the same on both systems. A question
 always defaults to the answer that changes nothing.
 
@@ -360,11 +369,13 @@ src/ReelsMagician.Core/        no UI, fully testable
   Framing/      subject detection, crop path planning
   Rendering/    caption styles, ASS generation, renderer, preview
   Projects/     settings, project state, pipeline orchestration
+  About/        version, links, the licence table the About tab shows
 src/ReelsMagician.App/         Avalonia front end, Windows and Wayland
 tests/ReelsMagician.SmokeTests/
 packaging/linux/               the AppImage: desktop entry, icons, licences, build and check scripts
 docs/                          system requirements and architecture decisions
 assets/AppIconBase.png         the app's icon, which every icon file is made from
+assets/idct-mark.svg           the IDCT mark the About tab draws (idct.tech's favicon)
 tools/make-icons.cs         makes the .ico and the PNG icons from it: dotnet run tools/make-icons.cs
 tools/make-speech-video.ps1 generates a narrated 4K test video (Windows: it uses the Windows speech engine)
 tools/update-icons.cs       copies the Font Awesome icons the app draws: dotnet run tools/update-icons.cs
@@ -378,6 +389,11 @@ dotnet run --project tests/ReelsMagician.SmokeTests -c Release
 
 # Logic checks only, needing no tools; this is what CI runs on Windows and Ubuntu
 dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- logic
+
+# The About tab's licence table against a self-contained publish: every package has a row and
+# every licence file is there. CI runs it after publishing on each system.
+dotnet publish src/ReelsMagician.App -c Release -r linux-x64 --self-contained -o out/publish
+dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- licences out/publish
 
 # Install what "Install everything missing" installs, never yt-dlp or Deno, and assert the right backends were chosen
 dotnet run --project tests/ReelsMagician.SmokeTests -c Release -- install
@@ -450,7 +466,9 @@ bottom of the app's window links to both.
 
 ## Licence and third-party components
 
-ReelsMagician is released under the [BSD 3-Clause License](LICENSE).
+ReelsMagician is released under the [BSD 3-Clause License](LICENSE). The names IDCT and
+ReelsMagician, the IDCT mark and the ReelsMagician icon are not covered by the BSD 3-Clause
+License; IDCT Bartosz Pachołek keeps all rights to them.
 
 The repository contains no third-party binaries and no model weights. The app downloads ffmpeg
 (GPL build), whisper.cpp, llama.cpp, and model weights from Whisper, Qwen and OpenCV from their
@@ -458,4 +476,5 @@ original publishers on first run. It downloads yt-dlp and Deno only if you agree
 under its own licence. The app's icons are [Font Awesome Free](https://fontawesome.com) icons,
 under CC BY 4.0.
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) lists every component, its licence and its
-source; read it before redistributing a build.
+source; read it before redistributing a build. The app's **About** tab lists them too, shows each
+licence text the build carries, and marks which downloaded tools are installed on your machine.

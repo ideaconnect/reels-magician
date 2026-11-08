@@ -24,6 +24,12 @@ public sealed class Toolset
     /// <summary>Set when llama.cpp is a Fallback build: a lesser build than this machine supports.</summary>
     public string? LlamaWarning { get; set; }
 
+    /// <summary>The kind of whisper.cpp build the app installed, as its marker names it; null for any other.</summary>
+    public BuildKind? WhisperBuild { get; set; }
+
+    /// <summary>The kind of llama.cpp build the app installed, as its marker names it; null for any other.</summary>
+    public BuildKind? LlamaBuild { get; set; }
+
     public GpuCapabilities? Gpu { get; set; }
 
     public bool HasFfmpeg => FfmpegPath is not null && FfprobePath is not null;

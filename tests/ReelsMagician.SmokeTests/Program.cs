@@ -9,10 +9,17 @@ using ReelsMagician.SmokeTests;
 //   link       fetches yt-dlp and Deno if missing, then resolves a real compatible video link end
 //              to end (download, probe, subtitles)
 //   recaption  rebuild captions from cached real transcripts and assert no overlap
+//   licences   holds the About tab's licence table to a self-contained publish of the app:
+//              licences out/publish (what CI runs after publishing on each system)
 var mode = args.Length > 0 ? args[0].ToLowerInvariant() : "";
 
 switch (mode)
 {
+    case "licences":
+        if (args.Length < 2) Check.True(false, "the licences mode is given a publish folder");
+        else LicenceChecks.RunOnPublish(args[1]);
+        break;
+
     case "install":
         await EndToEnd.InstallAsync();
         break;
@@ -56,4 +63,5 @@ static void RunLogicChecks()
     AppearanceChecks.Run();
     ThemeChecks.Run();
     AppIconChecks.Run();
+    LicenceChecks.Run();
 }

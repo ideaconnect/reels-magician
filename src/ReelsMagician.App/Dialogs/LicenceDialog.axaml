@@ -1,0 +1,33 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:about="using:ReelsMagician.Core.About"
+        x:Class="ReelsMagician.App.Dialogs.LicenceDialog"
+        Width="820" Height="640" MinWidth="480" MinHeight="320"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+  <DockPanel Margin="20">
+    <!-- One button, on the right as everywhere in the app; Enter and Escape close it. -->
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+      <Button x:Name="CloseButton" Content="Close" Classes="accent" IsDefault="True" IsCancel="True" />
+    </StackPanel>
+
+    <Border Background="{DynamicResource Panel}" BorderBrush="{DynamicResource BorderBrush2}"
+            BorderThickness="1" CornerRadius="8">
+      <ScrollViewer x:Name="Scroller" Padding="14,12">
+        <!-- The texts as the build carries them: each under its path, selectable, in a fixed-width
+             font, since licence files are laid out for one. -->
+        <ItemsControl x:Name="Files">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="about:LicenceFile">
+              <StackPanel Margin="0,0,0,16">
+                <TextBlock Text="{Binding Path}" Classes="h2" />
+                <SelectableTextBlock Text="{Binding Text}" Classes="mono" TextWrapping="Wrap"
+                                     IsVisible="{Binding Found}" />
+                <TextBlock Text="Not found in this build." Classes="hint" IsVisible="{Binding !Found}" />
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Border>
+  </DockPanel>
+</Window>

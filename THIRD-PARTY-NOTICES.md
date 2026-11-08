@@ -2,6 +2,13 @@
 
 ReelsMagician's own source code is licensed under the BSD 3-Clause License (see `LICENSE`).
 
+The names IDCT and ReelsMagician, the IDCT mark (`assets/idct-mark.svg`) and the ReelsMagician icon
+(`assets/AppIconBase.png` and the icon files made from it) are not covered by the BSD 3-Clause
+License. IDCT Bartosz Pachołek keeps all rights to them.
+
+The app's **About** tab lists the same components as this file, with the licence texts a build
+carries, and marks which of the downloaded ones are installed on the machine.
+
 This repository contains **no third-party binaries and no model weights**. Apart from the Font
 Awesome icons, whose shapes are copied into the source, everything below is fetched from its
 original publisher. NuGet restores the libraries when the app is built, the

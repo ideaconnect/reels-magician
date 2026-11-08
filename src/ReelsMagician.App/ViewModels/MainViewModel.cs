@@ -44,6 +44,8 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         AppTheme.Apply(_settings.Appearance);
         _toolchain = new ToolchainManager(_paths, this);
         _linkConsent = new LinkToolsConsent(shell, _toolchain);
+        // Before RefreshTools below, which shows the downloaded tools' state on it too.
+        About = new AboutViewModel(shell, link => OpenLinkAsync(link, $"Opening {link} in your browser."), _paths.Root);
 
         StyleEditor = new StyleEditorViewModel(_project.Style);
         StyleEditor.Changed += (_, _) => OnStyleChanged();
@@ -446,9 +448,9 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         private set { if (Set(ref _isBusy, value)) RefreshCommands(); }
     }
 
-    // Tab order in MainWindow.axaml. Cleanup comes last, docked to the right, apart from the steps.
+    // Tab order in MainWindow.axaml. Cleanup and About come last, on the right, apart from the steps.
     private const int SetupTab = 0, SourceTab = 1, SubtitlesTab = 2, ReelTab = 3, CaptionsTab = 4, RenderTab = 5,
-        CleanupTab = 6;
+        CleanupTab = 6, AboutTab = 7;
 
     private int _activeTab;
     public int ActiveTab
@@ -510,14 +512,17 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
     public const string CoffeeLink = "https://buymeacoffee.com/idct";
     public const string SponsorsLink = "https://github.com/sponsors/ideaconnect?frequency=one-time";
 
+    private Task OpenSupportLinkAsync(string link) =>
+        OpenLinkAsync(link, $"Opening {link} in your browser. Thank you for supporting ReelsMagician!");
+
     /// <summary>
-    /// Opens a support page in the system's browser. The status bar spells the address out too,
-    /// because on Linux nothing reports whether a browser actually opened, and a minimal desktop
-    /// may have none.
+    /// Opens a page in the system's browser. The status bar spells the address out too, because
+    /// on Linux nothing reports whether a browser actually opened, and a minimal desktop may have
+    /// none.
     /// </summary>
-    private async Task OpenSupportLinkAsync(string link)
+    private async Task OpenLinkAsync(string link, string opening)
     {
-        Status = $"Opening {link} in your browser. Thank you for supporting ReelsMagician!";
+        Status = opening;
         try
         {
             if (!await _shell.OpenLinkAsync(new Uri(link)).ConfigureAwait(true))
@@ -526,9 +531,13 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
         catch (Exception ex)
         {
             Status = $"No browser could be opened. The page is at {link}";
-            this.Warn("support", $"Could not open {link}: {ex.Message}");
+            this.Warn("links", $"Could not open {link}: {ex.Message}");
         }
     }
+
+    // ── About ────────────────────────────────────────────────────────────────────────────
+
+    public AboutViewModel About { get; }
 
     // ── Toolchain actions ────────────────────────────────────────────────────────────────
 
@@ -542,6 +551,7 @@ public sealed class MainViewModel : ViewModelBase, IProgressSink
 
         ShowRows(Components, _toolchain.Describe(_settings, _tools));
         ShowRows(LinkComponents, _toolchain.DescribeLinkTools(_tools));
+        About.ShowTools(_tools);
 
         GpuText = _tools.Gpu?.Describe() ?? "GPU unknown";
         BackendText = $"Whisper: {_tools.WhisperBackend}    ·    Qwen: {_tools.LlamaBackend}";
