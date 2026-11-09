@@ -34,7 +34,10 @@ public static class StuckTranscriptChecks
             "but by every word");
         foreach (var sound in (string[])["[Music]", "(applause)", "*music*", "♪ ♪", "...", " "])
             Check.True(RepeatedLine.Key(sound) is null, $"\"{sound}\" is no speech, so it is never a stuck line");
+        foreach (var sounds in (string[])["[Music] (applause)", "♪ (music) ♪", "[MUSIC PLAYING]♪♪"])
+            Check.True(RepeatedLine.Key(sounds) is null, $"nor is \"{sounds}\", made only of sounds");
         Check.True(RepeatedLine.Key("♪ la la la ♪") is not null, "but sung words are");
+        Check.True(RepeatedLine.Key("(laughs) Not again.") == "laughs not again", "and so is a line with words beside a sound");
     }
 
     /// <summary>Finding the longest run in a transcript.</summary>
@@ -160,6 +163,17 @@ public static class StuckTranscriptChecks
             "with Cancel as the answer that changes nothing");
         Check.Contains(model, "_project.Transcript is { Origin: TranscriptOrigin.Whisper }",
             "only a Whisper transcript is warned about: supplied and imported subtitles are their author's");
+
+        // Working the warning out after every row added reads the list once per row: filling 4,000
+        // cues took 0.9 s on the window's thread, against 26 ms when it is worked out once.
+        Check.Contains(model, "if (!_populatingSubtitles) ShowStuckWarning();",
+            "an added or removed row updates the warning, but not while the list is being filled");
+        var populate = Regex.Match(model, @"private void PopulateSubtitles\(\)\s*\{(?<body>.*?)\n    \}", RegexOptions.Singleline)
+            .Groups["body"].Value;
+        var filled = populate.IndexOf("_populatingSubtitles = false;", StringComparison.Ordinal);
+        Check.True(populate.Contains("_populatingSubtitles = true;", StringComparison.Ordinal) && filled >= 0
+                   && populate.IndexOf("ShowStuckWarning();", filled, StringComparison.Ordinal) > filled,
+            "filling the list works the warning out once, after the last row");
     }
 
     private static List<TranscriptSegment> Repeat(string text, int times) =>

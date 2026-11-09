@@ -27,9 +27,10 @@ public sealed partial record RepeatedLine(string Text, int Count, double Start, 
 
     /// <summary>
     /// What two lines are compared by: their words, in lower case, without punctuation. Null for a
-    /// line that is no speech: a sound Whisper describes, such as "[Music]", "(applause)",
-    /// "*music*" or "♪", or one with no words at all. Whisper writes one of those for each window of
-    /// a long piece of music, which is the music, not a transcript that is stuck.
+    /// line that is no speech: one made only of sounds Whisper describes, such as "[Music]",
+    /// "(applause)", "*music*", "♪" or "[Music] (applause)", or one with no words at all. Whisper
+    /// writes one of those for each window of a long piece of music, which is the music, not a
+    /// transcript that is stuck.
     /// </summary>
     public static string? Key(string text)
     {
@@ -45,7 +46,7 @@ public sealed partial record RepeatedLine(string Text, int Count, double Start, 
         return words.Length == 0 ? null : words;
     }
 
-    [GeneratedRegex(@"^\s*(\[[^\]]*\]|\([^)]*\)|\*[^*]*\*|[♪♫\s]+)\s*$")]
+    [GeneratedRegex(@"^\s*(?:(?:\[[^\]]*\]|\([^)]*\)|\*[^*]*\*|[♪♫])\s*)+$")]
     private static partial Regex SoundOnly();
 }
 
