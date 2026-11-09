@@ -63,7 +63,7 @@ public sealed class FormatExtension : MarkupExtension
 
 /// <summary>
 /// <c>{l:TrValue Name, Prefix=Preset_}</c>: the interface's text for a key made of a prefix and a
-/// bound English name, such as <c>Preset_PopYellowCapCutStyle</c> for a preset, or the name itself
+/// bound English name, such as <c>Preset_PopYellow</c> for a preset, or the name itself
 /// when there is no such key, as for a style of the user's own. Follows a switch of language.
 /// </summary>
 public sealed class TrValueExtension : MarkupExtension

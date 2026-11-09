@@ -9,7 +9,7 @@ public enum CaptionMode
     /// <summary>One static line per caption — clean and unobtrusive.</summary>
     PlainText,
 
-    /// <summary>The spoken word is recoloured and scaled up, the way CapCut and Filmora do it.</summary>
+    /// <summary>The spoken word is recoloured and scaled up as it is spoken.</summary>
     WordHighlight,
 }
 
@@ -114,7 +114,7 @@ public sealed class SubtitleStyle
         },
         new()
         {
-            Name = "Pop yellow (CapCut style)",
+            Name = "Pop yellow",
             Mode = CaptionMode.WordHighlight,
             Animation = CaptionAnimation.Pop,
             FontName = "Arial Black",
