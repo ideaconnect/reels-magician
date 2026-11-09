@@ -12,6 +12,12 @@ public sealed record TranscriptWord(double Start, double End, string Text, doubl
 /// <summary>One caption cue: a span of speech with its text and, where known, per-word timings.</summary>
 public sealed class TranscriptSegment
 {
+    /// <summary>Below this average word confidence, a cue is one Whisper was unsure about.</summary>
+    public const double LowConfidenceThreshold = 0.6;
+
+    /// <summary>The confidence of a word nothing doubts, such as one from subtitles that came with the video.</summary>
+    internal const double FullConfidence = 1.0;
+
     public double Start { get; set; }
     public double End { get; set; }
     public string Text { get; set; } = "";
@@ -19,6 +25,14 @@ public sealed class TranscriptSegment
 
     public double Duration => Math.Max(0, End - Start);
     public bool HasWordTimings => Words.Count > 0;
+
+    /// <summary>
+    /// Whether Whisper was unsure about this cue: its words average below
+    /// <see cref="LowConfidenceThreshold"/>. The Subtitles step shows such a cue in amber, so the
+    /// review lands on the lines Whisper may have got wrong.
+    /// </summary>
+    public bool LowConfidence =>
+        Words.Count > 0 && Words.Average(w => w.Confidence) < LowConfidenceThreshold;
 
     public TranscriptSegment Clone() => new()
     {
@@ -32,6 +46,12 @@ public sealed class TranscriptSegment
     /// Re-derives word timings after the text was edited. Words that survive the edit keep their
     /// original timing; new or changed words are spread evenly across the gap between the
     /// surviving anchors, so a typo fix never desynchronises the rest of the line.
+    ///
+    /// Spreading only estimates when a word is said; it says nothing about whether the word is
+    /// right. So a spread word keeps the confidence of its text: full confidence for a cue that
+    /// had no words yet (subtitles that came with the video, a cue Whisper gave no tokens for),
+    /// and for an edit the confidence of the words it replaced. Low confidence stays a mark of
+    /// what Whisper was unsure about, never a side effect of the timing (issue #76).
     /// </summary>
     public void RetimeWords()
     {
@@ -44,7 +64,7 @@ public sealed class TranscriptSegment
 
         if (Words.Count == 0)
         {
-            Words = SpreadEvenly(tokens, Start, End);
+            Words = SpreadEvenly(tokens, Start, End, FullConfidence);
             return;
         }
 
@@ -62,9 +82,20 @@ public sealed class TranscriptSegment
             }
         }
 
-        FillGaps(rebuilt, tokens, Start, End);
+        FillGaps(rebuilt, matches, tokens, oldWords, Start, End);
         Words = [.. rebuilt.Select(w => w!)];
         ClampWords();
+    }
+
+    /// <summary>
+    /// Spreads the cue's words afresh across the whole cue, for when their timings are no use any
+    /// more, as after a timeless cue was folded into this one. What Whisper made of the words
+    /// survives as their average confidence, which is what <see cref="LowConfidence"/> reads.
+    /// </summary>
+    internal void RespreadWords()
+    {
+        var confidence = AverageConfidence(Words, FullConfidence);
+        Words = SpreadEvenly(Tokenize(Text), Start, End, confidence);
     }
 
     /// <summary>
@@ -110,7 +141,15 @@ public sealed class TranscriptSegment
         return result;
     }
 
-    private static void FillGaps(TranscriptWord?[] words, List<string> tokens, double start, double end)
+    /// <summary>
+    /// Times each run of new words across the gap its anchors leave. The run takes the average
+    /// confidence of the old words it replaced; a run that replaced none, words typed in between,
+    /// takes that of the words either side. An edit so carries over how sure Whisper was of that
+    /// part of the line.
+    /// </summary>
+    private static void FillGaps(
+        TranscriptWord?[] words, int[] matches, List<string> tokens, List<TranscriptWord> oldWords,
+        double start, double end)
     {
         var i = 0;
         while (i < words.Length)
@@ -121,17 +160,35 @@ public sealed class TranscriptSegment
             while (i < words.Length && words[i] is null) i++;
             var runEnd = i; // exclusive
 
-            var from = runStart == 0 ? start : words[runStart - 1]!.End;
-            var to = runEnd >= words.Length ? end : words[runEnd]!.Start;
+            var before = runStart == 0 ? null : words[runStart - 1];
+            var after = runEnd >= words.Length ? null : words[runEnd];
+
+            var from = before?.End ?? start;
+            var to = after?.Start ?? end;
             if (to <= from) to = from + 0.12 * (runEnd - runStart);
 
-            var filled = SpreadEvenly(tokens.GetRange(runStart, runEnd - runStart), from, to);
+            // The old words between the two anchors are the ones this run replaced.
+            var oldFrom = runStart == 0 ? 0 : matches[runStart - 1] + 1;
+            var oldTo = runEnd >= words.Length ? oldWords.Count : matches[runEnd];
+            var replaced = oldWords.Skip(oldFrom).Take(oldTo - oldFrom);
+            var confidence = AverageConfidence(replaced, AverageConfidence([before, after], FullConfidence));
+
+            var filled = SpreadEvenly(tokens.GetRange(runStart, runEnd - runStart), from, to, confidence);
             for (var k = 0; k < filled.Count; k++) words[runStart + k] = filled[k];
         }
     }
 
-    /// <summary>Distributes tokens across a span, weighting each word by its length.</summary>
-    private static List<TranscriptWord> SpreadEvenly(List<string> tokens, double start, double end)
+    private static double AverageConfidence(IEnumerable<TranscriptWord?> words, double fallback)
+    {
+        var known = words.OfType<TranscriptWord>().ToList();
+        return known.Count > 0 ? known.Average(w => w.Confidence) : fallback;
+    }
+
+    /// <summary>
+    /// Distributes tokens across a span, weighting each word by its length. The timing is made
+    /// up, so the caller says how sure the text is.
+    /// </summary>
+    private static List<TranscriptWord> SpreadEvenly(List<string> tokens, double start, double end, double confidence)
     {
         var result = new List<TranscriptWord>(tokens.Count);
         if (tokens.Count == 0) return result;
@@ -143,7 +200,7 @@ public sealed class TranscriptSegment
         foreach (var token in tokens)
         {
             var share = span * Math.Max(1, token.Length) / totalWeight;
-            result.Add(new TranscriptWord(cursor, cursor + share, token, 0.5));
+            result.Add(new TranscriptWord(cursor, cursor + share, token, confidence));
             cursor += share;
         }
         return result;
@@ -196,7 +253,7 @@ public sealed class Transcript
             if (s.End < s.Start) s.End = s.Start;
         }
 
-        FoldTimelessCues();
+        FoldTimelessCues(out var folded);
         if (Segments.Count == 0) return;
 
         // Whisper regularly emits cues whose start and end are identical, and stretching those to
@@ -219,7 +276,12 @@ public sealed class Transcript
 
         // Words are clamped only once every cue boundary is final. Clamping earlier would pin
         // them against a boundary that a later step moves, leaving them outside their own cue.
-        foreach (var segment in Segments) segment.ClampWords();
+        // A folded cue's words are spread across its final window first, for the same reason.
+        foreach (var segment in Segments)
+        {
+            if (folded.Contains(segment)) segment.RespreadWords();
+            segment.ClampWords();
+        }
     }
 
     /// <summary>
@@ -234,8 +296,10 @@ public sealed class Transcript
     /// merged cue's words are respread across that window. The surviving words shift by a fraction
     /// of a second, which is the honest cost of Whisper having lost the timing outright.
     /// </summary>
-    private void FoldTimelessCues()
+    /// <param name="folded">The cues that took in another one, whose words still need respreading.</param>
+    private void FoldTimelessCues(out HashSet<TranscriptSegment> folded)
     {
+        folded = [];
         for (var i = Segments.Count - 1; i >= 0; i--)
         {
             var cue = Segments[i];
@@ -253,17 +317,20 @@ public sealed class Transcript
             {
                 target.Text = $"{target.Text.Trim()} {cue.Text.Trim()}".Trim();
                 target.End = Math.Max(target.End, cue.End);
+                target.Words.AddRange(cue.Words);
             }
             else
             {
                 target.Text = $"{cue.Text.Trim()} {target.Text.Trim()}".Trim();
                 target.Start = Math.Min(target.Start, cue.Start);
+                target.Words.InsertRange(0, cue.Words);
             }
 
-            // Drop the word timings so the merged text is respread over the whole window. Keeping
-            // the originals would leave the folded words with nowhere to go but the final instant,
-            // which is the flash this exists to remove.
-            target.Words.Clear();
+            // The merged text is respread over the whole window once the cue boundaries are final
+            // (see Normalize). Keeping the original timings would leave the folded words with
+            // nowhere to go but the final instant, which is the flash this exists to remove. The
+            // words are kept until then for how sure Whisper was of them.
+            folded.Add(target);
             Segments.RemoveAt(i);
         }
     }
@@ -279,11 +346,13 @@ public sealed class Transcript
             }
             else
             {
+                // Spread, not heard: the text keeps full confidence, as in RetimeWords.
                 var tokens = TranscriptSegment.Tokenize(segment.Text);
                 var span = segment.Duration / Math.Max(1, tokens.Count);
                 for (var i = 0; i < tokens.Count; i++)
                     yield return new TranscriptWord(
-                        segment.Start + i * span, segment.Start + (i + 1) * span, tokens[i], 0.5);
+                        segment.Start + i * span, segment.Start + (i + 1) * span, tokens[i],
+                        TranscriptSegment.FullConfidence);
             }
         }
     }

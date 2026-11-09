@@ -474,7 +474,7 @@ Analyse anyway?</value>
     <value>Entrance animation</value>
   </data>
   <data name="Captions_Mode_Note" xml:space="preserve">
-    <value>Plain text draws one static line per caption. Word highlight recolours and enlarges each word exactly as it is spoken, the way CapCut and Filmora do it.</value>
+    <value>Plain text draws one static line per caption. Word highlight recolours and enlarges each word exactly as it is spoken.</value>
   </data>
   <data name="Enum_CaptionMode_PlainText" xml:space="preserve">
     <value>Plain text</value>
@@ -507,8 +507,8 @@ Analyse anyway?</value>
     <value>Plain white</value>
     <comment>The English equals the preset's Name.</comment>
   </data>
-  <data name="Preset_PopYellowCapCutStyle" xml:space="preserve">
-    <value>Pop yellow (CapCut style)</value>
+  <data name="Preset_PopYellow" xml:space="preserve">
+    <value>Pop yellow</value>
   </data>
   <data name="Preset_GreenKaraoke" xml:space="preserve">
     <value>Green karaoke</value>

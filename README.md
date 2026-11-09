@@ -47,10 +47,10 @@
 </table>
 
 <p align="center">
-  <img src="docs/screenshots/reel-frame-1.jpg" width="220" alt="A frame of the finished reel: Celia on the bridge, cropped to 9:16, with a caption whose spoken word is yellow">
-  <img src="docs/screenshots/reel-frame-2.jpg" width="220" alt="A later frame: a man with a cybernetic eye, centred, with the caption We're on in one">
-  <img src="docs/screenshots/reel-frame-3.jpg" width="220" alt="The last clip: an older man in close-up, with the caption Maybe we can too">
-  <br><sub>Three frames of the 51-second reel made in the screenshots above.</sub>
+  <img src="docs/screenshots/reel-frame-1.jpg" width="220" alt="A frame of the finished reel: a young man in close-up, cropped to 9:16, with the caption The world's changed, Celia, its spoken word in yellow">
+  <img src="docs/screenshots/reel-frame-2.jpg" width="220" alt="A later frame: a grey-haired man in close-up, with the caption Maybe we can too">
+  <img src="docs/screenshots/reel-frame-3.jpg" width="220" alt="The last scene: a man in glasses, lit in violet, with the caption Memory overwrite complete">
+  <br><sub>Three frames of the 45-second reel made in the screenshots above.</sub>
 </p>
 
 <p align="center"><sub>The screenshots show ReelsMagician on Linux, in the light and the dark theme (GitHub picks the one you use), working on
@@ -64,7 +64,7 @@ ReelsMagician is a desktop app for Windows and Linux. Point it at an MP4 or a co
 2. lets you **review and correct the subtitles**;
 3. asks a local **Qwen** model to pick the most compelling stretch, and proposes several reels of the length you want;
 4. **keeps the subject centred** in the vertical crop: a face, else a person, else whatever moves on screen;
-5. joins the clips with a transition too short to smear the audio, and **burns in captions**: plain, or with each word highlighted as it is spoken, the way CapCut and Filmora do it.
+5. joins the clips with a transition too short to smear the audio, and **burns in captions**: plain, or with each word highlighted as it is spoken.
 
 Everything runs locally. Nothing is uploaded.
 
@@ -77,6 +77,7 @@ Everything runs locally. Nothing is uploaded.
 - [Support ReelsMagician](#support-reelsmagician)
 - [System requirements](#system-requirements)
 - [Known limitations](#known-limitations)
+- [Your first reel, step by step](#your-first-reel-step-by-step)
 - [How to use it](#how-to-use-it)
   - [Installing it](#installing-it)
   - [First start](#first-start)
@@ -157,8 +158,6 @@ warns when this computer probably has too little.
   step warns if a line still repeats
   ([#75](https://github.com/ideaconnect/reels-magician/issues/75)). The video's own subtitles avoid
   it (see [Making a reel](#making-a-reel)).
-- **Subtitles that come with the video are all marked amber**, as if Whisper had been unsure of them
-  ([#76](https://github.com/ideaconnect/reels-magician/issues/76)).
 - **The builds aren't signed yet**, so Windows SmartScreen warns the first time.
 - **Self-updating starts with the first release that has the Windows installer.** 0.1.0 and 0.2.0
   can't update themselves. The Windows zip, and an AppImage in a folder you can't write to, only
@@ -174,6 +173,76 @@ warns when this computer probably has too little.
 - **Footage with no clear subject**: the crop follows the visual energy, and can wander.
 - **Video links rely on yt-dlp and Deno**, third-party tools that follow the sites' changes. You are
   responsible for having the right to download each video you load from a link.
+
+## Your first reel, step by step
+
+New to ReelsMagician? This is the whole way from the
+[download](https://github.com/ideaconnect/reels-magician/releases) to a finished reel, in the app's
+own window. In each step the lettered dots mark what to press, in order, and the dotted arrows lead
+from one to the next. [How to use it](#how-to-use-it) says more about every step.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/guide-overview-dark.png">
+    <img src="docs/screenshots/guide-overview-light.png" alt="The way to a reel at a glance: get the app, then step 1 Setup (about 6 GB, once), 2 Source (pick your video), 3 Subtitles (check the words), 4 Reel (pick a proposal), 5 Captions (choose a look) and 6 Render (one click), and the 1080×1920 reel is done">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/guide-0-get-the-app-dark.png">
+    <img src="docs/screenshots/guide-0-get-the-app-light.png" alt="Before you start, get the app. A: open the Releases page of this repository and download the file for your system. B: on Windows, run ReelsMagician-win-x64-Setup.exe, which installs for your account with no admin rights; SmartScreen asks once, so choose More info, then Run anyway. C: on Linux, make ReelsMagician-x86_64.AppImage executable (chmod +x) and start it in a Wayland session">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/guide-1-setup-dark.png">
+    <img src="docs/screenshots/guide-1-setup-light.png" alt="Step 1 of 6, once: set it up. A: open Setup and press Install everything missing; it downloads about 6 GB, once. B: wait until every line of the list has a green check, then go on to Source">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/guide-2-source-dark.png">
+    <img src="docs/screenshots/guide-2-source-light.png" alt="Step 2 of 6: pick your video. A: press Browse… and choose an MP4, or paste a link into the box; Reel length sets how long the reel will be. B: press Load source. C: check the topic, which steers what gets picked, and press Transcribe">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/guide-3-subtitles-dark.png">
+    <img src="docs/screenshots/guide-3-subtitles-light.png" alt="Step 3 of 6: check the subtitles. A: read through the lines and fix any wrong word right where it is. B: press Analyse and pick the reel; Qwen reads the whole transcript and proposes reels, which can take a few minutes">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/guide-4-reel-dark.png">
+    <img src="docs/screenshots/guide-4-reel-light.png" alt="Step 4 of 6: pick your reel. A: click the proposal you like best; each shows its opening line, why it was picked and its clips. B: press Plan framing for this reel, and the crop will follow the speaker in every clip">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/guide-5-captions-dark.png">
+    <img src="docs/screenshots/guide-5-captions-light.png" alt="Step 5 of 6: choose the captions. A: pick a look under Preset. B: press Apply preset; fonts, colours and sizes can all be changed below it. C: press Refresh preview to see a real frame of your reel with its captions">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/guide-6-render-dark.png">
+    <img src="docs/screenshots/guide-6-render-light.png" alt="Step 6 of 6: render it. A: press Render the reel; when it is done, the bar at the bottom says where the reel was saved. B: Copy path copies its location, ready for an upload page">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/guide-7-done-dark.png">
+    <img src="docs/screenshots/guide-7-done-light.png" alt="Done: your reel is ready, a 1080×1920 MP4 with the captions burned in, in Videos/ReelsMagician, to post wherever you share reels. Three frames of it show the captions, the spoken word in yellow">
+  </picture>
+</p>
 
 ## How to use it
 
@@ -223,14 +292,16 @@ the title or filename; correct it if it is wrong, because the analysis is anchor
 **Transcribe**.
 
 **3 · Subtitles** — the review step. Every cue with its times, editable in place. Amber text marks
-cues Whisper was unsure about, so you can aim your attention. Split, merge, nudge by 100 ms,
-delete, or import and export SRT. An amber box above the list warns when Whisper wrote one line
-five times in a row or more, as it can over music; **Analyse** then asks before it uses the text.
+cues Whisper was unsure about, so you can aim your attention; subtitles that came with the video
+are never amber. Split, merge, nudge by 100 ms, delete, or import and export SRT. An amber box
+above the list warns when Whisper wrote one line five times in a row or more, as it can over music;
+**Analyse** then asks before it uses the text.
 
 Edits are safe: when you change a line, word timings are re-derived so that words which survived
 the edit keep their original timing and only new ones are re-spread. A typo fix never
 desynchronises the rest of the line — which matters, because these timings drive the karaoke
-highlight.
+highlight. An edit doesn't change the line's colour either: a line stays amber, or not, by what
+Whisper made of that part of it, and the **Edited** column shows the lines you have changed.
 
 Press **Analyse and pick the reel** when you are happy.
 
@@ -529,8 +600,8 @@ ahead of a real pause is judged by the hold it will actually get, not by the who
 
 **Word highlighting done properly.** ASS karaoke tags can only swap between two style colours —
 they cannot scale a word or animate it. So each caption emits one event per word, carrying the
-whole line with override tags on the word being spoken. That is what produces the CapCut look
-rather than a karaoke machine.
+whole line with override tags on the word being spoken. That is what lets the spoken word pop
+instead of only changing colour, as on a karaoke machine.
 
 **The caption never moves.** The spoken word is emphasised with colour and, optionally, a
 *vertical* grow — never a horizontal one. `\fscx` changes a glyph's advance width, so scaling the

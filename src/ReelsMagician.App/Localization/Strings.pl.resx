@@ -477,7 +477,7 @@ Mimo to analizować?</value>
     <value>Animacja wejścia</value>
   </data>
   <data name="Captions_Mode_Note" xml:space="preserve">
-    <value>Zwykły tekst rysuje jeden nieruchomy wiersz na podpis. Podświetlanie słów zmienia kolor i rozmiar każdego słowa dokładnie wtedy, gdy pada, tak jak w CapCut i Filmorze.</value>
+    <value>Zwykły tekst rysuje jeden nieruchomy wiersz na podpis. Podświetlanie słów zmienia kolor i rozmiar każdego słowa dokładnie wtedy, gdy pada.</value>
   </data>
   <data name="Enum_CaptionMode_PlainText" xml:space="preserve">
     <value>Zwykły tekst</value>
@@ -509,8 +509,8 @@ Mimo to analizować?</value>
   <data name="Preset_PlainWhite" xml:space="preserve">
     <value>Zwykły biały</value>
   </data>
-  <data name="Preset_PopYellowCapCutStyle" xml:space="preserve">
-    <value>Wyskakujący żółty (w stylu CapCut)</value>
+  <data name="Preset_PopYellow" xml:space="preserve">
+    <value>Wyskakujący żółty</value>
   </data>
   <data name="Preset_GreenKaraoke" xml:space="preserve">
     <value>Zielone karaoke</value>

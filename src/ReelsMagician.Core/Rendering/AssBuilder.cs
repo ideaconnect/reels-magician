@@ -22,7 +22,7 @@ public sealed class CaptionGroup
 /// Word highlighting is done by emitting one event per word, each carrying the whole line with
 /// override tags on the active word. ASS karaoke tags can only swap between two style colours,
 /// which cannot scale the word or animate it — one event per word can, and that is what makes
-/// the result look like CapCut or Filmora rather than a 90s karaoke machine.
+/// the spoken word pop rather than look like a 90s karaoke machine.
 /// </summary>
 public static class AssBuilder
 {
