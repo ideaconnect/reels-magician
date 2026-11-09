@@ -106,9 +106,12 @@ those in `packaging/linux/licenses` for its runtime. Keep all of them when you p
 
 ## In the documentation only
 
-The README's screenshots in `docs/screenshots/` show frames of a film that isn't ReelsMagician's.
-They are not part of any build of the app.
+The README's screenshots in `docs/screenshots/` show frames of a film that isn't ReelsMagician's, and
+the images of its step-by-step guide use two Font Awesome icons and the Inter typeface. They are not
+part of any build of the app.
 
 | Content | Licence | Source |
 |---|---|---|
 | Frames of *Tears of Steel* and its English subtitles, in the app's screenshots and the three frames of a reel made from it | CC BY 3.0: (CC) Blender Foundation \| mango.blender.org | https://mango.blender.org/ |
+| The download and check icons of the step-by-step guide's images | Font Awesome Free, CC BY 4.0 | https://fontawesome.com |
+| Inter, the typeface of the step-by-step guide's text | SIL Open Font License 1.1 | https://rsms.me/inter/ |

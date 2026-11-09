@@ -71,3 +71,9 @@ _Avoid_: Zapis, tekst mówiony
 **Render** — **render** (the step), **renderowanie** (the work):
 Encoding the finished reel. The step keeps the short loanword, as "Renderowanie" would not fit the step strip at the window's minimum width.
 _Avoid_: Eksport, eksportowanie
+
+### Describing the app
+
+**Word highlight** — **podświetlanie słów**:
+Captions in which each word is recoloured, and may grow, as it is spoken. The docs and the interface describe it, and every other feature, by what it does.
+_Avoid_: Comparisons with other video apps ("the way X does it", "X style"): neither the docs nor the interface name other editing or reel software

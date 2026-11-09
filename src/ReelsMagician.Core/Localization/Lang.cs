@@ -45,7 +45,7 @@ public readonly struct Lang
 
     /// <summary>
     /// A name as part of a resource key, its letters and digits with each word capitalised: the
-    /// key of a text looked up by an English name, such as <c>Preset_PopYellowCapCutStyle</c>.
+    /// key of a text looked up by an English name, such as <c>Preset_PopYellow</c>.
     /// </summary>
     public static string Slug(string name)
     {
