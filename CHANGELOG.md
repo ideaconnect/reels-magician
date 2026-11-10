@@ -2,7 +2,9 @@
 
 Changes to ReelsMagician, newest first.
 
-## Unreleased
+## 0.3.0 (2026-11-10)
+
+A new look, with light and dark themes, a Polish interface, an installer for Windows, and updates from inside the app. Still an early preview.
 
 ### Changed
 
