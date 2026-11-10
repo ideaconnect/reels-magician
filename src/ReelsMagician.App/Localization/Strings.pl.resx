@@ -318,6 +318,23 @@
   <data name="Subtitles_Note" xml:space="preserve">
     <value>Bursztynowy tekst oznacza napisy, których Whisper nie był pewien. Zmiany zostaną użyte przy analizie.</value>
   </data>
+  <data name="Subtitles_Stuck" xml:space="preserve">
+    <value>Transkrypcja wygląda na zapętloną: „{0}” pojawia się {1} razy z rzędu, od {2} do {3}. Whisper potrafi w kółko powtarzać wiersz, który zmyślił przy muzyce. Przed analizą usuń te napisy albo zaimportuj inne.</value>
+  </data>
+  <data name="Stuck_Title" xml:space="preserve">
+    <value>Transkrypcja wygląda na zapętloną</value>
+  </data>
+  <data name="Stuck_Ask" xml:space="preserve">
+    <value>„{0}” pojawia się {1} razy z rzędu, od {2} do {3}. Analiza wybierze rolkę z tego tekstu.
+
+Mimo to analizować?</value>
+  </data>
+  <data name="Stuck_Analyse" xml:space="preserve">
+    <value>Analizuj mimo to</value>
+  </data>
+  <data name="Stuck_NotStarted" xml:space="preserve">
+    <value>Nie rozpoczęto analizy. Najpierw usuń powtórzone napisy albo zaimportuj inne.</value>
+  </data>
   <data name="Subtitles_Analyse" xml:space="preserve">
     <value>Analizuj i wybierz rolkę</value>
   </data>

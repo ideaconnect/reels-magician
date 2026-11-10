@@ -28,6 +28,10 @@ public sealed partial class WhisperTranscriber(Toolset tools, AppSettings settin
     [GeneratedRegex(@"\[_[A-Za-z0-9_]*\]|<\|[^|]*\|>")]
     private static partial Regex EmbeddedMarker();
 
+    /// <summary>A cue as whisper-cli prints it while it runs: <c>[00:01:02.000 --> 00:01:04.000]   Text</c>.</summary>
+    [GeneratedRegex(@"^\s*\[(?<from>\d+:\d{2}:\d{2}[.,]\d{1,3})\s*-->\s*(?<to>\d+:\d{2}:\d{2}[.,]\d{1,3})\]\s*(?<text>.*)$")]
+    private static partial Regex PrintedCue();
+
     public async Task<Transcript> TranscribeAsync(
         string videoPath, double durationSeconds, string workDir, CancellationToken ct)
     {
@@ -41,47 +45,83 @@ public sealed partial class WhisperTranscriber(Toolset tools, AppSettings settin
         if (!File.Exists(wav) || new FileInfo(wav).Length < 1024)
             await ffmpeg.ExtractSpeechWavAsync(videoPath, wav, durationSeconds, ct).ConfigureAwait(false);
 
+        sink.Report("transcribe", Lang.Ui[nameof(Strings.Whisper_Running)], 0);
+        sink.Info("transcribe", $"Backend: {tools.WhisperBackendInfo.Describe(Lang.Log)}");
+
+        // The first pass hands each 30 s window the text before it, which keeps names, spelling
+        // and punctuation the same from one window to the next. Over a long stretch without
+        // speech that same context can trap Whisper in one made-up line for minutes (#75), so a
+        // pass that repeats one line StuckAt times in a row is stopped there, and the audio is
+        // transcribed again with no text carried over (-mc 0). Only a stuck transcript gets the
+        // second pass: on speech, -mc 0 merged cues and lost the last sentence of the narrated
+        // video the end-to-end check uses.
+        var (transcript, stuck) = await RunAsync(wav, workDir, keepContext: true, ct).ConfigureAwait(false);
+        if (stuck is not null)
+        {
+            sink.Warn("transcribe",
+                $"Whisper got stuck on one line: \"{stuck.Text}\" {stuck.Count} times in a row from " +
+                $"{Transcript.SrtTime(stuck.Start)}. Transcribing again without carrying text from one window to the next (-mc 0).");
+            sink.Report("transcribe", Lang.Ui[nameof(Strings.Whisper_Retrying)], 0);
+
+            (transcript, stuck) = await RunAsync(wav, workDir, keepContext: false, ct).ConfigureAwait(false);
+            if (stuck is not null)
+                sink.Warn("transcribe",
+                    $"The transcript still repeats one line: \"{stuck.Text}\" {stuck.Count} times in a row from " +
+                    $"{Transcript.SrtTime(stuck.Start)} to {Transcript.SrtTime(stuck.End)}. Check it on the Subtitles tab.");
+        }
+
+        transcript!.Normalize();
+        transcript.EnsureWordTimings();
+
+        sink.Report("transcribe", Lang.Ui.Format(nameof(Strings.Whisper_Done),
+            Lang.Ui.Plural("Count_Cues", transcript.Segments.Count), Lang.Ui.Plural("Count_Words", transcript.WordCount)), 1);
+        sink.Info("transcribe", $"Language: {transcript.Language}; {transcript.Segments.Count} cues");
+        return transcript;
+    }
+
+    /// <summary>
+    /// One run of whisper-cli over the speech. A run with the context kept watches the cues it
+    /// prints and is stopped as soon as one line comes <see cref="RepeatedLine.StuckAt"/> times in a
+    /// row; it then gives no transcript, only that line. Otherwise the transcript as whisper.cpp
+    /// wrote it, before normalising, with its longest run of one line when that looks stuck.
+    /// </summary>
+    private async Task<(Transcript? Transcript, RepeatedLine? Stuck)> RunAsync(
+        string wav, string workDir, bool keepContext, CancellationToken ct)
+    {
         var prefix = Path.Combine(workDir, "transcript");
         var jsonPath = prefix + ".json";
         if (File.Exists(jsonPath)) File.Delete(jsonPath);
 
-        var args = new List<string>
-        {
-            "-m", tools.WhisperModelPath!,
-            "-f", wav,
-            "-t", settings.WhisperThreads.ToString(),
-            "-oj",            // JSON output
-            "-ojf",           // include per-token timings
-            "-of", prefix,
-            "-pp",            // print progress so the UI can follow along
-            "-ml", "0",       // let whisper choose natural segment lengths
-        };
-        if (!string.Equals(settings.WhisperLanguage, "auto", StringComparison.OrdinalIgnoreCase))
-        {
-            args.Add("-l");
-            args.Add(settings.WhisperLanguage);
-        }
-        else
-        {
-            args.Add("-l");
-            args.Add("auto");
-        }
+        var args = Arguments(tools.WhisperModelPath!, wav, prefix, settings.WhisperThreads, settings.WhisperLanguage, keepContext);
+        var progressKey = keepContext ? nameof(Strings.Whisper_Progress) : nameof(Strings.Whisper_RetryProgress);
 
-        sink.Report("transcribe", Lang.Ui[nameof(Strings.Whisper_Running)], 0);
-        sink.Info("transcribe", $"Backend: {tools.WhisperBackendInfo.Describe(Lang.Log)}");
-
-        var result = await ProcessRunner.RunAsync(tools.WhisperCli, args,
-            workingDirectory: Path.GetDirectoryName(tools.WhisperCli),
-            onStdErrLine: line =>
-            {
-                var m = ProgressPattern().Match(line);
-                if (m.Success && int.TryParse(m.Groups[1].Value, out var pct))
-                    sink.Report("transcribe", Lang.Ui.Format(nameof(Strings.Whisper_Progress), pct), pct / 100.0);
-                else if (!string.IsNullOrWhiteSpace(line))
-                    sink.Debug("whisper", line);
-            },
-            captureOutput: true,
-            ct: ct).ConfigureAwait(false);
+        var watch = new RepeatWatch();
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        ProcessResult result;
+        try
+        {
+            result = await ProcessRunner.RunAsync(tools.WhisperCli, args,
+                workingDirectory: Path.GetDirectoryName(tools.WhisperCli),
+                onStdOutLine: line =>
+                {
+                    if (!keepContext || ParsePrintedCue(line) is not { } cue) return;
+                    if (watch.Add(cue.Text, cue.Start, cue.End)) stop.Cancel();
+                },
+                onStdErrLine: line =>
+                {
+                    var m = ProgressPattern().Match(line);
+                    if (m.Success && int.TryParse(m.Groups[1].Value, out var pct))
+                        sink.Report("transcribe", Lang.Ui.Format(progressKey, pct), pct / 100.0);
+                    else if (!string.IsNullOrWhiteSpace(line))
+                        sink.Debug("whisper", line);
+                },
+                captureOutput: true,
+                ct: stop.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested && watch.Longest is { } early)
+        {
+            return (null, early);
+        }
 
         if (!result.Success && !File.Exists(jsonPath))
         {
@@ -97,13 +137,40 @@ public sealed partial class WhisperTranscriber(Toolset tools, AppSettings settin
             throw new InvalidOperationException(Lang.Ui[nameof(Strings.Whisper_NoTranscript)]);
 
         var transcript = ParseWhisperJson(await File.ReadAllTextAsync(jsonPath, ct).ConfigureAwait(false));
-        transcript.Normalize();
-        transcript.EnsureWordTimings();
+        return (transcript, RepeatedLine.Longest(transcript.Segments));
+    }
 
-        sink.Report("transcribe", Lang.Ui.Format(nameof(Strings.Whisper_Done),
-            Lang.Ui.Plural("Count_Cues", transcript.Segments.Count), Lang.Ui.Plural("Count_Words", transcript.WordCount)), 1);
-        sink.Info("transcribe", $"Language: {transcript.Language}; {transcript.Segments.Count} cues");
-        return transcript;
+    /// <summary>
+    /// whisper-cli's arguments. Without <paramref name="keepContext"/> they add <c>-mc 0</c>
+    /// (<c>--max-context 0</c>): no text from one 30 s window is handed to the next, so a line
+    /// Whisper made up over music cannot carry on past its own window.
+    /// </summary>
+    public static List<string> Arguments(
+        string modelPath, string wav, string outputPrefix, int threads, string language, bool keepContext)
+    {
+        var args = new List<string>
+        {
+            "-m", modelPath,
+            "-f", wav,
+            "-t", threads.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            "-oj",            // JSON output
+            "-ojf",           // include per-token timings
+            "-of", outputPrefix,
+            "-pp",            // print progress so the UI can follow along
+            "-ml", "0",       // let whisper choose natural segment lengths
+            "-l", string.Equals(language, "auto", StringComparison.OrdinalIgnoreCase) ? "auto" : language,
+        };
+        if (!keepContext) args.AddRange(["-mc", "0"]);
+        return args;
+    }
+
+    /// <summary>A cue whisper-cli printed while it ran, or null for any other line it printed.</summary>
+    public static (double Start, double End, string Text)? ParsePrintedCue(string line)
+    {
+        var m = PrintedCue().Match(line);
+        if (!m.Success) return null;
+        return (SubtitleParser.ParseTime(m.Groups["from"].Value), SubtitleParser.ParseTime(m.Groups["to"].Value),
+            m.Groups["text"].Value.Trim());
     }
 
     /// <summary>Parses whisper.cpp's --output-json-full document into cues with word timings.</summary>

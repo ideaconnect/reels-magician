@@ -351,6 +351,12 @@
   <data name="Whisper_Progress" xml:space="preserve">
     <value>Transkrypcja Whisperem — {0}%</value>
   </data>
+  <data name="Whisper_Retrying" xml:space="preserve">
+    <value>Whisper utknął i powtarza jeden wiersz. Transkrypcja od nowa…</value>
+  </data>
+  <data name="Whisper_RetryProgress" xml:space="preserve">
+    <value>Transkrypcja od nowa — {0}%</value>
+  </data>
   <data name="Whisper_NoTranscript" xml:space="preserve">
     <value>Whisper zakończył pracę, ale nie zapisał transkrypcji JSON.</value>
   </data>

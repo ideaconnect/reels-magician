@@ -66,6 +66,7 @@ return Check.Report();
 static void RunLogicChecks()
 {
     UnitChecks.Run();
+    StuckTranscriptChecks.Run();
     PlatformChecks.Run();
     CaptionParsingChecks.Run();
     SourceAndCleanupChecks.Run();
